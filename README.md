@@ -1,10 +1,10 @@
-# KIE API Python Toolkit
+# Kie.ai Python Workflow Toolkit
 
-`kie-api` is a Python toolkit for working with [KIE.AI](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42).
+`kie-api` is a Python workflow toolkit for working with [Kie.ai](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42).
 
-## What is KIE.AI?
+## What is Kie.ai?
 
-KIE.AI is a marketplace-style API platform for creative AI models. Instead of one model or one workflow, it gives you access to multiple image and video models behind one account and one API key.
+Kie.ai is a marketplace-style API platform for creative AI models. Instead of one model or one workflow, it gives you access to multiple image and video models behind one account and one API key.
 
 Examples of model families currently covered by this repo:
 - Nano Banana 2
@@ -15,24 +15,51 @@ Examples of model families currently covered by this repo:
 - Kling 3.0 image-to-video
 - Kling 3.0 motion control
 
-KIE uses a credit-based model, so different models and modes cost different amounts. This repo is built to help you avoid blind API calls by checking credits, validating inputs, and preparing media safely before generation.
+Kie.ai uses a credit-based model, so different models and modes cost different amounts. This repo is built to help you avoid blind API calls by checking credits, validating inputs, and preparing media safely before generation.
 
 Useful links:
-- [KIE.AI](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42)
-- [KIE Market](https://kie.ai/market?ref=e7565cf24a7fad4586341a87eaf21e42)
-- [KIE Pricing](https://kie.ai/pricing?ref=e7565cf24a7fad4586341a87eaf21e42)
+- [Kie.ai](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42)
+- [Kie.ai Market](https://kie.ai/market?ref=e7565cf24a7fad4586341a87eaf21e42)
+- [Kie.ai Pricing](https://kie.ai/pricing?ref=e7565cf24a7fad4586341a87eaf21e42)
 
 ## What this repo does
 
 This repo gives you a reusable Python layer for:
 - validating model-aware requests before they spend credits
 - uploading images, video, and audio before generation
-- building KIE payloads with model-specific rules
+- building Kie.ai payloads with model-specific rules
 - resolving prompt presets for different models and request shapes
 - polling tasks and downloading final outputs
 - storing completed runs as local artifact bundles with web/thumb derivatives
 
 It is meant for developers who want to work with KIE directly, or use a clean Python library inside a larger app.
+
+## How agents use it
+
+This toolkit is designed for agent-driven workflows. A coding agent, CLI wrapper, or application can use it to turn a user request into a real Kie.ai generation run safely.
+
+Typical pattern:
+1. take the user prompt and any input media
+2. choose a model such as Nano Banana or Kling
+3. validate the request before credits are spent
+4. upload media first if the request includes images, video, or audio
+5. submit the generation task
+6. wait for completion
+7. download the output
+8. store a clean local run artifact bundle
+
+```mermaid
+flowchart TD
+    A["User prompt or media input"] --> B["normalize_request()"]
+    B --> C["resolve_prompt_context()"]
+    C --> D["Optional LLM prompt enhancement"]
+    D --> E["validate_request()"]
+    E --> F["prepare_request_for_submission()"]
+    F --> G["submit_prepared_request()"]
+    G --> H["wait_for_task()"]
+    H --> I["download_output_file()"]
+    I --> J["create_run_artifact()"]
+```
 
 ## Example workflows
 
@@ -97,7 +124,7 @@ The credit check is the simplest “system is connected” test. After that, the
 
 ## Supporting development
 
-If you are already planning to use KIE.AI, using the links above is one way to support ongoing maintenance of this repo. There is no obligation, and the library works the same regardless.
+If you are already planning to use Kie.ai, using the links above is one way to support ongoing maintenance of this repo. There is no obligation, and the library works the same regardless.
 
 ## Quick start
 
