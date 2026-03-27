@@ -1,0 +1,17 @@
+key: kling_video_v1
+label: Kling Video Prompt Enhancer v1
+version: v1
+description: Prompt profile for Kling text-to-video and image-to-video models.
+applies_to_models:
+  - kling-2.6-t2v
+  - kling-2.6-i2v
+  - kling-3.0-t2v
+  - kling-3.0-i2v
+rules:
+  - preserve intent
+  - improve motion wording
+  - improve camera wording
+status: deprecated
+source: builtin
+notes:
+  - Editable profile resource. Change prompt.md or metadata.yaml without touching Python code.

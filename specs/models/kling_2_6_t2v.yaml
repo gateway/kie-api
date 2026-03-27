@@ -1,0 +1,86 @@
+key: kling-2.6-t2v
+label: Kling 2.6 Text to Video
+family: market
+provider_model: kling-2.6/text-to-video
+task_modes:
+  - text_to_video
+inputs:
+  image:
+    required_min: 0
+    required_max: 0
+  video:
+    required_min: 0
+    required_max: 0
+  audio:
+    required_min: 0
+    required_max: 0
+options:
+  sound:
+    type: bool
+    default: null
+    required: true
+  aspect_ratio:
+    type: enum
+    allowed: ['1:1', '16:9', '9:16']
+    default: null
+    required: true
+  duration:
+    type: enum
+    allowed: [5, 10]
+    default: null
+    required: true
+prompt:
+  required: true
+  max_chars: 2500
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_key: kling_video_v1
+defaults: {}
+transport:
+  endpoint_family: market
+  create_path: /api/v1/jobs/createTask
+  status_path: /api/v1/jobs/recordInfo
+  callback_supported: true
+verification:
+  verified_from:
+    - live_page_model_surface
+    - docs_kie_secondary
+  verified_on: '2026-03-25'
+  verification_notes:
+    - Verified model shape from the live https://kie.ai/kling-2-6 page text-to-video surface.
+    - The live page exposes prompt, sound, aspect_ratio, and duration as the expected fields for text-to-video.
+    - The live page shows aspect_ratio choices 1:1, 16:9, and 9:16, and duration choices 5 or 10 seconds.
+    - Provider model string remains verified from docs.kie.ai because the live page did not expose the underlying JSON request example directly in this pass.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    provider_model: verified_docs
+    task_modes: inferred
+    inputs.image.required_min: inferred
+    inputs.image.required_max: inferred
+    inputs.video.required_min: inferred
+    inputs.video.required_max: inferred
+    inputs.audio.required_min: inferred
+    inputs.audio.required_max: inferred
+    options.sound.type: inferred
+    options.sound.required: verified_live
+    options.sound.default: unknown
+    options.aspect_ratio.type: inferred
+    options.aspect_ratio.allowed: verified_live
+    options.aspect_ratio.required: verified_live
+    options.aspect_ratio.default: unknown
+    options.duration.type: inferred
+    options.duration.allowed: verified_live
+    options.duration.required: verified_live
+    options.duration.default: unknown
+    prompt.required: verified_live
+    prompt.max_chars: verified_live
+    prompt.enhancement_supported: inferred
+    prompt.enhancement_default_policy: inferred
+    prompt.default_profile_key: inferred
+    defaults: inferred
+    transport.endpoint_family: inferred
+    transport.create_path: verified_docs
+    transport.status_path: verified_docs
+    transport.callback_supported: verified_docs

@@ -1,0 +1,93 @@
+key: nano-banana-2
+label: Nano Banana 2
+family: market
+provider_model: nano-banana-2
+task_modes:
+  - text_to_image
+  - image_edit
+inputs:
+  image:
+    required_min: 0
+    required_max: 14
+  video:
+    required_min: 0
+    required_max: 0
+  audio:
+    required_min: 0
+    required_max: 0
+input_constraints:
+  image_formats: [jpeg, png, webp]
+  image_max_mb: 30
+options:
+  aspect_ratio:
+    type: enum
+    allowed: ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9', 'auto']
+    default: null
+  resolution:
+    type: enum
+    allowed: ['1K', '2K', '4K']
+    default: null
+  output_format:
+    type: enum
+    allowed: [jpg, png]
+    default: null
+prompt:
+  required: true
+  max_chars: 20000
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_keys_by_input_pattern:
+    prompt_only: nano_banana_2_text_to_image_v1
+    image_edit: nano_banana_2_image_edit_v1
+defaults: {}
+transport:
+  endpoint_family: market
+  create_path: /api/v1/jobs/createTask
+  status_path: /api/v1/jobs/recordInfo
+  callback_supported: true
+verification:
+  verified_from:
+    - live_page_api_surface
+    - docs_kie_secondary
+  verified_on: '2026-03-25'
+  verification_notes:
+    - Verified from the live https://kie.ai/nano-banana-2 page API surface.
+    - The live page shows required prompt with maxLength 20000 and optional image_input with up to 14 images.
+    - The live page supports JPEG, PNG, and WEBP up to 30MB for image_input.
+    - The live page exposes aspect_ratio, resolution, and output_format values directly in the expected fields list.
+    - The docs endpoint request example uses model string nano-banana-2, which confirms the exact provider model name.
+    - Docs examples also include google_search, but the current live page API surface does not expose that field, so it remains intentionally excluded from the runtime abstraction.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    provider_model: verified_docs
+    task_modes: inferred
+    inputs.image.required_min: verified_live
+    inputs.image.required_max: verified_live
+    inputs.video.required_min: inferred
+    inputs.video.required_max: inferred
+    inputs.audio.required_min: inferred
+    inputs.audio.required_max: inferred
+    input_constraints.image_formats: verified_live
+    input_constraints.image_max_mb: verified_live
+    options.aspect_ratio.type: inferred
+    options.aspect_ratio.allowed: verified_live
+    options.aspect_ratio.default: inferred
+    options.resolution.type: inferred
+    options.resolution.allowed: verified_live
+    options.resolution.default: inferred
+    options.output_format.type: inferred
+    options.output_format.allowed: verified_live
+    options.output_format.default: inferred
+    prompt.required: verified_live
+    prompt.max_chars: verified_live
+    prompt.enhancement_supported: inferred
+    prompt.enhancement_default_policy: inferred
+    prompt.default_profile_key: inferred
+    prompt.default_profile_keys_by_input_pattern: inferred
+    defaults: inferred
+    transport.endpoint_family: inferred
+    transport.create_path: verified_docs
+    transport.status_path: verified_docs
+    transport.callback_supported: verified_docs

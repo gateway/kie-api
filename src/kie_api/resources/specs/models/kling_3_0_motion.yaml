@@ -1,0 +1,119 @@
+key: kling-3.0-motion
+label: Kling 3.0 Motion Control
+family: market
+provider_model: kling-3.0/motion-control
+task_modes:
+  - motion_control
+inputs:
+  image:
+    required_min: 1
+    required_max: 1
+  video:
+    required_min: 1
+    required_max: 1
+  audio:
+    required_min: 0
+    required_max: 0
+input_constraints:
+  image_formats: [jpg, jpeg, png]
+  image_max_mb: 10
+  image_min_dimension_px: 300
+  image_aspect_ratio_min: 0.4
+  image_aspect_ratio_max: 2.5
+  video_formats: [mp4, mov, quicktime]
+  video_max_mb: 100
+  video_duration_min_seconds: 3
+  video_duration_max_seconds: 30
+  video_min_dimension_px: 300
+  video_aspect_ratio_min: 0.4
+  video_aspect_ratio_max: 2.5
+options:
+  character_orientation:
+    type: enum
+    allowed: [image, video]
+    default: null
+    notes: "'image' uses the image orientation and caps video duration lower than 'video' according to the live page."
+  mode:
+    type: enum
+    allowed: ['720p', '1080p']
+    default: null
+    value_aliases:
+      std: '720p'
+      pro: '1080p'
+    notes: "The live page expected fields list uses 720p and 1080p, while the help text still mentions std/pro naming."
+  background_source:
+    type: string
+    default: null
+    notes: "Docs request examples show background_source=input_video, but the current live page API surface does not expose this field. It is modeled as an optional docs-only passthrough."
+prompt:
+  required: false
+  max_chars: 2500
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_key: kling_3_0_motion_control_v1
+defaults: {}
+transport:
+  endpoint_family: market
+  create_path: /api/v1/jobs/createTask
+  status_path: /api/v1/jobs/recordInfo
+  callback_supported: true
+verification:
+  verified_from:
+    - live_page_api_surface
+    - docs_kie_secondary
+  verified_on: '2026-03-25'
+  verification_notes:
+    - Verified from the live https://kie.ai/kling-3-motion-control page API surface.
+    - The live page shows prompt, input_urls, video_urls, character_orientation, and mode in the expected fields list.
+    - The live page says input_urls is required, supports JPEG, PNG, and JPG, and requires dimensions greater than 300px with aspect ratio 2:5 to 5:2.
+    - The live page says video_urls is required, supports MP4 and MOV/QuickTime, and allows 3 to 30 seconds depending on character_orientation.
+    - Live page minimum image and video dimension is greater than 300px, while docs.kie.ai still states greater than 340px; the live page wins and the discrepancy is recorded here.
+    - Docs include background_source in the request example, but that field was not visible on the live page API surface; it is included here as an optional docs-only passthrough with explicit provenance.
+    - Docs-side examples still reference std/pro semantics for mode, while the live expected fields list shows 720p/1080p values. The SDK accepts std/pro as aliases but normalizes to the live values.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    provider_model: verified_docs
+    task_modes: inferred
+    inputs.image.required_min: verified_live
+    inputs.image.required_max: verified_live
+    inputs.video.required_min: verified_live
+    inputs.video.required_max: verified_live
+    inputs.audio.required_min: inferred
+    inputs.audio.required_max: inferred
+    input_constraints.image_formats: verified_live
+    input_constraints.image_max_mb: verified_live
+    input_constraints.image_min_dimension_px: verified_live
+    input_constraints.image_aspect_ratio_min: verified_live
+    input_constraints.image_aspect_ratio_max: verified_live
+    input_constraints.video_formats: verified_live
+    input_constraints.video_max_mb: verified_live
+    input_constraints.video_duration_min_seconds: verified_live
+    input_constraints.video_duration_max_seconds: verified_live
+    input_constraints.video_min_dimension_px: verified_live
+    input_constraints.video_aspect_ratio_min: verified_live
+    input_constraints.video_aspect_ratio_max: verified_live
+    options.character_orientation.type: inferred
+    options.character_orientation.allowed: verified_live
+    options.character_orientation.default: unknown
+    options.character_orientation.notes: verified_live
+    options.mode.type: inferred
+    options.mode.allowed: verified_live
+    options.mode.default: unknown
+    options.mode.value_aliases: inferred
+    options.mode.notes: verified_live
+    options.background_source.type: inferred
+    options.background_source.default: unknown
+    options.background_source.notes: verified_docs
+    prompt.required: verified_live
+    prompt.max_chars: verified_live
+    prompt.enhancement_supported: inferred
+    prompt.enhancement_default_policy: inferred
+    prompt.default_profile_key: inferred
+    prompt.default_profile_keys_by_input_pattern: inferred
+    defaults: inferred
+    transport.endpoint_family: inferred
+    transport.create_path: verified_docs
+    transport.status_path: verified_docs
+    transport.callback_supported: verified_docs

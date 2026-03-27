@@ -1,0 +1,20 @@
+key: nano_banana_pro_image_edit_v1
+label: Nano Banana Pro Image Edit Preset v1
+version: v1
+description: Built-in preset for Nano Banana Pro image-edit requests.
+applies_to_models:
+  - nano-banana-pro
+applies_to_task_modes:
+  - image_edit
+applies_to_input_patterns:
+  - image_edit
+variables:
+  - user_prompt
+  - image_count
+rules:
+  - preserve identity and key composition
+  - make requested edits explicit
+  - keep premium visual polish
+source: builtin
+notes:
+  - Built-in request-shape-aware preset for wrapper-side enhancement.

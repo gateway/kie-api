@@ -1,0 +1,20 @@
+key: nano_banana_pro_text_to_image_v1
+label: Nano Banana Pro Text to Image Preset v1
+version: v1
+description: Built-in preset for Nano Banana Pro prompt-only generation.
+applies_to_models:
+  - nano-banana-pro
+applies_to_task_modes:
+  - text_to_image
+applies_to_input_patterns:
+  - prompt_only
+variables:
+  - user_prompt
+  - model_key
+rules:
+  - preserve user intent
+  - improve clarity and production value
+  - keep premium visual language grounded
+source: builtin
+notes:
+  - Built-in request-shape-aware preset for wrapper-side enhancement.

@@ -1,0 +1,20 @@
+key: kling_3_0_i2v_first_last_frame_v1
+label: Kling 3.0 First/Last Frame Preset v1
+version: v1
+description: Built-in preset for Kling 3.0 image-to-video requests using first and last frame guidance.
+applies_to_models:
+  - kling-3.0-i2v
+applies_to_task_modes:
+  - image_to_video
+applies_to_input_patterns:
+  - first_last_frames
+variables:
+  - user_prompt
+  - image_count
+rules:
+  - preserve first and last frame identity
+  - bridge both endpoint images cleanly
+  - avoid continuity-breaking inventions
+source: builtin
+notes:
+  - Built-in request-shape-aware preset for wrapper-side enhancement.

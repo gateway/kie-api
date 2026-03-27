@@ -1,0 +1,155 @@
+version: '2026-03-26-site-pricing-page'
+label: KIE site pricing page snapshot
+released_on: '2026-03-26'
+currency: USD
+source_kind: site_pricing_page_api
+source_url: https://kie.ai/pricing
+notes:
+  - This snapshot was derived from KIE's public site pricing API discovered from the pricing page bundle.
+  - It reflects live-observed website pricing rows from 2026-03-26.
+  - Treat it as non-authoritative planning data until it is matched against actual billed usage.
+rules:
+  - model_key: nano-banana-2
+    pricing_status: observed_site_pricing
+    billing_unit: request
+    provider: Google
+    interface_type: image
+    anchor_url: https://kie.ai/nano-banana-2
+    raw_credit_text: '8'
+    raw_usd_text: '0.04'
+    base_credits: 8
+    base_cost_usd: 0.04
+    multipliers:
+      resolution:
+        1k: 1.0
+        2k: 1.5
+        4k: 2.25
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.
+  - model_key: nano-banana-pro
+    pricing_status: observed_site_pricing
+    billing_unit: request
+    provider: Google
+    interface_type: image
+    anchor_url: https://kie.ai/nano-banana-pro
+    raw_credit_text: '18.0'
+    raw_usd_text: '0.09'
+    base_credits: 18
+    base_cost_usd: 0.09
+    multipliers:
+      resolution:
+        1k: 1.0
+        2k: 1.0
+        4k: 1.3333333333
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.
+      - KIE's site pricing groups Nano Banana Pro 1K and 2K into a combined '1/2K' tier.
+  - model_key: kling-2.6-t2v
+    pricing_status: observed_site_pricing
+    billing_unit: video
+    provider: Kling
+    interface_type: video
+    anchor_url: https://kie.ai/kling-2-6?model=kling-2.6%2Ftext-to-video
+    raw_credit_text: '55.0'
+    raw_usd_text: '0.275'
+    base_credits: 55
+    base_cost_usd: 0.275
+    multipliers:
+      duration:
+        '5': 1.0
+        '10': 2.0
+      sound:
+        'false': 1.0
+        'true': 2.0
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.
+  - model_key: kling-2.6-i2v
+    pricing_status: observed_site_pricing
+    billing_unit: video
+    provider: Kling
+    interface_type: video
+    anchor_url: https://kie.ai/kling-2-6
+    raw_credit_text: '55.0'
+    raw_usd_text: '0.275'
+    base_credits: 55
+    base_cost_usd: 0.275
+    multipliers:
+      duration:
+        '5': 1.0
+        '10': 2.0
+      sound:
+        'false': 1.0
+        'true': 2.0
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.
+  - model_key: kling-3.0-t2v
+    pricing_status: observed_site_pricing
+    billing_unit: second
+    provider: Kling
+    interface_type: video
+    anchor_url: https://kie.ai/kling-3-0
+    raw_credit_text: '14'
+    raw_usd_text: '0.07'
+    base_credits: 14
+    base_cost_usd: 0.07
+    multipliers:
+      duration:
+        '5': 5.0
+        '10': 10.0
+      mode:
+        std: 1.0
+        pro: 1.2857142857
+        720p: 1.0
+        1080p: 1.2857142857
+      sound:
+        'false': 1.0
+        'true': 1.4285714286
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.
+      - The site pricing page does not distinguish Kling 3.0 text-to-video from image-to-video pricing.
+  - model_key: kling-3.0-i2v
+    pricing_status: observed_site_pricing
+    billing_unit: second
+    provider: Kling
+    interface_type: video
+    anchor_url: https://kie.ai/kling-3-0
+    raw_credit_text: '14'
+    raw_usd_text: '0.07'
+    base_credits: 14
+    base_cost_usd: 0.07
+    multipliers:
+      duration:
+        '5': 5.0
+        '10': 10.0
+      mode:
+        std: 1.0
+        pro: 1.2857142857
+        720p: 1.0
+        1080p: 1.2857142857
+      sound:
+        'false': 1.0
+        'true': 1.4285714286
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.
+      - The site pricing page does not distinguish Kling 3.0 text-to-video from image-to-video pricing.
+  - model_key: kling-3.0-motion
+    pricing_status: observed_site_pricing
+    billing_unit: second
+    provider: Kling
+    interface_type: video
+    anchor_url: https://kie.ai/kling-3-motion-control
+    raw_credit_text: '20'
+    raw_usd_text: '0.1'
+    base_credits: 20
+    base_cost_usd: 0.1
+    multipliers:
+      duration:
+        '5': 5.0
+        '10': 10.0
+      mode:
+        720p: 1.0
+        1080p: 1.35
+        std: 1.0
+        pro: 1.35
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.

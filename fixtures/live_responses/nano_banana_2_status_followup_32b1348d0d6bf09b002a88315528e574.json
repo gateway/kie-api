@@ -1,0 +1,89 @@
+{
+  "history": [
+    {
+      "task_id": "32b1348d0d6bf09b002a88315528e574",
+      "state": "queued",
+      "provider_code": 200,
+      "provider_message": "success",
+      "provider_status": "waiting",
+      "progress": null,
+      "output_urls": [],
+      "error_message": null,
+      "raw_response": {
+        "code": 200,
+        "msg": "success",
+        "data": {
+          "taskId": "32b1348d0d6bf09b002a88315528e574",
+          "model": "nano-banana-2",
+          "state": "waiting",
+          "param": "{\"input\":\"{\\\"image_input\\\":[\\\"https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/2way-person1.jpg\\\"],\\\"aspect_ratio\\\":\\\"9:16\\\",\\\"output_format\\\":\\\"jpg\\\",\\\"prompt\\\":\\\"Remove all elements around the man in this photo and make the background blue\\\",\\\"resolution\\\":\\\"2K\\\"}\",\"model\":\"nano-banana-2\"}",
+          "resultJson": "",
+          "failCode": null,
+          "failMsg": null,
+          "costTime": null,
+          "completeTime": null,
+          "createTime": 1774509092129
+        }
+      }
+    },
+    {
+      "task_id": "32b1348d0d6bf09b002a88315528e574",
+      "state": "succeeded",
+      "provider_code": 200,
+      "provider_message": "success",
+      "provider_status": "success",
+      "progress": null,
+      "output_urls": [],
+      "error_message": null,
+      "raw_response": {
+        "code": 200,
+        "msg": "success",
+        "data": {
+          "taskId": "32b1348d0d6bf09b002a88315528e574",
+          "model": "nano-banana-2",
+          "state": "success",
+          "param": "{\"input\":\"{\\\"image_input\\\":[\\\"https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/2way-person1.jpg\\\"],\\\"aspect_ratio\\\":\\\"9:16\\\",\\\"output_format\\\":\\\"jpg\\\",\\\"prompt\\\":\\\"Remove all elements around the man in this photo and make the background blue\\\",\\\"resolution\\\":\\\"2K\\\"}\",\"model\":\"nano-banana-2\"}",
+          "resultJson": "{\"resultUrls\":[\"https://tempfile.aiquickdraw.com/na2/32b1348d0d6bf09b002a88315528e5741913054.jpeg\"]}",
+          "failCode": null,
+          "failMsg": null,
+          "costTime": 274,
+          "completeTime": 1774509366025,
+          "createTime": 1774509092129
+        }
+      }
+    }
+  ],
+  "summary": {
+    "task_id": "32b1348d0d6bf09b002a88315528e574",
+    "poll_seconds": 20,
+    "elapsed_seconds": 20,
+    "terminal": true,
+    "final_status": {
+      "task_id": "32b1348d0d6bf09b002a88315528e574",
+      "state": "succeeded",
+      "provider_code": 200,
+      "provider_message": "success",
+      "provider_status": "success",
+      "progress": null,
+      "output_urls": [],
+      "error_message": null,
+      "raw_response": {
+        "code": 200,
+        "msg": "success",
+        "data": {
+          "taskId": "32b1348d0d6bf09b002a88315528e574",
+          "model": "nano-banana-2",
+          "state": "success",
+          "param": "{\"input\":\"{\\\"image_input\\\":[\\\"https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/2way-person1.jpg\\\"],\\\"aspect_ratio\\\":\\\"9:16\\\",\\\"output_format\\\":\\\"jpg\\\",\\\"prompt\\\":\\\"Remove all elements around the man in this photo and make the background blue\\\",\\\"resolution\\\":\\\"2K\\\"}\",\"model\":\"nano-banana-2\"}",
+          "resultJson": "{\"resultUrls\":[\"https://tempfile.aiquickdraw.com/na2/32b1348d0d6bf09b002a88315528e5741913054.jpeg\"]}",
+          "failCode": null,
+          "failMsg": null,
+          "costTime": 274,
+          "completeTime": 1774509366025,
+          "createTime": 1774509092129
+        }
+      }
+    },
+    "history_count": 2
+  }
+}

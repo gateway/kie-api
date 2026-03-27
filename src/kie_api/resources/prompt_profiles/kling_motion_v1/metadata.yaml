@@ -1,0 +1,15 @@
+key: kling_motion_v1
+label: Kling Motion Prompt Enhancer v1
+version: v1
+description: Prompt profile for Kling 3.0 Motion Control.
+applies_to_models:
+  - kling-3.0-motion
+applies_to_task_modes:
+  - motion_control
+rules:
+  - preserve identity
+  - preserve transfer intent
+status: deprecated
+source: builtin
+notes:
+  - Editable profile resource. Change prompt.md or metadata.yaml without touching Python code.

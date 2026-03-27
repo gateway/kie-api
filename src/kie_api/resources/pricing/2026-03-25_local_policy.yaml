@@ -1,0 +1,95 @@
+version: '2026-03-25-local-policy'
+label: Local dry-run pricing baseline
+released_on: '2026-03-25'
+currency: USD
+source_kind: local_policy
+notes:
+  - This snapshot is a local preflight policy baseline for dry-run estimation.
+  - It is editable package data, not a live-verified KIE billing contract.
+  - Use it to drive warnings and confirmation thresholds without touching Python code.
+rules:
+  - model_key: nano-banana-pro
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 6
+    notes:
+      - Local policy estimate for higher-quality image generation/edit runs.
+  - model_key: nano-banana-2
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 4
+    notes:
+      - Local policy estimate for standard image generation/edit runs.
+  - model_key: kling-2.6-t2v
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 12
+    multipliers:
+      duration:
+        '5': 1.0
+        '10': 1.75
+      sound:
+        'true': 1.1
+        'false': 1.0
+    notes:
+      - Local policy estimate for Kling 2.6 text-to-video.
+  - model_key: kling-2.6-i2v
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 13
+    multipliers:
+      duration:
+        '5': 1.0
+        '10': 1.75
+      sound:
+        'true': 1.1
+        'false': 1.0
+    notes:
+      - Local policy estimate for Kling 2.6 image-to-video.
+  - model_key: kling-3.0-t2v
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 18
+    multipliers:
+      duration:
+        '5': 1.0
+        '10': 1.9
+      mode:
+        std: 1.0
+        pro: 1.7
+      sound:
+        'true': 1.15
+        'false': 1.0
+    notes:
+      - Local policy estimate for Kling 3.0 text-to-video.
+  - model_key: kling-3.0-i2v
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 19
+    multipliers:
+      duration:
+        '5': 1.0
+        '10': 1.9
+      mode:
+        std: 1.0
+        pro: 1.7
+      sound:
+        'true': 1.15
+        'false': 1.0
+    notes:
+      - Local policy estimate for Kling 3.0 image-to-video.
+  - model_key: kling-3.0-motion
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 22
+    multipliers:
+      duration:
+        '5': 1.0
+        '10': 1.8
+      mode:
+        '720p': 1.0
+        '1080p': 1.7
+        std: 1.0
+        pro: 1.7
+    notes:
+      - Local policy estimate for Kling 3.0 motion control.

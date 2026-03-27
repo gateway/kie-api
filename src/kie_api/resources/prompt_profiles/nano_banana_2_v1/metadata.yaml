@@ -1,0 +1,13 @@
+key: nano_banana_2_v1
+label: Nano Banana 2 Prompt Enhancer v1
+version: v1
+description: Prompt profile for concise Nano Banana 2 generation prompts.
+applies_to_models:
+  - nano-banana-2
+rules:
+  - preserve intent
+  - keep concise
+status: deprecated
+source: builtin
+notes:
+  - Editable profile resource. Change prompt.md or metadata.yaml without touching Python code.

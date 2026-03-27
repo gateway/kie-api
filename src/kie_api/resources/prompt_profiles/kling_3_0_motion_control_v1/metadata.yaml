@@ -1,0 +1,21 @@
+key: kling_3_0_motion_control_v1
+label: Kling 3.0 Motion Control Preset v1
+version: v1
+description: Built-in preset for Kling 3.0 motion control requests.
+applies_to_models:
+  - kling-3.0-motion
+applies_to_task_modes:
+  - motion_control
+applies_to_input_patterns:
+  - motion_control
+variables:
+  - user_prompt
+  - image_count
+  - video_count
+rules:
+  - preserve source image identity
+  - preserve motion transfer intent
+  - improve clarity around pacing and stability
+source: builtin
+notes:
+  - Built-in request-shape-aware preset for wrapper-side enhancement.

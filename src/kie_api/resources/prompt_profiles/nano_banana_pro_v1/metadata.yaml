@@ -1,0 +1,14 @@
+key: nano_banana_pro_v1
+label: Nano Banana Pro Prompt Enhancer v1
+version: v1
+description: Prompt profile for high-quality Nano Banana Pro image generation and edits.
+applies_to_models:
+  - nano-banana-pro
+rules:
+  - preserve intent
+  - be visually concrete
+  - avoid bloated prompt output
+status: deprecated
+source: builtin
+notes:
+  - Editable profile resource. Change prompt.md or metadata.yaml without touching Python code.
