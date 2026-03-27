@@ -34,6 +34,40 @@ This repo gives you a reusable Python layer for:
 
 It is meant for developers who want to work with KIE directly, or use a clean Python library inside a larger app.
 
+## Supported models
+
+These descriptions are based on the current public Kie.ai model pages and live product positioning.
+
+### Nano Banana 2
+
+- Good at: fast text-to-image and image-edit workflows with strong quality for the cost
+- What it does: generates or edits images with native 2K output, optional 4K upscaling, good character consistency, and strong text rendering
+- Who it is by: Google, using Gemini 3.1 Flash Image on Kie.ai
+
+### Nano Banana Pro
+
+- Good at: higher-fidelity image generation, better prompt understanding, text rendering, and more demanding production-style image work
+- What it does: generates or edits higher-end images with 2K/4K output, strong typography, multi-object consistency, and better reasoning over complex visual instructions
+- Who it is by: Google DeepMind, using Gemini 3.0 Pro Image on Kie.ai
+
+### Kling 2.6
+
+- Good at: audio-visual video generation from text or images when you want synchronized speech, ambient sound, and sound effects in one workflow
+- What it does: creates short videos from text or images with native audio support and structured text-to-video or image-to-video flows
+- Who it is by: Kling AI on Kie.ai
+
+### Kling 3.0
+
+- Good at: higher-end cinematic video generation, stronger consistency, multi-shot direction, and image-to-video workflows
+- What it does: creates videos from text or images, supports 3 to 15 second generations, multi-shot prompting, stronger scene consistency, and native audio generation
+- Who it is by: Kling AI on Kie.ai
+
+### Kling 3.0 Motion Control
+
+- Good at: transferring motion or performance from a reference video onto a subject or scene defined by an image
+- What it does: uses a reference image plus a motion-driver video to create directed motion-controlled video output
+- Who it is by: Kling AI on Kie.ai
+
 ## How agents use it
 
 This toolkit is designed for agent-driven workflows. A coding agent, CLI wrapper, or application can use it to turn a user request into a real Kie.ai generation run safely.
@@ -153,6 +187,7 @@ python scripts/sync_packaged_specs.py --check
 
 Start with:
 - [Getting started](docs/GETTING_STARTED.md)
+- [Agent skills](docs/AGENT_SKILLS.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Library usage](docs/LIBRARY_USAGE.md)
 - [End-to-end flow](docs/END_TO_END_FLOW.md)
@@ -396,6 +431,7 @@ python -m pytest tests/smoke -m smoke -rs
 ```
 
 ## Docs
+- [Agent skills](docs/AGENT_SKILLS.md)
 - [Getting started](docs/GETTING_STARTED.md)
 - [Library usage](docs/LIBRARY_USAGE.md)
 - [End-to-end flow](docs/END_TO_END_FLOW.md)
