@@ -2,6 +2,20 @@
 
 `kie-api` is a Python workflow toolkit for working with [Kie.ai](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42).
 
+## LLM quick start
+
+If you want another LLM, agent, or wrapper to understand this repo fast, start here:
+- [LLM Start Here](docs/LLM_START_HERE.md)
+- [Integration Playbook](docs/INTEGRATION_PLAYBOOK.md)
+
+These two docs explain:
+- what Kie.ai is
+- what `kie-api` owns
+- how the request lifecycle works
+- how prompt presets fit in
+- how uploads, polling, downloads, and artifacts work
+- how another API system should integrate with this repo
+
 ## What is Kie.ai?
 
 Kie.ai is a marketplace-style API platform for creative AI models. Instead of one model or one workflow, it gives you access to multiple image and video models behind one account and one API key.
@@ -186,6 +200,8 @@ python scripts/sync_packaged_specs.py --check
 ```
 
 Start with:
+- [LLM Start Here](docs/LLM_START_HERE.md)
+- [Integration Playbook](docs/INTEGRATION_PLAYBOOK.md)
 - [Getting started](docs/GETTING_STARTED.md)
 - [Agent skills](docs/AGENT_SKILLS.md)
 - [Configuration](docs/CONFIGURATION.md)
