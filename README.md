@@ -1,35 +1,99 @@
-# kie-api
+# KIE API Python Toolkit
 
-Python toolkit for KIE.AI image and video workflows.
+`kie-api` is a Python toolkit for working with [KIE.AI](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42).
 
-This repo focuses on practical KIE usage:
-- validating requests before they spend credits
-- uploading media before generation
-- building model-aware payloads
-- polling tasks and downloading results
-- storing finished runs as local artifact bundles
+## What is KIE.AI?
 
-It is designed for developers who want to work with KIE.AI directly, or use it as a reusable library inside a larger app.
+KIE.AI is a marketplace-style API platform for creative AI models. Instead of one model or one workflow, it gives you access to multiple image and video models behind one account and one API key.
 
-## Why this exists
+Examples of model families currently covered by this repo:
+- Nano Banana 2
+- Nano Banana Pro
+- Kling 2.6 text-to-video
+- Kling 2.6 image-to-video
+- Kling 3.0 text-to-video
+- Kling 3.0 image-to-video
+- Kling 3.0 motion control
 
-KIE.AI is useful because it acts as a model marketplace for image and video generation APIs. Different models have different costs and different request shapes, so this repo provides a clean, reusable layer around:
-- request validation
-- upload-first handling
-- prompt presets
-- cost/preflight checks
-- artifact capture after completion
+KIE uses a credit-based model, so different models and modes cost different amounts. This repo is built to help you avoid blind API calls by checking credits, validating inputs, and preparing media safely before generation.
 
-KIE.AI is useful here because it acts as an AI model marketplace for image and video generation APIs. Different models have different credit costs, so this repo is built around:
-- credit checks before expensive runs
-- dry-run validation before upload/submit
-- upload-first request handling
-- artifact capture after completion
-
-This repo assumes a credit-funded usage model where each model run has its own cost. Always check KIE's current pricing and billing behavior before relying on any specific top-up amount or credit rule:
+Useful links:
 - [KIE.AI](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42)
 - [KIE Market](https://kie.ai/market?ref=e7565cf24a7fad4586341a87eaf21e42)
 - [KIE Pricing](https://kie.ai/pricing?ref=e7565cf24a7fad4586341a87eaf21e42)
+
+## What this repo does
+
+This repo gives you a reusable Python layer for:
+- validating model-aware requests before they spend credits
+- uploading images, video, and audio before generation
+- building KIE payloads with model-specific rules
+- resolving prompt presets for different models and request shapes
+- polling tasks and downloading final outputs
+- storing completed runs as local artifact bundles with web/thumb derivatives
+
+It is meant for developers who want to work with KIE directly, or use a clean Python library inside a larger app.
+
+## Example workflows
+
+### 1. Simple image generation
+
+Use `nano-banana-2` with a prompt only:
+- check credits
+- submit a prompt-only image request
+- wait for completion
+- download the image
+- store the result under `outputs/`
+
+### 2. Image edit
+
+Use `nano-banana-pro` or `nano-banana-2` with one or more reference images:
+- validate image count first
+- upload the images
+- submit the prompt plus uploaded image URLs
+- download the final image
+
+### 3. Image to video
+
+Use `kling-3.0-i2v` with one image:
+- create or choose a source image
+- upload the image first
+- submit a Kling prompt with the uploaded first-frame image
+- wait for the video task
+- download the final video and poster/artifacts
+
+### 4. Chained run
+
+Use one model’s output as another model’s input:
+- generate an image with Nano Banana
+- download and store it
+- feed that image into Kling 3.0 image-to-video
+- store both runs and link them through artifacts
+
+## First live proof path
+
+The easiest way to prove your setup works is:
+1. load your key
+2. check remaining credits
+3. run one simple Nano Banana image generation
+
+Credit check:
+
+```bash
+. .venv/bin/activate
+set -a
+source .env.live
+set +a
+python examples/check_credit_balance.py
+```
+
+Then run the guarded live example:
+
+```bash
+python examples/live_run_guarded.py
+```
+
+The credit check is the simplest “system is connected” test. After that, the Nano Banana live example is the safest first generation test.
 
 ## Supporting development
 
@@ -60,15 +124,6 @@ python -m pytest
 python scripts/sync_packaged_specs.py --check
 ```
 
-First live proof path after your key is loaded:
-
-```bash
-python examples/check_credit_balance.py
-python examples/live_run_guarded.py
-```
-
-The credit check is the simplest “system is connected” test. After that, the Nano Banana live example is the safest first generation test.
-
 Start with:
 - [Getting started](docs/GETTING_STARTED.md)
 - [Configuration](docs/CONFIGURATION.md)
@@ -87,6 +142,7 @@ Start with:
 - explicit YAML model specs
 - editable markdown-backed prompt presets
 - field-level provenance for current model facts
+- example image and video flows that have already been tested live
 - typed normalization, validation, upload, submit, status, pricing, and credit models
 - local run artifact bundles with derivatives and append-only indexing
 - artifact query helpers for recent runs, filters, and latest assets
