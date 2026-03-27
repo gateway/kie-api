@@ -1,7 +1,7 @@
 from kie_api import build_submission_payload, validate_request
 from kie_api.clients.submit import SubmitClient
 from kie_api.config import KieSettings
-from kie_api.models import RawUserRequest
+from kie_api.models import KlingMultiPromptShot, RawUserRequest
 from kie_api.registry.loader import load_registry
 from kie_api.services.normalizer import RequestNormalizer
 
@@ -165,6 +165,31 @@ def test_submit_client_preserves_first_last_frame_order_for_kling_3_i2v() -> Non
         "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/end.png",
     ]
     assert payload["input"]["sound"] is True
+
+
+def test_submit_client_builds_kling_3_multi_shot_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            prompt="ignored in multi-shot mode",
+            multi_prompt=[
+                KlingMultiPromptShot(prompt="opening push-in on a pilot", duration=2),
+                KlingMultiPromptShot(prompt="medium reaction shot with subtle frustration", duration=3),
+            ],
+            options={"duration": 5, "mode": "pro", "multi_shots": True},
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert payload["input"]["multi_shots"] is True
+    assert payload["input"]["multi_prompt"] == [
+        {"prompt": "opening push-in on a pilot", "duration": 2},
+        {"prompt": "medium reaction shot with subtle frustration", "duration": 3},
+    ]
 
 
 def test_submit_client_builds_motion_payload_with_separate_image_and_video_fields() -> None:

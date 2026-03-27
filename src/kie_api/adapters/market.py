@@ -57,6 +57,11 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
         provider_field = option_spec.provider_field if option_spec and option_spec.provider_field else option_name
         input_payload[provider_field] = option_value
 
+    if request.multi_prompt:
+        input_payload["multi_prompt"] = [
+            {"prompt": shot.prompt, "duration": shot.duration} for shot in request.multi_prompt
+        ]
+
     payload: Dict[str, Any] = {
         "model": request.provider_model,
         "input": input_payload,

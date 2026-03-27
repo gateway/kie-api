@@ -129,6 +129,52 @@ print(validation.normalized_request.debug["frame_guidance_mode"])
 
 Use `examples/dry_run_kling_frame_guidance.py` for a local dry-run check, including a path that can reuse the latest successful Nano Banana 2 artifact as the first frame.
 
+## Kling 3.0 multi-shot shape
+
+Kling 3.0 now supports the docs-aligned `multi_prompt` request shape in the runtime models.
+
+Rules:
+- `multi_prompt` is only valid when `options["multi_shots"]` is `True`
+- each shot must include:
+  - `prompt`
+  - `duration`
+- each shot duration must be between `1` and `12` seconds
+- in image-to-video multi-shot mode, only a single first-frame image is allowed
+
+Example:
+
+```python
+from kie_api import normalize_request, validate_request
+from kie_api.models import RawUserRequest
+
+request = RawUserRequest(
+    model_key="kling-3.0-t2v",
+    multi_prompt=[
+        {"prompt": "wide establishing shot of the cockpit", "duration": 2},
+        {"prompt": "closer reaction shot as the pilot studies the phone", "duration": 3},
+    ],
+    options={"duration": 5, "mode": "pro", "multi_shots": True},
+)
+
+normalized = normalize_request(request)
+validation = validate_request(normalized)
+
+print(validation.state)
+print(validation.normalized_request.multi_prompt)
+```
+
+This is intentionally separate from the single-shot path:
+- single-shot: use `prompt`
+- multi-shot: use `multi_prompt` with `multi_shots=True`
+
+Current limitation:
+- `kling_elements` / element references from the official Kling 3.0 docs are not modeled in the runtime request types yet
+- treat that as a documented TODO before relying on advanced element-reference workflows
+
+Kling 2.6 note:
+- the current official Kling 2.6 docs in `docs.kie.ai` show the simpler single-prompt text-to-video and image-to-video shapes
+- this repo does not currently model Kling 2.6 as a multi-shot workflow
+
 ## Prompt presets and wrapper-side system prompts
 
 Use `resolve_prompt_context()` when your wrapper needs the rendered preset text and resolved preset metadata before calling an external LLM skill.

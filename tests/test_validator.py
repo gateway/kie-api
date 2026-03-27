@@ -207,6 +207,115 @@ def test_validator_returns_ready_with_defaults_for_kling_t2v() -> None:
     assert [item.field for item in result.defaulted_fields] == ["multi_shots"]
 
 
+def test_validator_rejects_kling_multi_prompt_when_multi_shots_disabled() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            prompt="single-shot prompt",
+            multi_prompt=[
+                {"prompt": "shot one", "duration": 2},
+            ],
+            options={"duration": 5, "mode": "std", "multi_shots": False},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert result.impossible_inputs[0].field == "multi_prompt"
+    assert result.impossible_inputs[0].code == "multi_prompt_requires_multi_shots"
+
+
+def test_validator_requires_multi_prompt_when_kling_multi_shots_enabled() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            options={"duration": 5, "mode": "std", "multi_shots": True},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.NEEDS_INPUT
+    assert {item.field for item in result.missing_inputs} == {"multi_prompt"}
+
+
+def test_validator_accepts_kling_multi_shot_with_multi_prompt() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            multi_prompt=[
+                {"prompt": "wide establishing shot", "duration": 2},
+                {"prompt": "close-up reaction shot", "duration": 3},
+            ],
+            options={"duration": 5, "mode": "std", "multi_shots": True},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.READY_WITH_DEFAULTS
+    assert result.normalized_request is not None
+    assert [shot.prompt for shot in result.normalized_request.multi_prompt] == [
+        "wide establishing shot",
+        "close-up reaction shot",
+    ]
+
+
+def test_validator_rejects_kling_multi_shot_duration_outside_docs_range() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            multi_prompt=[
+                {"prompt": "too long shot", "duration": 13},
+            ],
+            options={"duration": 5, "mode": "std", "multi_shots": True},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert result.impossible_inputs[0].field == "multi_prompt[0].duration"
+
+
+def test_validator_rejects_kling_multi_shot_with_two_images() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-i2v",
+            images=[
+                "https://example.com/start.png",
+                "https://example.com/end.png",
+            ],
+            multi_prompt=[
+                {"prompt": "shot one", "duration": 2},
+                {"prompt": "shot two", "duration": 2},
+            ],
+            options={"duration": 5, "mode": "std", "multi_shots": True},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(item.code == "too_many_images_for_kling_multi_shot" for item in result.impossible_inputs)
+
+
 def test_validator_records_unknown_provider_passthrough_options_as_warnings() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

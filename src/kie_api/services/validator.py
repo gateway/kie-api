@@ -41,9 +41,13 @@ class RequestValidator:
             )
 
         if spec.prompt.required and not (request.prompt or "").strip():
-            missing_inputs.append(
-                MissingInput(field="prompt", message="A prompt is required for this model.")
-            )
+            if not (
+                request.model_key in {"kling-3.0-t2v", "kling-3.0-i2v"}
+                and normalized.options.get("multi_shots") is True
+            ):
+                missing_inputs.append(
+                    MissingInput(field="prompt", message="A prompt is required for this model.")
+                )
 
         media_collections = {
             "image": normalized.images,
@@ -94,6 +98,63 @@ class RequestValidator:
                                 "first and last frame images are provided."
                             ),
                             received=normalized.options.get("aspect_ratio"),
+                        )
+                    )
+            if normalized.options.get("multi_shots") is True and image_count > 1:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="image",
+                        code="too_many_images_for_kling_multi_shot",
+                        message=(
+                            "Kling 3.0 multi-shot mode only supports a single first-frame image."
+                        ),
+                        received=image_count,
+                    )
+                )
+
+        if request.model_key in {"kling-3.0-t2v", "kling-3.0-i2v"}:
+            multi_shots_enabled = normalized.options.get("multi_shots") is True
+            if normalized.multi_prompt and not multi_shots_enabled:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="multi_prompt",
+                        code="multi_prompt_requires_multi_shots",
+                        message=(
+                            "Kling 3.0 only accepts 'multi_prompt' when 'multi_shots' is enabled."
+                        ),
+                        received=[item.model_dump() for item in normalized.multi_prompt],
+                    )
+                )
+            if multi_shots_enabled and not normalized.multi_prompt:
+                missing_inputs.append(
+                    MissingInput(
+                        field="multi_prompt",
+                        message=(
+                            "Kling 3.0 multi-shot mode requires a 'multi_prompt' array of shots."
+                        ),
+                    )
+                )
+            for index, shot in enumerate(normalized.multi_prompt):
+                if shot.duration < 1 or shot.duration > 12:
+                    impossible_inputs.append(
+                        InvalidInput(
+                            field=f"multi_prompt[{index}].duration",
+                            code="invalid_multi_prompt_duration",
+                            message=(
+                                "Each Kling 3.0 multi-shot entry must use a duration between 1 and 12 seconds."
+                            ),
+                            received=shot.duration,
+                        )
+                    )
+                if len(shot.prompt) > 500:
+                    impossible_inputs.append(
+                        InvalidInput(
+                            field=f"multi_prompt[{index}].prompt",
+                            code="multi_prompt_prompt_too_long",
+                            message=(
+                                "Each Kling 3.0 multi-shot prompt must be 500 characters or fewer."
+                            ),
+                            received=len(shot.prompt),
                         )
                     )
 

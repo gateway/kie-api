@@ -48,11 +48,13 @@ class RequestNormalizer:
             options=options,
             defaulted_fields=defaults_applied,
             callback_url=raw_request.callback_url,
+            multi_prompt=deepcopy(raw_request.multi_prompt),
             metadata=deepcopy(raw_request.metadata),
             debug={
                 "raw_model_key": raw_request.model_key,
                 "resolved_model_key": spec.key,
                 "raw_options": deepcopy(raw_request.options),
+                "raw_multi_prompt_count": len(raw_request.multi_prompt),
                 "requested_prompt_profile_key": raw_request.prompt_profile_key,
                 "has_system_prompt_override": bool(raw_request.system_prompt_override),
             },

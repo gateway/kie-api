@@ -56,6 +56,14 @@ If live behavior differs from docs or assumptions:
 - update tests
 - record the mismatch in docs
 
+For advanced provider-specific shapes such as Kling 3.0 multi-shot mode:
+- add typed runtime request models where needed
+- validate cross-field rules explicitly
+- do not hide docs-only shape differences inside generic passthrough options
+
+Known current TODO:
+- Kling 3.0 `kling_elements` / element-reference support is documented by Kie.ai, but is not yet modeled in the runtime request types or upload flow here
+
 ## Completion rule
 
 A model is only wrapper-ready when:

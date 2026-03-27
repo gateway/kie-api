@@ -81,6 +81,7 @@ class RawUserRequest(BaseModel):
     )
     system_prompt_override: Optional[str] = None
     callback_url: Optional[str] = None
+    multi_prompt: List["KlingMultiPromptShot"] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     raw_payload: Dict[str, Any] = Field(default_factory=dict)
 
@@ -98,6 +99,15 @@ class RawUserRequest(BaseModel):
     @classmethod
     def validate_audios(cls, value: Any) -> List[MediaReference]:
         return _coerce_media_list(value, MediaType.AUDIO)
+
+    @field_validator("multi_prompt", mode="before")
+    @classmethod
+    def validate_multi_prompt(cls, value: Any) -> List["KlingMultiPromptShot"]:
+        if value in (None, ""):
+            return []
+        if not isinstance(value, list):
+            raise TypeError("multi_prompt must be a list of shot objects")
+        return [item if isinstance(item, KlingMultiPromptShot) else KlingMultiPromptShot(**item) for item in value]
 
 
 class MissingInput(BaseModel):
@@ -159,8 +169,23 @@ class NormalizedRequest(BaseModel):
     options: Dict[str, Any] = Field(default_factory=dict)
     defaulted_fields: List[AppliedDefault] = Field(default_factory=list)
     callback_url: Optional[str] = None
+    multi_prompt: List["KlingMultiPromptShot"] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     debug: Dict[str, Any] = Field(default_factory=dict)
+
+
+class KlingMultiPromptShot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    prompt: str
+    duration: int
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("multi_prompt shot prompt cannot be empty")
+        return value.strip()
 
 
 class ValidationResult(BaseModel):

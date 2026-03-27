@@ -72,6 +72,24 @@ def test_normalizer_keeps_generic_kling_3_family_as_t2v_without_images() -> None
     assert [item.field for item in normalized.defaulted_fields] == ["sound", "multi_shots"]
 
 
+def test_normalizer_preserves_kling_multi_prompt_shape() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            multi_prompt=[
+                {"prompt": "first shot", "duration": 2},
+                {"prompt": "second shot", "duration": 3},
+            ],
+            options={"duration": "5", "mode": "std", "multi_shots": "true"},
+        )
+    )
+
+    assert normalized.options["multi_shots"] is True
+    assert [shot.duration for shot in normalized.multi_prompt] == [2, 3]
+
+
 def test_normalizer_rejects_unsafe_family_inference_when_too_many_images() -> None:
     normalizer = RequestNormalizer(load_registry())
 
