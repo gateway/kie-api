@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 from kie_api.services.pricing_refresh import (
     PricingCatalogCapture,
     PricingCatalogRow,
@@ -8,11 +5,6 @@ from kie_api.services.pricing_refresh import (
     build_supported_model_snapshot,
     extract_next_data_labels,
     extract_pricing_hints,
-)
-
-
-FIXTURES_DIR = (
-    Path(__file__).resolve().parents[1] / "fixtures" / "live_responses"
 )
 
 
@@ -44,11 +36,164 @@ def test_extract_next_data_labels_reads_next_data_pricing_text() -> None:
 
 def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     count = PricingPageCount.model_validate(
-        json.loads((FIXTURES_DIR / "pricing_count_2026-03-26.json").read_text())["data"]
+        {"all": 17, "image": 5, "video": 12, "music": 0, "chat": 0}
     )
-    row_payloads = []
-    for name in ("pricing_nano_banana_2026-03-26.json", "pricing_kling_2026-03-26.json"):
-        row_payloads.extend(json.loads((FIXTURES_DIR / name).read_text())["data"]["records"])
+    row_payloads = [
+        {
+            "modelDescription": "Google nano banana 2, 4K",
+            "interfaceType": "image",
+            "provider": "Google",
+            "creditPrice": "18",
+            "creditUnit": "per image",
+            "usdPrice": "0.09",
+            "falPrice": "0.16",
+            "discountRate": 43.75,
+            "anchor": "https://kie.ai/nano-banana-2",
+        },
+        {
+            "modelDescription": "Google nano banana 2, 2K",
+            "interfaceType": "image",
+            "provider": "Google",
+            "creditPrice": "12",
+            "creditUnit": "per image",
+            "usdPrice": "0.06",
+            "falPrice": "0.08",
+            "discountRate": 25.0,
+            "anchor": "https://kie.ai/nano-banana-2",
+        },
+        {
+            "modelDescription": "Google nano banana 2, 1K",
+            "interfaceType": "image",
+            "provider": "Google",
+            "creditPrice": "8",
+            "creditUnit": "per image",
+            "usdPrice": "0.04",
+            "falPrice": "0.04",
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/nano-banana-2",
+        },
+        {
+            "modelDescription": "Google nano banana pro, 1/2K",
+            "interfaceType": "image",
+            "provider": "Google",
+            "creditPrice": "18.0",
+            "creditUnit": "per image",
+            "usdPrice": "0.09",
+            "falPrice": "0.12",
+            "discountRate": 25.0,
+            "anchor": "https://kie.ai/nano-banana-pro",
+        },
+        {
+            "modelDescription": "Google nano banana pro, 4K",
+            "interfaceType": "image",
+            "provider": "Google",
+            "creditPrice": "24.0",
+            "creditUnit": "per image",
+            "usdPrice": "0.12",
+            "falPrice": "0.16",
+            "discountRate": 25.0,
+            "anchor": "https://kie.ai/nano-banana-pro",
+        },
+        {
+            "modelDescription": "kling 2.6, text-to-video, without audio-5.0s",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "55.0",
+            "creditUnit": "per video",
+            "usdPrice": "0.275",
+            "falPrice": "0.3",
+            "discountRate": 8.33,
+            "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Ftext-to-video",
+        },
+        {
+            "modelDescription": "kling 2.6, text-to-video, with audio-5.0s",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "110.0",
+            "creditUnit": "per video",
+            "usdPrice": "0.55",
+            "falPrice": "0.6",
+            "discountRate": 8.33,
+            "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Ftext-to-video",
+        },
+        {
+            "modelDescription": "kling 2.6, text-to-video, without audio-10.0s",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "110.0",
+            "creditUnit": "per video",
+            "usdPrice": "0.55",
+            "falPrice": "0.6",
+            "discountRate": 8.33,
+            "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Ftext-to-video",
+        },
+        {
+            "modelDescription": "kling 3.0, video, with audio-1080P",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "27",
+            "creditUnit": "per second",
+            "usdPrice": "0.135",
+            "falPrice": "0.15",
+            "discountRate": 10.0,
+            "anchor": "https://kie.ai/kling-3-0",
+        },
+        {
+            "modelDescription": "kling 3.0, video, without audio-1080P",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "18",
+            "creditUnit": "per second",
+            "usdPrice": "0.09",
+            "falPrice": "0.1",
+            "discountRate": 10.0,
+            "anchor": "https://kie.ai/kling-3-0",
+        },
+        {
+            "modelDescription": "kling 3.0, video, with audio-720P",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "20",
+            "creditUnit": "per second",
+            "usdPrice": "0.1",
+            "falPrice": "0.11",
+            "discountRate": 9.09,
+            "anchor": "https://kie.ai/kling-3-0",
+        },
+        {
+            "modelDescription": "kling 3.0, video, without audio-720P",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "14",
+            "creditUnit": "per second",
+            "usdPrice": "0.07",
+            "falPrice": "0.08",
+            "discountRate": 12.5,
+            "anchor": "https://kie.ai/kling-3-0",
+        },
+        {
+            "modelDescription": "kling 3.0 motion control, video-to-video, 1080P",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "27",
+            "creditUnit": "per second",
+            "usdPrice": "0.135",
+            "falPrice": "0.15",
+            "discountRate": 10.0,
+            "anchor": "https://kie.ai/kling-3-motion-control",
+        },
+        {
+            "modelDescription": "kling 3.0 motion control, video-to-video, 720P",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "20",
+            "creditUnit": "per second",
+            "usdPrice": "0.1",
+            "falPrice": "0.11",
+            "discountRate": 9.09,
+            "anchor": "https://kie.ai/kling-3-motion-control",
+        },
+    ]
 
     rows = [
         PricingCatalogRow(

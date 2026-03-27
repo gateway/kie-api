@@ -15,6 +15,7 @@ build/
 htmlcov/
 outputs/
 docs/reviews/
+fixtures/live_responses/
 01_project_plan.md
 02_live_model_registry_harvest.md
 03_model_spec_schema.md
