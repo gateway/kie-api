@@ -1,6 +1,24 @@
 # kie-api
 
-Reusable Python toolkit for KIE.AI integration. This repo is the reusable KIE integration engine and spec source, not a company-specific Control API.
+Python toolkit for KIE.AI image and video workflows.
+
+This repo focuses on practical KIE usage:
+- validating requests before they spend credits
+- uploading media before generation
+- building model-aware payloads
+- polling tasks and downloading results
+- storing finished runs as local artifact bundles
+
+It is designed for developers who want to work with KIE.AI directly, or use it as a reusable library inside a larger app.
+
+## Why this exists
+
+KIE.AI is useful because it acts as a model marketplace for image and video generation APIs. Different models have different costs and different request shapes, so this repo provides a clean, reusable layer around:
+- request validation
+- upload-first handling
+- prompt presets
+- cost/preflight checks
+- artifact capture after completion
 
 KIE.AI is useful here because it acts as an AI model marketplace for image and video generation APIs. Different models have different credit costs, so this repo is built around:
 - credit checks before expensive runs
@@ -8,10 +26,14 @@ KIE.AI is useful here because it acts as an AI model marketplace for image and v
 - upload-first request handling
 - artifact capture after completion
 
-This repo does not assume a subscription workflow. It assumes a credit-funded usage model where each model run has its own cost. Always check KIE's current pricing and billing behavior before relying on any specific top-up amount or credit rule:
+This repo assumes a credit-funded usage model where each model run has its own cost. Always check KIE's current pricing and billing behavior before relying on any specific top-up amount or credit rule:
 - [KIE.AI](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42)
 - [KIE Market](https://kie.ai/market?ref=e7565cf24a7fad4586341a87eaf21e42)
 - [KIE Pricing](https://kie.ai/pricing?ref=e7565cf24a7fad4586341a87eaf21e42)
+
+## Supporting development
+
+If you are already planning to use KIE.AI, using the links above is one way to support ongoing maintenance of this repo. There is no obligation, and the library works the same regardless.
 
 ## Quick start
 
