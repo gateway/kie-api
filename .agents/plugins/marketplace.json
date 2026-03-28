@@ -1,0 +1,20 @@
+{
+  "name": "gateway",
+  "interface": {
+    "displayName": "Gateway Plugins"
+  },
+  "plugins": [
+    {
+      "name": "kie-ai-workflows",
+      "source": {
+        "source": "local",
+        "path": "./plugins/kie-ai-workflows"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

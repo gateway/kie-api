@@ -7,6 +7,7 @@
 If you want another LLM, agent, or wrapper to understand this repo fast, start here:
 - [LLM Start Here](docs/LLM_START_HERE.md)
 - [Integration Playbook](docs/INTEGRATION_PLAYBOOK.md)
+- [Codex Plugin](docs/CODEX_PLUGIN.md)
 
 These two docs explain:
 - what Kie.ai is
@@ -15,6 +16,8 @@ These two docs explain:
 - how prompt presets fit in
 - how uploads, polling, downloads, and artifacts work
 - how another API system should integrate with this repo
+
+This repo also ships a lightweight Codex plugin package under `plugins/kie-ai-workflows` for users who want a more guided skill-first entry point.
 
 ## What is Kie.ai?
 
@@ -202,6 +205,7 @@ python scripts/sync_packaged_specs.py --check
 Start with:
 - [LLM Start Here](docs/LLM_START_HERE.md)
 - [Integration Playbook](docs/INTEGRATION_PLAYBOOK.md)
+- [Codex Plugin](docs/CODEX_PLUGIN.md)
 - [Getting started](docs/GETTING_STARTED.md)
 - [Agent skills](docs/AGENT_SKILLS.md)
 - [Configuration](docs/CONFIGURATION.md)

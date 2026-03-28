@@ -1,0 +1,39 @@
+{
+  "name": "kie-ai-workflows",
+  "version": "0.1.0",
+  "description": "Codex plugin for Kie.ai image and video workflows using the kie-api toolkit.",
+  "author": {
+    "name": "Gateway",
+    "url": "https://github.com/gateway"
+  },
+  "homepage": "https://github.com/gateway/kie-api",
+  "repository": "https://github.com/gateway/kie-api",
+  "license": "MIT",
+  "keywords": [
+    "kie.ai",
+    "image-generation",
+    "video-generation",
+    "nano-banana",
+    "kling",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Kie.ai Workflows",
+    "shortDescription": "Generate images and videos with Kie.ai through guided Codex skills.",
+    "longDescription": "A lightweight Codex plugin for Kie.ai image and video workflows. It helps users start with API key setup, check credits, run a Nano Banana test, create Kling videos, chain image-to-video flows, and retrieve the latest generated media from the local artifact library.",
+    "developerName": "Gateway",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/gateway/kie-api",
+    "defaultPrompt": [
+      "Help me set up Kie.ai and check my credits.",
+      "Generate a Nano Banana image from a prompt.",
+      "Create a Kling video from my latest image."
+    ],
+    "brandColor": "#305B76"
+  }
+}
