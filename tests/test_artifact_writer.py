@@ -4,8 +4,19 @@ from pathlib import Path
 
 from PIL import Image
 
-from kie_api import ArtifactDerivativeSettings, create_run_artifact
-from kie_api.artifacts.models import ArtifactSource, PromptRecord, ProviderTrace, RunArtifactCreateRequest, RunSourceContext
+from kie_api import (
+    ArtifactDerivativeSettings,
+    ArtifactPrivacyMode,
+    ArtifactPrivacySettings,
+    create_run_artifact,
+)
+from kie_api.artifacts.models import (
+    ArtifactSource,
+    PromptRecord,
+    ProviderTrace,
+    RunArtifactCreateRequest,
+    RunSourceContext,
+)
 
 
 def test_create_run_artifact_writes_expected_bundle_for_image_run(tmp_path: Path) -> None:
@@ -48,6 +59,11 @@ def test_create_run_artifact_writes_expected_bundle_for_image_run(tmp_path: Path
             final_status_response={"code": 200, "data": {"state": "success"}},
             warnings=["Used test asset inputs."],
             tags=["portrait", "artifact-test"],
+            source_context=RunSourceContext(
+                project_name="artifact-tests",
+                source_user="alice",
+                source_channel="dashboard",
+            ),
         ),
         output_root=tmp_path / "outputs",
     )
@@ -63,9 +79,10 @@ def test_create_run_artifact_writes_expected_bundle_for_image_run(tmp_path: Path
     assert (run_dir / "original" / "output_01.png").exists()
     assert (run_dir / "web" / "output_01.webp").exists()
     assert (run_dir / "thumb" / "output_01.webp").exists()
-    assert (run_dir / "logs" / "submit_payload.json").exists()
-    assert (run_dir / "logs" / "submit_response.json").exists()
-    assert (run_dir / "logs" / "status_response_final.json").exists()
+    assert not (run_dir / "request.json").exists()
+    assert not (run_dir / "logs" / "submit_payload.json").exists()
+    assert not (run_dir / "logs" / "submit_response.json").exists()
+    assert not (run_dir / "logs" / "status_response_final.json").exists()
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["hero_output_path"] == "web/output_01.webp"
@@ -78,13 +95,23 @@ def test_create_run_artifact_writes_expected_bundle_for_image_run(tmp_path: Path
     assert run_payload["outputs"][0]["web_path"] == "web/output_01.webp"
     assert run_payload["outputs"][0]["thumb_path"] == "thumb/output_01.webp"
     assert run_payload["outputs"][0]["bytes_original"] is not None
+    assert run_payload["inputs"][0]["source_path"] is None
+    assert run_payload["outputs"][0]["source_path"] is None
+    assert run_payload["source_context"]["source_user"] is None
+    assert run_payload["source_context"]["source_channel"] is None
+    assert run_payload["request_path"] is None
     assert run_payload["provider_trace"]["task_id"] == "task_123"
+    assert run_payload["provider_trace"]["submit_payload_path"] is None
 
     index_path = tmp_path / "outputs" / "index.jsonl"
     assert index_path.exists()
     index_line = json.loads(index_path.read_text(encoding="utf-8").splitlines()[0])
     assert index_line["run_id"] == run.run_id
     assert index_line["hero_output"] == "web/output_01.webp"
+
+    notes_text = (run_dir / "notes.md").read_text(encoding="utf-8")
+    assert "Source user" not in notes_text
+    assert "Source channel" not in notes_text
 
 
 def test_create_run_artifact_honors_custom_derivative_settings(tmp_path: Path) -> None:
@@ -126,3 +153,64 @@ def test_create_run_artifact_honors_custom_derivative_settings(tmp_path: Path) -
     assert output.sha256 is None
     assert output.derivatives[0].sha256 is None
     assert run.source_context.project_name == "artifact-tests"
+
+
+def test_create_run_artifact_can_opt_into_full_internal_trace(tmp_path: Path) -> None:
+    input_image = tmp_path / "input.png"
+    output_image = tmp_path / "output.png"
+    Image.new("RGB", (640, 480), color="green").save(input_image)
+    Image.new("RGB", (640, 480), color="red").save(output_image)
+
+    run = create_run_artifact(
+        RunArtifactCreateRequest(
+            status="succeeded",
+            model_key="nano-banana-2",
+            created_at=datetime(2026, 3, 26, 22, 30, 0, tzinfo=timezone.utc).isoformat(),
+            privacy=ArtifactPrivacySettings(mode=ArtifactPrivacyMode.FULL),
+            source_metadata={"team": "ops"},
+            source_context=RunSourceContext(
+                project_name="artifact-tests",
+                source_user="tester",
+                source_channel="cli",
+                notes="keep me",
+                metadata={"scope": "internal"},
+            ),
+            prompts=PromptRecord(raw="Test", final_used="Test"),
+            inputs=[
+                ArtifactSource(
+                    kind="image",
+                    role="reference",
+                    source_path=str(input_image),
+                    source_url="https://example.com/input.png",
+                )
+            ],
+            outputs=[
+                ArtifactSource(
+                    kind="image",
+                    role="output",
+                    source_path=str(output_image),
+                    source_url="https://example.com/output.png",
+                )
+            ],
+            request_payload={"prompt": "Test"},
+            submit_payload={"model": "nano-banana-2"},
+            submit_response={"code": 200},
+            final_status_response={"code": 200, "data": {"state": "success"}},
+            provider_trace=ProviderTrace(task_id="task_full"),
+        ),
+        output_root=tmp_path / "outputs",
+    )
+
+    run_dir = Path(run.run_dir)
+    assert (run_dir / "request.json").exists()
+    assert (run_dir / "logs" / "submit_payload.json").exists()
+    assert (run_dir / "logs" / "submit_response.json").exists()
+    assert (run_dir / "logs" / "status_response_final.json").exists()
+
+    run_payload = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+    assert run_payload["inputs"][0]["source_path"] == str(input_image)
+    assert run_payload["inputs"][0]["source_url"] == "https://example.com/input.png"
+    assert run_payload["source_context"]["source_user"] == "tester"
+    assert run_payload["source_context"]["source_channel"] == "cli"
+    assert run_payload["source_metadata"] == {"team": "ops"}
+    assert run_payload["provider_trace"]["submit_payload_path"] == "logs/submit_payload.json"

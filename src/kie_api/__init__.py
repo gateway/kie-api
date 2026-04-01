@@ -35,6 +35,8 @@ from .api import (
 from .artifacts import (
     ArtifactSource,
     ArtifactDerivativeSettings,
+    ArtifactPrivacyMode,
+    ArtifactPrivacySettings,
     AssetRecord,
     DerivedAssetRecord,
     PromptRecord,
@@ -90,6 +92,8 @@ __all__ = [
     "apply_enhanced_prompt",
     "append_run_index",
     "ArtifactDerivativeSettings",
+    "ArtifactPrivacyMode",
+    "ArtifactPrivacySettings",
     "ArtifactSource",
     "AssetRecord",
     "build_submission_payload",

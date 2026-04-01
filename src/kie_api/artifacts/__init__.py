@@ -20,6 +20,8 @@ from .inspect import detect_mime_type, ffmpeg_available, image_metadata, sha256_
 from .models import (
     ArtifactSource,
     ArtifactDerivativeSettings,
+    ArtifactPrivacyMode,
+    ArtifactPrivacySettings,
     AssetRecord,
     DerivedAssetRecord,
     PromptRecord,
@@ -38,6 +40,8 @@ __all__ = [
     "append_run_index",
     "ArtifactSource",
     "ArtifactDerivativeSettings",
+    "ArtifactPrivacyMode",
+    "ArtifactPrivacySettings",
     "AssetRecord",
     "build_poster_command",
     "build_run_id",

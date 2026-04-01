@@ -29,6 +29,10 @@ class ArtifactProcessingError(KieApiError):
     """Raised when run artifact creation or derivative generation fails."""
 
 
+class DownloadPolicyError(KieApiError):
+    """Raised when a download request violates host, path, or size policy."""
+
+
 class ProviderResponseError(KieApiError):
     """Raised when KIE returns an invalid or unsuccessful payload."""
 

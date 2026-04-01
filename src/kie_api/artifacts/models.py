@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -35,6 +36,21 @@ class ArtifactDerivativeSettings(BaseModel):
     video_poster_format: str = "jpg"
     allow_upscale: bool = False
     enable_sha256: bool = True
+
+
+class ArtifactPrivacyMode(str, Enum):
+    REDACTED = "redacted"
+    FULL = "full"
+
+
+class ArtifactPrivacySettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mode: ArtifactPrivacyMode = ArtifactPrivacyMode.REDACTED
+
+    @property
+    def persist_sensitive_fields(self) -> bool:
+        return self.mode == ArtifactPrivacyMode.FULL
 
 
 class RunSourceContext(BaseModel):
@@ -136,6 +152,7 @@ class RunArtifactCreateRequest(BaseModel):
     tags: List[str] = Field(default_factory=list)
     notes: Optional[str] = None
     derivative_settings: ArtifactDerivativeSettings = Field(default_factory=ArtifactDerivativeSettings)
+    privacy: ArtifactPrivacySettings = Field(default_factory=ArtifactPrivacySettings)
     request_payload: Optional[Dict[str, Any]] = None
     submit_payload: Optional[Dict[str, Any]] = None
     submit_response: Optional[Dict[str, Any]] = None
@@ -210,6 +227,7 @@ class RunArtifact(BaseModel):
     tags: List[str] = Field(default_factory=list)
     notes: Optional[str] = None
     derivative_settings: ArtifactDerivativeSettings = Field(default_factory=ArtifactDerivativeSettings)
+    privacy: ArtifactPrivacySettings = Field(default_factory=ArtifactPrivacySettings)
     manifest_path: str
     notes_path: str
     request_path: Optional[str] = None

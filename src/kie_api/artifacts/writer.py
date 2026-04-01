@@ -14,12 +14,14 @@ from .models import (
     ArtifactSource,
     AssetRecord,
     ArtifactDerivativeSettings,
+    ArtifactPrivacySettings,
     PromptRecord,
     ProviderTrace,
     RunArtifact,
     RunArtifactCreateRequest,
     RunIndexEntry,
     RunManifest,
+    RunSourceContext,
 )
 from .paths import coerce_created_at, create_run_artifact_paths
 
@@ -43,6 +45,7 @@ def create_run_artifact(
         paths.run_dir,
         paths.inputs_dir,
         derivative_settings=request.derivative_settings,
+        privacy=request.privacy,
     )
     outputs = _copy_outputs(
         request.outputs,
@@ -51,10 +54,22 @@ def create_run_artifact(
         paths.web_dir,
         paths.thumb_dir,
         derivative_settings=request.derivative_settings,
+        privacy=request.privacy,
     )
     prompt_record = _write_prompts(paths.run_dir, paths.prompt_txt, paths.prompt_enhanced_txt, request.prompts)
-    request_path = _write_optional_json(paths.run_dir, paths.request_json, request.request_payload)
-    provider_trace, log_paths = _write_provider_trace(paths.run_dir, paths.logs_dir, request.provider_trace, request)
+    request_path = _write_optional_json(
+        paths.run_dir,
+        paths.request_json,
+        request.request_payload,
+        privacy=request.privacy,
+    )
+    provider_trace, log_paths = _write_provider_trace(
+        paths.run_dir,
+        paths.logs_dir,
+        request.provider_trace,
+        request,
+        privacy=request.privacy,
+    )
 
     run = RunArtifact(
         run_id=run_id,
@@ -64,8 +79,8 @@ def create_run_artifact(
         provider_model=request.provider_model,
         task_mode=request.task_mode,
         run_dir=str(paths.run_dir),
-        source_metadata=request.source_metadata,
-        source_context=request.source_context,
+        source_metadata=_sanitize_mapping(request.source_metadata, privacy=request.privacy),
+        source_context=_sanitize_source_context(request.source_context, privacy=request.privacy),
         prompts=prompt_record,
         inputs=inputs,
         outputs=outputs,
@@ -77,6 +92,7 @@ def create_run_artifact(
         tags=request.tags,
         notes=request.notes,
         derivative_settings=request.derivative_settings,
+        privacy=request.privacy,
         manifest_path=str(paths.manifest_json.relative_to(paths.run_dir)),
         notes_path=str(paths.notes_md.relative_to(paths.run_dir)),
         request_path=request_path,
@@ -161,6 +177,7 @@ def _copy_inputs(
     inputs_dir: Path,
     *,
     derivative_settings: ArtifactDerivativeSettings,
+    privacy: ArtifactPrivacySettings,
 ) -> List[AssetRecord]:
     records: List[AssetRecord] = []
     counters: Dict[str, int] = {}
@@ -182,6 +199,7 @@ def _copy_inputs(
                 source_url=source.source_url,
                 metadata=source.metadata,
                 enable_sha256=derivative_settings.enable_sha256,
+                privacy=privacy,
             )
         )
     return records
@@ -195,6 +213,7 @@ def _copy_outputs(
     thumb_dir: Path,
     *,
     derivative_settings: ArtifactDerivativeSettings,
+    privacy: ArtifactPrivacySettings,
 ) -> List[AssetRecord]:
     records: List[AssetRecord] = []
     for index, source in enumerate(sources, start=1):
@@ -211,6 +230,7 @@ def _copy_outputs(
             source_url=source.source_url,
             metadata=source.metadata,
             enable_sha256=derivative_settings.enable_sha256,
+            privacy=privacy,
         )
         if source.kind == "image":
             web_path = web_dir / f"output_{index:02d}.{derivative_settings.image_web_format.lstrip('.')}"
@@ -278,9 +298,14 @@ def _write_provider_trace(
     logs_dir: Path,
     trace: ProviderTrace,
     request: RunArtifactCreateRequest,
+    *,
+    privacy: ArtifactPrivacySettings,
 ) -> tuple[ProviderTrace, Dict[str, str]]:
-    record = trace.model_copy(deep=True)
+    record = _sanitize_provider_trace(trace, privacy=privacy)
     logs: Dict[str, str] = {}
+
+    if not privacy.persist_sensitive_fields:
+        return record, logs
 
     for filename, payload, attr_name in (
         ("submit_payload.json", request.submit_payload, "submit_payload_path"),
@@ -311,6 +336,7 @@ def _asset_record(
     source_url: Optional[str],
     metadata: Dict[str, Any],
     enable_sha256: bool,
+    privacy: ArtifactPrivacySettings,
 ) -> AssetRecord:
     extracted = (
         image_metadata(path, include_sha256=enable_sha256)
@@ -332,8 +358,8 @@ def _asset_record(
         relative_path=_relative(run_dir, path),
         original_path=_relative(run_dir, path),
         original_filename=original_filename,
-        source_path=source_path,
-        source_url=source_url,
+        source_path=source_path if privacy.persist_sensitive_fields else None,
+        source_url=source_url if privacy.persist_sensitive_fields else None,
         mime_type=extracted.get("mime_type"),
         width=extracted.get("width"),
         height=extracted.get("height"),
@@ -346,8 +372,14 @@ def _asset_record(
     )
 
 
-def _write_optional_json(run_dir: Path, path: Path, payload: Optional[Dict[str, Any]]) -> Optional[str]:
-    if payload is None:
+def _write_optional_json(
+    run_dir: Path,
+    path: Path,
+    payload: Optional[Dict[str, Any]],
+    *,
+    privacy: ArtifactPrivacySettings,
+) -> Optional[str]:
+    if payload is None or not privacy.persist_sensitive_fields:
         return None
     _write_json(path, payload)
     return _relative(run_dir, path)
@@ -355,6 +387,45 @@ def _write_optional_json(run_dir: Path, path: Path, payload: Optional[Dict[str, 
 
 def _write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+
+
+def _sanitize_mapping(payload: Dict[str, Any], *, privacy: ArtifactPrivacySettings) -> Dict[str, Any]:
+    return dict(payload) if privacy.persist_sensitive_fields else {}
+
+
+def _sanitize_source_context(
+    context: RunSourceContext,
+    *,
+    privacy: ArtifactPrivacySettings,
+) -> RunSourceContext:
+    if privacy.persist_sensitive_fields:
+        return context.model_copy(deep=True)
+    # Project/agent labels are kept because they are useful for browsing;
+    # user/channel/notes are stripped from the default dashboard-safe bundle.
+    return context.model_copy(
+        update={
+            "source_user": None,
+            "source_channel": None,
+            "notes": None,
+            "metadata": {},
+        },
+        deep=True,
+    )
+
+
+def _sanitize_provider_trace(trace: ProviderTrace, *, privacy: ArtifactPrivacySettings) -> ProviderTrace:
+    if privacy.persist_sensitive_fields:
+        return trace.model_copy(deep=True)
+    return trace.model_copy(
+        update={
+            "request_path": None,
+            "submit_payload_path": None,
+            "submit_response_path": None,
+            "final_status_path": None,
+            "metadata": {},
+        },
+        deep=True,
+    )
 
 
 def write_run_notes(run: RunArtifact, *, manifest: Optional[RunManifest] = None) -> Path:
