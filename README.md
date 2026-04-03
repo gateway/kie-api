@@ -217,7 +217,7 @@ Start with:
 - Your KIE key belongs in `KIE_API_KEY`.
 - Do not hardcode it in Python.
 - Do not commit `.env.live`.
-- Use the tracked [`.env.example`](/Users/evilone/Documents/Development/Video-Image-APIs/kie-ai/kie_codex_bootstrap/.env.example) as the local template.
+- Use the tracked [`.env.example`](.env.example) as the local template.
 - The repo ignores local env files so your personal key stays out of Git.
 
 ## What it includes
@@ -479,4 +479,4 @@ Pricing note:
 
 ## License
 
-This repo is licensed under the MIT License. See [LICENSE](/Users/evilone/Documents/Development/Video-Image-APIs/kie-ai/kie_codex_bootstrap/LICENSE).
+This repo is licensed under the MIT License. See [LICENSE](LICENSE).
