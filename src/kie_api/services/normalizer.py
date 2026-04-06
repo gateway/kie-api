@@ -5,9 +5,9 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
-from ..enums import PromptPolicy, TaskMode
+from ..enums import MediaRole, PromptPolicy, TaskMode
 from ..exceptions import RequestNormalizationError
-from ..models import AppliedDefault, NormalizedRequest, RawUserRequest
+from ..models import AppliedDefault, MediaReference, NormalizedRequest, RawUserRequest
 from ..registry.loader import SpecRegistry
 from ..registry.models import ModelSpec
 
@@ -94,6 +94,12 @@ class RequestNormalizer:
 
         if spec.key in {"nano-banana-pro", "nano-banana-2"}:
             return TaskMode.IMAGE_EDIT if raw_request.images else TaskMode.TEXT_TO_IMAGE
+        if spec.key == "seedance-2.0":
+            if _seedance_has_reference_media(raw_request):
+                return TaskMode.REFERENCE_TO_VIDEO
+            if _seedance_frame_images(raw_request.images):
+                return TaskMode.REFERENCE_TO_VIDEO
+            return TaskMode.TEXT_TO_VIDEO
 
         raise RequestNormalizationError(f"unable to infer task mode for {spec.key}")
 
@@ -151,3 +157,25 @@ class RequestNormalizer:
         if raw_request.enhance is False:
             return PromptPolicy.OFF
         return spec.prompt.enhancement_default_policy
+
+
+def _seedance_has_reference_media(raw_request: RawUserRequest) -> bool:
+    return bool(
+        _media_with_role(raw_request.images, MediaRole.REFERENCE)
+        or _media_with_role(raw_request.videos, MediaRole.REFERENCE)
+        or _media_with_role(raw_request.audios, MediaRole.REFERENCE)
+    )
+
+
+def _seedance_frame_images(images: List[MediaReference]) -> bool:
+    return bool(
+        _media_with_role(images, MediaRole.FIRST_FRAME)
+        or _media_with_role(images, MediaRole.LAST_FRAME)
+    )
+
+
+def _media_with_role(
+    media: List[MediaReference],
+    role: MediaRole,
+) -> List[MediaReference]:
+    return [item for item in media if item.role == role]

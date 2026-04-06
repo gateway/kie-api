@@ -2,9 +2,12 @@ import pytest
 
 from kie_api.clients.callbacks import (
     build_callback_signature,
+    canonicalize_callback_payload,
     parse_callback_event,
+    verify_callback_request,
     verify_callback_signature,
 )
+from kie_api.config import KieSettings
 from kie_api.exceptions import CallbackVerificationError
 
 
@@ -71,3 +74,58 @@ def test_verify_callback_signature_raises_on_missing_task_id() -> None:
             },
             secret="top-secret",
         )
+
+
+def test_verify_callback_request_requires_trusted_output_urls() -> None:
+    payload = {
+        "data": {
+            "taskId": "task_123",
+            "status": "success",
+            "outputs": ["https://evil.example.com/out.mp4"],
+        }
+    }
+    headers = {
+        "X-Webhook-Timestamp": "1711111111",
+        "X-Webhook-Signature": build_callback_signature(
+            task_id="task_123",
+            timestamp="1711111111",
+            secret="top-secret",
+        ),
+    }
+
+    with pytest.raises(CallbackVerificationError, match="not trusted"):
+        verify_callback_request(
+            payload,
+            headers,
+            secret="top-secret",
+            settings=KieSettings(callback_trusted_output_hosts=["tempfile.aiquickdraw.com"]),
+            max_age_seconds=600,
+            now=1711111111,
+        )
+
+
+def test_verify_callback_request_rejects_conflicting_task_ids() -> None:
+    payload = {"taskId": "outer_123", "data": {"taskId": "task_123"}}
+    headers = {
+        "X-Webhook-Timestamp": "1711111111",
+        "X-Webhook-Signature": build_callback_signature(
+            task_id="task_123",
+            timestamp="1711111111",
+            secret="top-secret",
+        ),
+    }
+
+    with pytest.raises(CallbackVerificationError, match="conflicting"):
+        verify_callback_request(
+            payload,
+            headers,
+            secret="top-secret",
+            settings=KieSettings(),
+            max_age_seconds=600,
+            now=1711111111,
+        )
+
+
+def test_canonicalize_callback_payload_is_deterministic() -> None:
+    payload = {"b": 2, "a": {"y": 2, "x": 1}}
+    assert canonicalize_callback_payload(payload) == '{"a":{"x":1,"y":2},"b":2}'

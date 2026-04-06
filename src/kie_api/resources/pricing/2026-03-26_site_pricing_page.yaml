@@ -153,3 +153,36 @@ rules:
         pro: 1.35
     notes:
       - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.
+  - model_key: seedance-2.0
+    pricing_status: observed_site_pricing
+    billing_unit: second
+    provider: ByteDance
+    interface_type: video
+    anchor_url: https://kie.ai/seedance-2-0
+    raw_credit_text: '19'
+    raw_usd_text: '0.095'
+    base_credits: 19
+    base_cost_usd: 0.095
+    multipliers:
+      duration:
+        '4': 4.0
+        '5': 5.0
+        '6': 6.0
+        '7': 7.0
+        '8': 8.0
+        '9': 9.0
+        '10': 10.0
+        '11': 11.0
+        '12': 12.0
+        '13': 13.0
+        '14': 14.0
+        '15': 15.0
+      pricing_variant:
+        480p_no_video_input: 1.0
+        720p_no_video_input: 2.1578947368
+        480p_with_video_input: 0.6052631579
+        720p_with_video_input: 1.3157894737
+    notes:
+      - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-04-04.
+      - Seedance pricing is modeled with an internal pricing_variant derived from request resolution plus whether reference_video_urls are present.
+      - The site pricing API publishes separate rows for with video input and no video input; this rule maps those exactly for dry-run estimation.

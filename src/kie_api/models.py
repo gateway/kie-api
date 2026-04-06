@@ -11,6 +11,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from .enums import (
     GuardDecision,
     JobState,
+    MediaRole,
     MediaType,
     PromptInputPattern,
     PromptPolicy,
@@ -24,10 +25,12 @@ class MediaReference(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     media_type: MediaType
+    role: Optional[MediaRole] = None
     url: Optional[str] = None
     path: Optional[str] = None
     filename: Optional[str] = None
     mime_type: Optional[str] = None
+    duration_seconds: Optional[float] = None
     source: str = "remote"
 
     @model_validator(mode="after")
@@ -41,7 +44,9 @@ class MediaReference(BaseModel):
         if isinstance(value, cls):
             return value
         if isinstance(value, dict):
-            return cls(media_type=media_type, **value)
+            payload = dict(value)
+            payload.setdefault("media_type", media_type)
+            return cls(**payload)
         if isinstance(value, Path):
             return cls(media_type=media_type, path=str(value), filename=value.name, source="local")
         if isinstance(value, str):

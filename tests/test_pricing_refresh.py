@@ -193,6 +193,50 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "discountRate": 9.09,
             "anchor": "https://kie.ai/kling-3-motion-control",
         },
+        {
+            "modelDescription": "bytedance/seedance-2, 720p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "41",
+            "creditUnit": "per second",
+            "usdPrice": "0.205",
+            "falPrice": "0.25",
+            "discountRate": 18.0,
+            "anchor": None,
+        },
+        {
+            "modelDescription": "bytedance/seedance-2, 720p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "25",
+            "creditUnit": "per second",
+            "usdPrice": "0.125",
+            "falPrice": "0.18",
+            "discountRate": 30.0,
+            "anchor": None,
+        },
+        {
+            "modelDescription": "bytedance/seedance-2, 480p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "19",
+            "creditUnit": "per second",
+            "usdPrice": "0.095",
+            "falPrice": "0.12",
+            "discountRate": 20.0,
+            "anchor": None,
+        },
+        {
+            "modelDescription": "bytedance/seedance-2, 480p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "11.5",
+            "creditUnit": "per second",
+            "usdPrice": "0.057",
+            "falPrice": "0.09",
+            "discountRate": 36.0,
+            "anchor": None,
+        },
     ]
 
     rows = [
@@ -228,3 +272,5 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert rules["kling-2.6-t2v"].billing_unit == "video"
     assert rules["kling-3.0-t2v"].billing_unit == "second"
     assert rules["kling-3.0-motion"].multipliers["mode"]["1080p"] == 1.35
+    assert rules["seedance-2.0"].billing_unit == "second"
+    assert rules["seedance-2.0"].multipliers["pricing_variant"]["720p_with_video_input"] == 25.0 / 19.0

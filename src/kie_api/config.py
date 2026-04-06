@@ -14,6 +14,11 @@ def _env_float(name: str, default: float) -> float:
     return float(value) if value is not None else default
 
 
+def _env_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    return int(value) if value is not None else default
+
+
 def _env_csv(name: str, default: str) -> List[str]:
     value = os.getenv(name, default)
     return [item.strip() for item in value.split(",") if item.strip()]
@@ -60,6 +65,27 @@ class KieSettings(BaseModel):
         default_factory=lambda: _env_csv(
             "KIE_TRUSTED_UPLOADED_MEDIA_HOSTS",
             "tempfile.redpandaai.co,kieai.redpandaai.co",
+        )
+    )
+    trusted_download_hosts: List[str] = Field(
+        default_factory=lambda: _env_csv(
+            "KIE_TRUSTED_DOWNLOAD_HOSTS",
+            "tempfile.redpandaai.co,kieai.redpandaai.co,tempfile.aiquickdraw.com",
+        )
+    )
+    download_max_bytes: int = Field(
+        default_factory=lambda: _env_int("KIE_DOWNLOAD_MAX_BYTES", 250_000_000)
+    )
+    download_output_root: Optional[str] = Field(
+        default_factory=lambda: os.getenv("KIE_DOWNLOAD_OUTPUT_ROOT")
+    )
+    callback_max_age_seconds: int = Field(
+        default_factory=lambda: _env_int("KIE_CALLBACK_MAX_AGE_SECONDS", 300)
+    )
+    callback_trusted_output_hosts: List[str] = Field(
+        default_factory=lambda: _env_csv(
+            "KIE_CALLBACK_TRUSTED_OUTPUT_HOSTS",
+            "tempfile.redpandaai.co,kieai.redpandaai.co,tempfile.aiquickdraw.com",
         )
     )
     connect_timeout_seconds: float = Field(
@@ -139,10 +165,19 @@ class KieSettings(BaseModel):
         )
 
     def is_trusted_uploaded_url(self, value: str) -> bool:
+        return self._url_host_is_trusted(value, self.trusted_uploaded_media_hosts)
+
+    def is_trusted_download_url(self, value: str) -> bool:
+        return self._url_host_is_trusted(value, self.trusted_download_hosts)
+
+    def is_trusted_callback_output_url(self, value: str) -> bool:
+        return self._url_host_is_trusted(value, self.callback_trusted_output_hosts)
+
+    def _url_host_is_trusted(self, value: str, trusted_hosts: List[str]) -> bool:
         host = httpx.URL(value).host
         if not host:
             return False
         return any(
             host == trusted_host or host.endswith(f".{trusted_host}")
-            for trusted_host in self.trusted_uploaded_media_hosts
+            for trusted_host in trusted_hosts
         )

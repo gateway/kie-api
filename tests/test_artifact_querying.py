@@ -208,3 +208,24 @@ def test_custom_derivative_settings_change_index_hero_paths(tmp_path: Path) -> N
     assert entries[0].hero_thumb == "thumb/output_01.png"
     manifest = json.loads((Path(run.run_dir) / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["hero_web"] == "web/output_01.jpg"
+
+
+def test_load_run_index_skips_malformed_lines(tmp_path: Path) -> None:
+    output_root = tmp_path / "outputs"
+    output_root.mkdir(parents=True)
+    index_path = output_root / "index.jsonl"
+    index_path.write_text(
+        "\n".join(
+            [
+                '{"run_id":"run_a","created_at":"2026-03-26T20:00:00+00:00","status":"succeeded","model_key":"nano-banana-2"}',
+                '{"broken":',
+                '{"run_id":"run_b","created_at":"2026-03-26T21:00:00+00:00","status":"failed","model_key":"nano-banana-pro"}',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    entries = load_run_index(output_root)
+
+    assert [entry.run_id for entry in entries] == ["run_a", "run_b"]

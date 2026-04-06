@@ -16,11 +16,18 @@ class MediaType(StrEnum):
     AUDIO = "audio"
 
 
+class MediaRole(StrEnum):
+    FIRST_FRAME = "first_frame"
+    LAST_FRAME = "last_frame"
+    REFERENCE = "reference"
+
+
 class TaskMode(StrEnum):
     TEXT_TO_IMAGE = "text_to_image"
     IMAGE_EDIT = "image_edit"
     TEXT_TO_VIDEO = "text_to_video"
     IMAGE_TO_VIDEO = "image_to_video"
+    REFERENCE_TO_VIDEO = "reference_to_video"
     MOTION_CONTROL = "motion_control"
 
 
@@ -36,6 +43,7 @@ class PromptInputPattern(StrEnum):
     SINGLE_IMAGE = "single_image"
     FIRST_LAST_FRAMES = "first_last_frames"
     IMAGE_EDIT = "image_edit"
+    MULTIMODAL_REFERENCE = "multimodal_reference"
     MOTION_CONTROL = "motion_control"
 
 

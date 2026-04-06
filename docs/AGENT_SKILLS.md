@@ -40,6 +40,7 @@ Codex:
 - `kie-nano-banana`
 - `kie-kling-video`
 - `kie-chain-image-to-video`
+- `kie-model-onboarding`
 
 Claude Code:
 - `.claude/agents/kie-find-latest-media.md`
@@ -47,6 +48,7 @@ Claude Code:
 - `.claude/agents/kie-nano-banana.md`
 - `.claude/agents/kie-kling-video.md`
 - `.claude/agents/kie-chain-image-to-video.md`
+- `.claude/agents/kie-model-onboarding.md`
 
 ## What these skills do
 
@@ -77,6 +79,12 @@ Claude Code:
 - finds the latest image or video without rerunning generation
 - reads the artifact index and manifest layer
 - returns direct file paths so the user does not need to hunt
+
+### `kie-model-onboarding`
+- adds new Kie.ai image or video models to `kie-api`
+- follows the repo's spec-first onboarding workflow
+- covers request shape analysis, prompt presets, tests, and live smoke verification
+- is the right workflow for models like Seedance 2.0
 
 ## Standard result contract
 

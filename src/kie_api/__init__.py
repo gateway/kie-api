@@ -35,6 +35,8 @@ from .api import (
 from .artifacts import (
     ArtifactSource,
     ArtifactDerivativeSettings,
+    ArtifactPrivacyMode,
+    ArtifactPrivacySettings,
     AssetRecord,
     DerivedAssetRecord,
     PromptRecord,
@@ -48,6 +50,7 @@ from .artifacts import (
 from .clients import CreditsClient
 from .clients import DownloadClient
 from .config import KieSettings
+from .enums import MediaRole
 from .fixtures import REQUEST_FIXTURES, RequestFixture, get_request_fixture
 from .models import (
     AppliedDefault,
@@ -90,6 +93,8 @@ __all__ = [
     "apply_enhanced_prompt",
     "append_run_index",
     "ArtifactDerivativeSettings",
+    "ArtifactPrivacyMode",
+    "ArtifactPrivacySettings",
     "ArtifactSource",
     "AssetRecord",
     "build_submission_payload",
@@ -121,6 +126,7 @@ __all__ = [
     "list_runs_by_tag",
     "load_run_artifact",
     "MediaReference",
+    "MediaRole",
     "MissingInput",
     "NormalizedRequest",
     "ObservedResponseFixture",

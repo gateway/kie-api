@@ -5,7 +5,7 @@ import pytest
 
 from kie_api import build_submission_payload, prepare_request_for_submission
 from kie_api.config import KieSettings
-from kie_api.enums import JobState, MediaType, TaskMode
+from kie_api.enums import JobState, MediaRole, MediaType, TaskMode
 from kie_api.exceptions import RequestPreparationError
 from kie_api.models import MediaReference, NormalizedRequest, RawUserRequest, StatusResult, UploadResult
 from kie_api.registry.loader import load_registry
@@ -150,6 +150,55 @@ def test_prepare_request_uploads_all_media_types_from_normalized_request() -> No
     assert prepared.normalized_request.images[0].url.startswith("https://tempfile.redpandaai.co/")
     assert prepared.normalized_request.videos[0].url.startswith("https://tempfile.redpandaai.co/")
     assert prepared.normalized_request.audios[0].url.startswith("https://tempfile.redpandaai.co/")
+
+
+def test_prepare_request_preserves_seedance_media_roles_and_payload_shape() -> None:
+    registry = load_registry()
+    upload_client = DummyUploadClient()
+    normalized = NormalizedRequest(
+        model_key="seedance-2.0",
+        provider_model="bytedance/seedance-2",
+        task_mode=TaskMode.REFERENCE_TO_VIDEO,
+        prompt="Use the first frame as the subject anchor.",
+        images=[
+            MediaReference(
+                media_type=MediaType.IMAGE,
+                role=MediaRole.FIRST_FRAME,
+                path="/tmp/first.png",
+                filename="first.png",
+            )
+        ],
+        videos=[
+            MediaReference(
+                media_type=MediaType.VIDEO,
+                role=MediaRole.REFERENCE,
+                url="https://example.com/source/ref.mp4",
+                filename="ref.mp4",
+                duration_seconds=4.5,
+            )
+        ],
+        options={"resolution": "480p", "aspect_ratio": "9:16", "duration": 5},
+    )
+
+    prepared = prepare_request_for_submission(
+        normalized,
+        registry=registry,
+        settings=KieSettings(api_key="test-key"),
+        upload_client=upload_client,
+    )
+
+    assert prepared.normalized_request.images[0].role == MediaRole.FIRST_FRAME
+    assert prepared.normalized_request.videos[0].role == MediaRole.REFERENCE
+    assert prepared.normalized_request.videos[0].duration_seconds == 4.5
+
+    payload = build_submission_payload(
+        prepared.normalized_request,
+        registry=registry,
+        settings=KieSettings(api_key="test-key"),
+    )
+
+    assert payload["input"]["first_frame_url"].endswith("/first.png")
+    assert payload["input"]["reference_video_urls"][0].endswith("/ref.mp4")
 
 
 def test_build_submission_payload_rejects_non_uploaded_media_urls() -> None:

@@ -5,9 +5,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, List
 
-from ..enums import OptionType, ValidationState
+from ..enums import MediaRole, OptionType, TaskMode, ValidationState
 from ..models import (
     InvalidInput,
+    MediaReference,
     MissingInput,
     NormalizedRequest,
     ValidationMessage,
@@ -109,6 +110,159 @@ class RequestValidator:
                             "Kling 3.0 multi-shot mode only supports a single first-frame image."
                         ),
                         received=image_count,
+                    )
+                )
+
+        if request.model_key == "seedance-2.0":
+            first_frame_images = _media_with_role(normalized.images, MediaRole.FIRST_FRAME)
+            last_frame_images = _media_with_role(normalized.images, MediaRole.LAST_FRAME)
+            reference_images = _media_with_role(normalized.images, MediaRole.REFERENCE)
+            reference_videos = _media_with_role(normalized.videos, MediaRole.REFERENCE)
+            reference_audios = _media_with_role(normalized.audios, MediaRole.REFERENCE)
+            has_reference_media = bool(reference_images or reference_videos or reference_audios)
+            has_frame_mode = bool(first_frame_images or last_frame_images)
+            unlabeled_media = [
+                item
+                for collection in (normalized.images, normalized.videos, normalized.audios)
+                for item in collection
+                if item.role is None
+            ]
+
+            if unlabeled_media:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="media",
+                        code="seedance_media_role_required",
+                        message=(
+                            "Seedance 2.0 media inputs must declare a role of first_frame, last_frame, or reference."
+                        ),
+                        received=[item.model_dump() for item in unlabeled_media],
+                    )
+                )
+
+            if normalized.task_mode == TaskMode.TEXT_TO_VIDEO and (
+                normalized.images or normalized.videos or normalized.audios
+            ):
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="task_mode",
+                        code="seedance_text_to_video_cannot_include_media",
+                        message=(
+                            "Seedance 2.0 text-to-video requests cannot include first/last frame inputs or reference media."
+                        ),
+                        received=normalized.task_mode.value,
+                    )
+                )
+
+            if normalized.task_mode == TaskMode.REFERENCE_TO_VIDEO and not (
+                normalized.images or normalized.videos or normalized.audios
+            ):
+                missing_inputs.append(
+                    MissingInput(
+                        field="media",
+                        message=(
+                            "Seedance 2.0 reference-to-video requests require a first frame, first+last frames, or reference media."
+                        ),
+                    )
+                )
+
+            if has_frame_mode and has_reference_media:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="images",
+                        code="seedance_frames_and_references_are_mutually_exclusive",
+                        message=(
+                            "Seedance 2.0 does not allow first/last frame guidance together with multimodal reference assets."
+                        ),
+                        received={
+                            "first_frame_count": len(first_frame_images),
+                            "last_frame_count": len(last_frame_images),
+                            "reference_image_count": len(reference_images),
+                            "reference_video_count": len(reference_videos),
+                            "reference_audio_count": len(reference_audios),
+                        },
+                    )
+                )
+
+            if last_frame_images and not first_frame_images:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="images",
+                        code="seedance_last_frame_requires_first_frame",
+                        message="Seedance 2.0 requires a first-frame image when a last-frame image is provided.",
+                        received={"last_frame_count": len(last_frame_images)},
+                    )
+                )
+
+            if len(first_frame_images) > 1:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="images",
+                        code="too_many_first_frame_images",
+                        message="Seedance 2.0 accepts at most one first-frame image.",
+                        received=len(first_frame_images),
+                    )
+                )
+
+            if len(last_frame_images) > 1:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="images",
+                        code="too_many_last_frame_images",
+                        message="Seedance 2.0 accepts at most one last-frame image.",
+                        received=len(last_frame_images),
+                    )
+                )
+
+            if len(reference_images) > 9:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="images",
+                        code="too_many_reference_images",
+                        message="Seedance 2.0 accepts at most 9 reference images.",
+                        received=len(reference_images),
+                    )
+                )
+
+            if len(reference_videos) > 3:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="videos",
+                        code="too_many_reference_videos",
+                        message="Seedance 2.0 accepts at most 3 reference videos.",
+                        received=len(reference_videos),
+                    )
+                )
+
+            if len(reference_audios) > 3:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="audios",
+                        code="too_many_reference_audios",
+                        message="Seedance 2.0 accepts at most 3 reference audios.",
+                        received=len(reference_audios),
+                    )
+                )
+
+            video_total_duration = _sum_known_media_durations(reference_videos)
+            if video_total_duration is not None and video_total_duration > 15:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="videos",
+                        code="reference_video_duration_limit_exceeded",
+                        message="Seedance 2.0 reference videos must total 15 seconds or less.",
+                        received=video_total_duration,
+                    )
+                )
+
+            if reference_audios:
+                warning_details.append(
+                    ValidationMessage(
+                        field="audios",
+                        code="seedance_reference_audio_duration_unverified",
+                        message=(
+                            "Seedance 2.0 reference audio count is validated, but total reference audio duration still needs live verification."
+                        ),
                     )
                 )
 
@@ -310,3 +464,23 @@ class RequestValidator:
         self, field: str, code: str, message: str, received: Any
     ) -> InvalidInput:
         return InvalidInput(field=field, code=code, message=message, received=received)
+
+
+def _media_with_role(
+    media: List[MediaReference],
+    role: MediaRole,
+) -> List[MediaReference]:
+    return [item for item in media if item.role == role]
+
+
+def _sum_known_media_durations(media: List[MediaReference]) -> int | None:
+    durations: List[int] = []
+    for item in media:
+        duration_hint = item.duration_seconds
+        if duration_hint is None:
+            return None
+        try:
+            durations.append(int(duration_hint))
+        except (TypeError, ValueError):
+            return None
+    return sum(durations)

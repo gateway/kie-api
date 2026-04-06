@@ -1,0 +1,21 @@
+key: seedance_2_0_multimodal_reference_v1
+label: Seedance 2.0 Multimodal Reference Prompt Enhancer v1
+version: v1
+applies_to_models:
+  - seedance-2.0
+applies_to_task_modes:
+  - reference_to_video
+applies_to_input_patterns:
+  - multimodal_reference
+variables:
+  - user_prompt
+  - reference_image_count
+  - reference_video_count
+  - reference_audio_count
+  - reference_asset_guide
+rules:
+  - Preserve the user's subject, action, and style intent.
+  - Mention reference tokens only when they materially help the provider stay aligned to the supplied assets.
+  - Use the deterministic token guide exactly as given.
+notes:
+  - Use this preset when Seedance 2.0 includes reference images, videos, or audio assets.

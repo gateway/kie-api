@@ -25,6 +25,7 @@ Typical request shapes:
 - `first_last_frames`
 - `image_edit`
 - `motion_control`
+- `multimodal_reference` when a provider supports mixed image/video/audio guidance that is not equivalent to first/last-frame or edit mode
 
 A preset is ready when:
 - the template exists
@@ -60,6 +61,12 @@ For advanced provider-specific shapes such as Kling 3.0 multi-shot mode:
 - add typed runtime request models where needed
 - validate cross-field rules explicitly
 - do not hide docs-only shape differences inside generic passthrough options
+
+For multimodal video models such as Seedance 2.0:
+- treat first-frame, first+last-frame, and multimodal-reference as mutually-exclusive validated scenarios if the provider documents them that way
+- do not force them into a Kling-style multi-shot abstraction unless the provider request shape actually exposes shot arrays
+- if multimodal references introduce mixed image/video/audio guidance, prefer a dedicated input-pattern binding over overloading existing `single_image` or `first_last_frames` logic
+- use role-aware media references when the same endpoint needs to distinguish first-frame, last-frame, and general reference assets
 
 Known current TODO:
 - Kling 3.0 `kling_elements` / element-reference support is documented by Kie.ai, but is not yet modeled in the runtime request types or upload flow here

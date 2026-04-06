@@ -1,0 +1,18 @@
+key: seedance_2_0_t2v_v1
+label: Seedance 2.0 Text to Video Prompt Enhancer v1
+version: v1
+applies_to_models:
+  - seedance-2.0
+applies_to_task_modes:
+  - text_to_video
+applies_to_input_patterns:
+  - prompt_only
+variables:
+  - user_prompt
+  - duration
+rules:
+  - Preserve the user's core scene and motion intent.
+  - Expand the prompt into concise cinematic video direction without inventing unsupported media references.
+  - Keep the final wording compatible with a single text-to-video request.
+notes:
+  - Use this preset for plain Seedance 2.0 text-to-video requests with no first/last frames or reference assets.

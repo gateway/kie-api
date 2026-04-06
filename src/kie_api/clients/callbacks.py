@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import hashlib
 import hmac
 import time
@@ -9,6 +10,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..config import KieSettings
 from ..exceptions import CallbackVerificationError
 
 
@@ -78,6 +80,46 @@ def verify_callback_signature(
 
     expected = build_callback_signature(task_id=task_id, timestamp=timestamp, secret=secret)
     return hmac.compare_digest(expected, str(signature))
+
+
+def verify_callback_request(
+    payload: Dict[str, Any],
+    headers: Mapping[str, Any],
+    *,
+    secret: str,
+    settings: Optional[KieSettings] = None,
+    max_age_seconds: Optional[int] = None,
+    now: Optional[int] = None,
+) -> CallbackEvent:
+    resolved_settings = settings or KieSettings()
+    resolved_max_age = (
+        resolved_settings.callback_max_age_seconds if max_age_seconds is None else max_age_seconds
+    )
+    if not verify_callback_signature(
+        payload,
+        headers,
+        secret=secret,
+        max_age_seconds=resolved_max_age,
+        now=now,
+    ):
+        raise CallbackVerificationError("Callback signature validation failed.")
+
+    event = parse_callback_event(payload)
+    if not event.task_id:
+        raise CallbackVerificationError("Callback payload does not contain a usable task id.")
+    if payload.get("taskId") and str(payload.get("taskId")) != event.task_id:
+        raise CallbackVerificationError("Callback payload contains conflicting top-level and nested task ids.")
+
+    for url in event.output_urls:
+        if not resolved_settings.is_trusted_callback_output_url(url):
+            raise CallbackVerificationError(f"Callback output URL host is not trusted: {url!r}")
+    return event
+
+
+def canonicalize_callback_payload(payload: Dict[str, Any]) -> str:
+    """Return a deterministic compact JSON string for audit/debug use."""
+
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
 
 def _extract_task_id(payload: Dict[str, Any]) -> Optional[str]:

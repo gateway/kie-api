@@ -5,6 +5,7 @@ from kie_api.registry.models import PricingRule
 from kie_api.services.credit_guard import CreditGuard
 from kie_api.services.preflight import PreflightService
 from kie_api.services.pricing import PricingRegistry
+import pytest
 
 
 def test_pricing_registry_returns_snapshot_backed_estimate() -> None:
@@ -110,3 +111,29 @@ def test_preflight_can_warn_without_confirmation_threshold() -> None:
 
     assert result.decision == GuardDecision.WARN
     assert result.can_submit is True
+
+
+def test_pricing_registry_applies_seedance_request_shape_variant() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="seedance-2.0",
+        provider_model="bytedance/seedance-2",
+        task_mode=TaskMode.REFERENCE_TO_VIDEO,
+        prompt="use these references for motion and scene pacing",
+        prompt_policy=PromptPolicy.OFF,
+        videos=[
+            {
+                "media_type": "video",
+                "url": "https://example.com/ref.mp4",
+                "role": "reference",
+            }
+        ],
+        options={"duration": 8, "resolution": "720p"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == 8.0
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(25.0 / 19.0)
+    assert estimate.estimated_credits == pytest.approx(200.0)
+    assert estimate.estimated_cost_usd == pytest.approx(1.0)

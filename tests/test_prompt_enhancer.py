@@ -187,3 +187,36 @@ def test_prompt_enhancer_raises_for_unresolved_template_variables(tmp_path) -> N
                 prompt_profile_key="broken_preset",
             )
         )
+
+
+def test_prompt_enhancer_resolves_seedance_multimodal_reference_preset() -> None:
+    registry = load_registry()
+    enhancer = PromptEnhancer(registry)
+
+    context = enhancer.resolve_context(
+        NormalizedRequest(
+            model_key="seedance-2.0",
+            provider_model="bytedance/seedance-2",
+            task_mode="reference_to_video",
+            prompt="use the reference assets for character identity and pacing",
+            raw_prompt="use the reference assets for character identity and pacing",
+            prompt_policy=PromptPolicy.PREVIEW,
+            images=[
+                {"media_type": "image", "url": "https://example.com/ref1.png", "role": "reference", "filename": "ref1.png"},
+                {"media_type": "image", "url": "https://example.com/ref2.png", "role": "reference", "filename": "ref2.png"},
+            ],
+            videos=[
+                {"media_type": "video", "url": "https://example.com/ref1.mp4", "role": "reference", "filename": "ref1.mp4"}
+            ],
+            audios=[
+                {"media_type": "audio", "url": "https://example.com/ref1.mp3", "role": "reference", "filename": "ref1.mp3"}
+            ],
+        )
+    )
+
+    assert str(context.input_pattern) == "multimodal_reference"
+    assert context.resolved_preset_key == "seedance_2_0_multimodal_reference_v1"
+    assert "@image1 -> reference image 1 (ref1.png)" in (context.rendered_system_prompt or "")
+    assert "@image2 -> reference image 2 (ref2.png)" in (context.rendered_system_prompt or "")
+    assert "@video1 -> reference video 1 (ref1.mp4)" in (context.rendered_system_prompt or "")
+    assert "@audio1 -> reference audio 1 (ref1.mp3)" in (context.rendered_system_prompt or "")

@@ -8,6 +8,7 @@ Included skills:
 - `nano-banana`
 - `kling-video`
 - `chain-image-to-video`
+- `model-onboarding`
 
 To install them into your local Codex skills folder:
 

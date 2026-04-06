@@ -90,7 +90,7 @@ def test_submit_client_builds_kling_2_6_t2v_payload() -> None:
     assert payload["model"] == "kling-2.6/text-to-video"
     assert payload["input"]["sound"] is True
     assert payload["input"]["aspect_ratio"] == "16:9"
-    assert payload["input"]["duration"] == 5
+    assert payload["input"]["duration"] == "5"
 
 
 def test_submit_client_builds_kling_2_6_i2v_payload() -> None:
@@ -113,7 +113,7 @@ def test_submit_client_builds_kling_2_6_i2v_payload() -> None:
         "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/start.png"
     ]
     assert payload["input"]["sound"] is False
-    assert payload["input"]["duration"] == 10
+    assert payload["input"]["duration"] == "10"
 
 
 def test_submit_client_builds_kling_3_video_payload() -> None:
@@ -253,3 +253,71 @@ def test_submit_client_passes_through_docs_only_motion_background_source() -> No
     payload = client.build_payload(normalized)
 
     assert payload["input"]["background_source"] == "input_video"
+
+
+def test_submit_client_builds_seedance_first_last_frame_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="bridge these two endpoint frames with a smooth motion arc",
+            images=[
+                {
+                    "url": "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/start.png",
+                    "role": "first_frame",
+                },
+                {
+                    "url": "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/end.png",
+                    "role": "last_frame",
+                },
+            ],
+            options={"duration": 6, "resolution": "720p", "generate_audio": True},
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert payload["model"] == "bytedance/seedance-2"
+    assert payload["input"]["first_frame_url"].endswith("start.png")
+    assert payload["input"]["last_frame_url"].endswith("end.png")
+    assert "reference_image_urls" not in payload["input"]
+    assert payload["input"]["generate_audio"] is True
+
+
+def test_submit_client_builds_seedance_multimodal_reference_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="use the references for scene styling and pacing",
+            images=[
+                {"url": "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/ref1.png", "role": "reference"},
+                {"url": "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/ref2.png", "role": "reference"},
+            ],
+            videos=[
+                {"url": "https://kieai.redpandaai.co/kieai/183531/videos/user-uploads/ref.mov", "role": "reference"}
+            ],
+            audios=[
+                {"url": "https://kieai.redpandaai.co/kieai/183531/audios/user-uploads/ref.mp3", "role": "reference"}
+            ],
+            options={"duration": 8, "web_search": False},
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert payload["input"]["reference_image_urls"] == [
+        "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/ref1.png",
+        "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/ref2.png",
+    ]
+    assert payload["input"]["reference_video_urls"] == [
+        "https://kieai.redpandaai.co/kieai/183531/videos/user-uploads/ref.mov"
+    ]
+    assert payload["input"]["reference_audio_urls"] == [
+        "https://kieai.redpandaai.co/kieai/183531/audios/user-uploads/ref.mp3"
+    ]
+    assert "first_frame_url" not in payload["input"]

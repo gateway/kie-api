@@ -146,9 +146,11 @@ class RequestPreparationService:
             prepared.append(
                 MediaReference(
                     media_type=media.media_type,
+                    role=media.role,
                     url=resolved_url,
                     filename=upload_result.file_name or media.filename,
                     mime_type=upload_result.mime_type or media.mime_type,
+                    duration_seconds=media.duration_seconds,
                     source="uploaded",
                 )
             )
