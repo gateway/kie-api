@@ -105,3 +105,72 @@ def test_normalizer_rejects_unsafe_family_inference_when_too_many_images() -> No
                 ],
             )
         )
+
+
+def test_normalizer_resolves_seedance_text_only_to_text_to_video() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="a fox sprinting through a snowy forest",
+            options={"duration": 4},
+        )
+    )
+
+    assert normalized.task_mode == TaskMode.TEXT_TO_VIDEO
+
+
+def test_normalizer_resolves_seedance_first_frame_to_reference_to_video() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="animate from this starting pose",
+            images=[
+                {
+                    "url": "https://example.com/start.png",
+                    "role": "first_frame",
+                }
+            ],
+            options={"duration": 4},
+        )
+    )
+
+    assert normalized.task_mode == TaskMode.REFERENCE_TO_VIDEO
+
+
+def test_normalizer_resolves_seedance_first_last_frames_to_reference_to_video() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="move from this opening frame to the final pose",
+            images=[
+                {"url": "https://example.com/start.png", "role": "first_frame"},
+                {"url": "https://example.com/end.png", "role": "last_frame"},
+            ],
+            options={"duration": 6},
+        )
+    )
+
+    assert normalized.task_mode == TaskMode.REFERENCE_TO_VIDEO
+
+
+def test_normalizer_resolves_seedance_reference_media_to_reference_to_video() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="use the reference assets for character identity and pacing",
+            images=[{"url": "https://example.com/ref1.png", "role": "reference"}],
+            videos=[{"url": "https://example.com/ref1.mp4", "role": "reference"}],
+            audios=[{"url": "https://example.com/ref1.mp3", "role": "reference"}],
+            options={"duration": 8},
+        )
+    )
+
+    assert normalized.task_mode == TaskMode.REFERENCE_TO_VIDEO

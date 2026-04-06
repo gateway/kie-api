@@ -114,6 +114,12 @@ That code is:
 - not authoritative
 - not a replacement for a verified billing API contract
 
+Current example:
+- Seedance 2.0 pricing is now derived from the public site pricing API rows for:
+  - `480p` vs `720p`
+  - `with video input` vs `no video input`
+- the runtime turns that into a dry-run `pricing_variant` internally based on request shape, so wrappers do not need to send pricing-only fields
+
 Manual candidate refresh:
 
 ```bash

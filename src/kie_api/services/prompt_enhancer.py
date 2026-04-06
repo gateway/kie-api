@@ -6,7 +6,7 @@ import re
 from copy import deepcopy
 from typing import Callable, Optional
 
-from ..enums import PromptInputPattern, PromptPolicy, PromptResolutionSource, TaskMode
+from ..enums import MediaRole, PromptInputPattern, PromptPolicy, PromptResolutionSource, TaskMode
 from ..exceptions import PromptTemplateRenderError
 from ..models import (
     NormalizedRequest,
@@ -205,6 +205,14 @@ def _detect_input_pattern(request: NormalizedRequest) -> PromptInputPattern:
         return PromptInputPattern.MOTION_CONTROL
     if request.task_mode == TaskMode.IMAGE_EDIT:
         return PromptInputPattern.IMAGE_EDIT
+    if request.task_mode == TaskMode.REFERENCE_TO_VIDEO:
+        if _reference_media_count(request) > 0:
+            return PromptInputPattern.MULTIMODAL_REFERENCE
+        if _has_role(request.images, MediaRole.LAST_FRAME):
+            return PromptInputPattern.FIRST_LAST_FRAMES
+        if _has_role(request.images, MediaRole.FIRST_FRAME):
+            return PromptInputPattern.SINGLE_IMAGE
+        return PromptInputPattern.PROMPT_ONLY
     if request.task_mode == TaskMode.IMAGE_TO_VIDEO:
         if len(request.images) >= 2:
             return PromptInputPattern.FIRST_LAST_FRAMES
@@ -216,6 +224,9 @@ def _build_template_context(
     request: NormalizedRequest,
     input_pattern: PromptInputPattern,
 ):
+    reference_images = _media_with_role(request.images, MediaRole.REFERENCE)
+    reference_videos = _media_with_role(request.videos, MediaRole.REFERENCE)
+    reference_audios = _media_with_role(request.audios, MediaRole.REFERENCE)
     return {
         "user_prompt": request.raw_prompt or request.prompt or "",
         "model_key": request.model_key,
@@ -224,6 +235,16 @@ def _build_template_context(
         "image_count": str(len(request.images)),
         "video_count": str(len(request.videos)),
         "audio_count": str(len(request.audios)),
+        "first_frame_present": str(_has_role(request.images, MediaRole.FIRST_FRAME)).lower(),
+        "last_frame_present": str(_has_role(request.images, MediaRole.LAST_FRAME)).lower(),
+        "reference_image_count": str(len(reference_images)),
+        "reference_video_count": str(len(reference_videos)),
+        "reference_audio_count": str(len(reference_audios)),
+        "reference_asset_guide": _build_reference_asset_guide(
+            reference_images=reference_images,
+            reference_videos=reference_videos,
+            reference_audios=reference_audios,
+        ),
     }
 
 
@@ -243,3 +264,48 @@ def _render_template(template: str, context: dict) -> str:
             "prompt preset template referenced unresolved variables: " + ", ".join(sorted(set(missing)))
         )
     return rendered
+
+
+def _reference_media_count(request: NormalizedRequest) -> int:
+    return (
+        len(_media_with_role(request.images, MediaRole.REFERENCE))
+        + len(_media_with_role(request.videos, MediaRole.REFERENCE))
+        + len(_media_with_role(request.audios, MediaRole.REFERENCE))
+    )
+
+
+def _has_role(media_list, role: MediaRole) -> bool:
+    return any(item.role == role for item in media_list)
+
+
+def _media_with_role(media_list, role: MediaRole):
+    return [item for item in media_list if item.role == role]
+
+
+def _build_reference_asset_guide(
+    *,
+    reference_images,
+    reference_videos,
+    reference_audios,
+) -> str:
+    lines = []
+
+    for index, item in enumerate(reference_images, start=1):
+        lines.append(
+            f"@image{index} -> reference image {index}"
+            + (f" ({item.filename})" if item.filename else "")
+        )
+    for index, item in enumerate(reference_videos, start=1):
+        lines.append(
+            f"@video{index} -> reference video {index}"
+            + (f" ({item.filename})" if item.filename else "")
+        )
+    for index, item in enumerate(reference_audios, start=1):
+        lines.append(
+            f"@audio{index} -> reference audio {index}"
+            + (f" ({item.filename})" if item.filename else "")
+        )
+
+    if not lines:
+        return "No reference assets provided."
+    return "\n".join(lines)

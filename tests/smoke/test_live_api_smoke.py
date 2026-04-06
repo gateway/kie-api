@@ -105,3 +105,47 @@ def test_live_status_smoke(live_submitted_task_id: str) -> None:
     assert result is not None
     assert result.task_id == live_submitted_task_id
     assert result.provider_status is not None
+
+
+def test_live_seedance_first_frame_submit_smoke() -> None:
+    _require_live_smoke()
+    if os.getenv("KIE_SMOKE_ALLOW_SEEDANCE") != "1":
+        pytest.skip("Set KIE_SMOKE_ALLOW_SEEDANCE=1 to run Seedance 2.0 smoke tests.")
+
+    source_url = os.getenv("KIE_SMOKE_SEEDANCE_FIRST_FRAME_URL")
+    if not source_url:
+        pytest.skip("Set KIE_SMOKE_SEEDANCE_FIRST_FRAME_URL for the Seedance 2.0 smoke test.")
+
+    registry = load_registry()
+    settings = KieSettings.from_env()
+    validation = validate_request(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt=os.getenv(
+                "KIE_SMOKE_SEEDANCE_PROMPT",
+                "Animate from this first frame with a gentle cinematic push-in.",
+            ),
+            images=[{"url": source_url, "role": "first_frame"}],
+            options={"duration": 4, "resolution": "480p", "generate_audio": False},
+        ),
+        registry,
+    )
+    if validation.normalized_request is None or validation.state not in {
+        ValidationState.READY,
+        ValidationState.READY_WITH_DEFAULTS,
+        ValidationState.READY_WITH_WARNING,
+    }:
+        pytest.skip(f"Seedance smoke request did not validate cleanly: {validation.state}")
+
+    prepared = prepare_request_for_submission(validation, registry=registry, settings=settings)
+    submission = submit_prepared_request(prepared, registry=registry, settings=settings)
+    status = wait_for_task(
+        submission.task_id,
+        settings=settings,
+        poll_interval_seconds=settings.wait_poll_interval_seconds,
+        timeout_seconds=min(settings.wait_timeout_seconds, 600.0),
+    ).final_status
+
+    assert submission.task_id
+    assert status is not None
+    assert status.task_id == submission.task_id

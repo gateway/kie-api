@@ -56,7 +56,9 @@ class PricingRegistry:
         return self._estimate(model_key, options or {})
 
     def estimate_request(self, request: NormalizedRequest) -> EstimatedCost:
-        return self._estimate(request.model_key, request.options)
+        options = dict(request.options)
+        options.update(_derive_request_pricing_options(request))
+        return self._estimate(request.model_key, options)
 
     def _estimate(self, model_key: str, options: Dict[str, Any]) -> EstimatedCost:
         rule = self._rules.get(model_key)
@@ -150,3 +152,16 @@ def _is_authoritative_pricing(pricing_status: str, source_kind: str) -> bool:
         "live_billing",
     }
     return pricing_status in authoritative_statuses or source_kind in authoritative_source_kinds
+
+
+def _derive_request_pricing_options(request: NormalizedRequest) -> Dict[str, Any]:
+    derived: Dict[str, Any] = {}
+
+    if request.model_key == "seedance-2.0":
+        resolution = _normalize_option_value(request.options.get("resolution") or "720p")
+        has_video_input = bool(request.videos)
+        derived["pricing_variant"] = (
+            f"{resolution}_{'with_video_input' if has_video_input else 'no_video_input'}"
+        )
+
+    return derived

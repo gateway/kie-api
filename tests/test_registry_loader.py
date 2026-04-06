@@ -12,10 +12,12 @@ from kie_api.registry.loader import load_latest_pricing_snapshot, load_model_spe
 def test_registry_loads_verified_model_specs() -> None:
     registry = load_registry()
 
-    assert len(registry.model_specs) == 7
+    assert len(registry.model_specs) == 8
     assert registry.get_model("nano-banana-pro").inputs["image"].required_max == 8
     assert registry.get_model("nano-banana-2").inputs["image"].required_max == 14
     assert registry.get_model("kling-3.0-i2v").inputs["image"].required_max == 2
+    assert registry.get_model("seedance-2.0").provider_model == "bytedance/seedance-2"
+    assert registry.get_model("seedance-2.0").task_modes[-1] == "reference_to_video"
     assert registry.get_model("nano-banana-pro").options["resolution"].allowed == ["1K", "2K", "4K"]
     assert registry.get_model("nano-banana-2").options["output_format"].allowed == ["jpg", "png"]
 

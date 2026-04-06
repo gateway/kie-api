@@ -1,0 +1,18 @@
+key: seedance_2_0_first_frame_v1
+label: Seedance 2.0 First Frame Prompt Enhancer v1
+version: v1
+applies_to_models:
+  - seedance-2.0
+applies_to_task_modes:
+  - reference_to_video
+applies_to_input_patterns:
+  - single_image
+variables:
+  - user_prompt
+  - first_frame_present
+rules:
+  - Preserve the first-frame composition and subject continuity.
+  - Describe motion that grows naturally out of the supplied starting frame.
+  - Do not refer to multimodal reference tokens unless they are actually present.
+notes:
+  - Use this preset when Seedance 2.0 has exactly one first-frame image and no last frame or reference media.

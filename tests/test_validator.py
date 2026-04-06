@@ -332,3 +332,118 @@ def test_validator_records_unknown_provider_passthrough_options_as_warnings() ->
 
     assert result.state == ValidationState.READY_WITH_WARNING
     assert result.warning_details[0].field == "mystery_flag"
+
+
+def test_validator_rejects_seedance_last_frame_without_first_frame() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="end on this pose",
+            images=[{"url": "https://example.com/end.png", "role": "last_frame"}],
+            options={"duration": 4},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(item.code == "seedance_last_frame_requires_first_frame" for item in result.impossible_inputs)
+
+
+def test_validator_rejects_seedance_frames_and_multimodal_references_together() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="mix the first frame with other references",
+            images=[
+                {"url": "https://example.com/start.png", "role": "first_frame"},
+                {"url": "https://example.com/ref1.png", "role": "reference"},
+            ],
+            options={"duration": 4},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(
+        item.code == "seedance_frames_and_references_are_mutually_exclusive"
+        for item in result.impossible_inputs
+    )
+
+
+def test_validator_rejects_seedance_too_many_reference_images() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="use all of these reference stills",
+            images=[
+                {"url": f"https://example.com/ref{index}.png", "role": "reference"}
+                for index in range(10)
+            ],
+            options={"duration": 4},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(item.code == "too_many_reference_images" for item in result.impossible_inputs)
+
+
+def test_validator_rejects_seedance_reference_video_duration_sum_over_limit() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="use these reference clips for motion language",
+            videos=[
+                {"url": "https://example.com/ref1.mp4", "role": "reference", "duration_seconds": 10},
+                {"url": "https://example.com/ref2.mp4", "role": "reference", "duration_seconds": 8},
+            ],
+            options={"duration": 6},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(
+        item.code == "reference_video_duration_limit_exceeded"
+        for item in result.impossible_inputs
+    )
+
+
+def test_validator_accepts_seedance_multimodal_reference_request() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="use these references for the character, scene, and rhythm",
+            images=[
+                {"url": "https://example.com/ref1.png", "role": "reference"},
+                {"url": "https://example.com/ref2.png", "role": "reference"},
+            ],
+            videos=[{"url": "https://example.com/ref1.mp4", "role": "reference", "duration_seconds": 12}],
+            audios=[{"url": "https://example.com/ref1.mp3", "role": "reference"}],
+            options={"duration": 8, "resolution": "720p"},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.READY_WITH_WARNING
+    assert any(item.code == "seedance_reference_audio_duration_unverified" for item in result.warning_details)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
-from ..enums import JobState, TaskMode
+from ..enums import JobState, MediaRole, TaskMode
 from ..exceptions import ProviderResponseError
 from ..models import (
     CreditBalanceResult,
@@ -35,6 +35,16 @@ PROVIDER_STATUS_MAP = {
 }
 
 
+def _coerce_market_option_value(request: NormalizedRequest, provider_field: str, option_value: Any) -> Any:
+    if provider_field == "duration" and request.model_key.startswith("kling-2.6"):
+        if isinstance(option_value, bool):
+            return str(option_value).lower()
+        if isinstance(option_value, (int, float)) and int(option_value) == option_value:
+            return str(int(option_value))
+        return str(option_value)
+    return option_value
+
+
 def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec) -> Dict[str, Any]:
     input_payload: Dict[str, Any] = {}
 
@@ -42,7 +52,24 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
     if resolved_prompt:
         input_payload["prompt"] = resolved_prompt
 
-    if request.task_mode in {TaskMode.TEXT_TO_IMAGE, TaskMode.IMAGE_EDIT}:
+    if request.model_key == "seedance-2.0":
+        first_frame = _first_media_url(request.images, MediaRole.FIRST_FRAME)
+        last_frame = _first_media_url(request.images, MediaRole.LAST_FRAME)
+        reference_images = _media_urls(request.images, MediaRole.REFERENCE)
+        reference_videos = _media_urls(request.videos, MediaRole.REFERENCE)
+        reference_audios = _media_urls(request.audios, MediaRole.REFERENCE)
+
+        if first_frame:
+            input_payload["first_frame_url"] = first_frame
+        if last_frame:
+            input_payload["last_frame_url"] = last_frame
+        if reference_images:
+            input_payload["reference_image_urls"] = reference_images
+        if reference_videos:
+            input_payload["reference_video_urls"] = reference_videos
+        if reference_audios:
+            input_payload["reference_audio_urls"] = reference_audios
+    elif request.task_mode in {TaskMode.TEXT_TO_IMAGE, TaskMode.IMAGE_EDIT}:
         if request.images:
             input_payload["image_input"] = [media.url or media.path for media in request.images]
     elif request.task_mode in {TaskMode.TEXT_TO_VIDEO, TaskMode.IMAGE_TO_VIDEO}:
@@ -55,7 +82,7 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
     for option_name, option_value in request.options.items():
         option_spec = spec.options.get(option_name)
         provider_field = option_spec.provider_field if option_spec and option_spec.provider_field else option_name
-        input_payload[provider_field] = option_value
+        input_payload[provider_field] = _coerce_market_option_value(request, provider_field, option_value)
 
     if request.multi_prompt:
         input_payload["multi_prompt"] = [
@@ -69,6 +96,15 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
     if request.callback_url:
         payload["callBackUrl"] = request.callback_url
     return payload
+
+
+def _media_urls(media_list, role: MediaRole) -> List[str]:
+    return [item.url or item.path for item in media_list if item.role == role]
+
+
+def _first_media_url(media_list, role: MediaRole) -> Optional[str]:
+    urls = _media_urls(media_list, role)
+    return urls[0] if urls else None
 
 
 def normalize_market_submission_response(

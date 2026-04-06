@@ -26,6 +26,7 @@ Kie.ai is a marketplace-style API platform for creative AI models. Instead of on
 Examples of model families currently covered by this repo:
 - Nano Banana 2
 - Nano Banana Pro
+- Seedance 2.0
 - Kling 2.6 text-to-video
 - Kling 2.6 image-to-video
 - Kling 3.0 text-to-video
@@ -72,6 +73,12 @@ These descriptions are based on the current public Kie.ai model pages and live p
 - Good at: audio-visual video generation from text or images when you want synchronized speech, ambient sound, and sound effects in one workflow
 - What it does: creates short videos from text or images with native audio support and structured text-to-video or image-to-video flows
 - Who it is by: Kling AI on Kie.ai
+
+### Seedance 2.0
+
+- Good at: multimodal guided video generation with first-frame, first+last-frame, and mixed image/video/audio references
+- What it does: creates videos from plain prompts or reference-driven payloads, supports first and last frame guidance, multiple reference assets, optional audio generation, and reference-aware prompting
+- Who it is by: ByteDance on Kie.ai
 
 ### Kling 3.0
 
@@ -147,6 +154,19 @@ Use one model’s output as another model’s input:
 - download and store it
 - feed that image into Kling 3.0 image-to-video
 - store both runs and link them through artifacts
+
+### 5. Multimodal reference video
+
+Use `seedance-2.0` when you need richer video guidance:
+- plain text-to-video with no media
+- one first-frame image
+- first+last-frame image guidance
+- multimodal reference video with reference images, videos, and audio
+
+Seedance uses role-aware media references in the runtime request model:
+- `first_frame`
+- `last_frame`
+- `reference`
 
 ## First live proof path
 

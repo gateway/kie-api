@@ -129,6 +129,74 @@ print(validation.normalized_request.debug["frame_guidance_mode"])
 
 Use `examples/dry_run_kling_frame_guidance.py` for a local dry-run check, including a path that can reuse the latest successful Nano Banana 2 artifact as the first frame.
 
+## Seedance 2.0 multimodal reference shape
+
+Seedance 2.0 is the first model in `kie-api` that uses role-aware media references.
+
+Rules:
+- keep media grouped by type:
+  - images in `images`
+  - videos in `videos`
+  - audios in `audios`
+- add a `role` to each media item:
+  - `first_frame`
+  - `last_frame`
+  - `reference`
+- the valid Seedance scenarios are:
+  - text-to-video with no media
+  - one `first_frame` image
+  - one `first_frame` plus one `last_frame` image
+  - multimodal reference media using `reference` roles
+- first/last-frame mode and multimodal-reference mode are mutually exclusive
+
+Example:
+
+```python
+from kie_api import normalize_request, resolve_prompt_context, validate_request
+from kie_api.models import RawUserRequest
+
+request = RawUserRequest(
+    model_key="seedance-2.0",
+    prompt="Reference @image1 and @video1 for the fighter's design and motion language.",
+    images=[
+        {"url": "https://example.com/character.png", "role": "reference"},
+        {"url": "https://example.com/scene.png", "role": "reference"},
+    ],
+    videos=[
+        {"url": "https://example.com/motion.mp4", "role": "reference", "duration_seconds": 12},
+    ],
+    audios=[
+        {"url": "https://example.com/rhythm.mp3", "role": "reference"},
+    ],
+    options={"duration": 8, "resolution": "720p", "generate_audio": True},
+)
+
+normalized = normalize_request(request)
+context = resolve_prompt_context(normalized)
+validation = validate_request(normalized)
+
+print(context.input_pattern)
+print(context.resolved_preset_key)
+print(context.rendered_system_prompt)
+print(validation.state)
+```
+
+Seedance prompt context adds reference-aware render variables:
+- `first_frame_present`
+- `last_frame_present`
+- `reference_image_count`
+- `reference_video_count`
+- `reference_audio_count`
+- `reference_asset_guide`
+
+`reference_asset_guide` renders deterministic prompt tokens like:
+- `@image1`
+- `@image2`
+- `@video1`
+- `@audio1`
+
+Those tokens are for wrapper-side prompt enhancement and future dashboard/editor UX. They do not change the upload-first requirement.
+
 ## Kling 3.0 multi-shot shape
 
 Kling 3.0 now supports the docs-aligned `multi_prompt` request shape in the runtime models.

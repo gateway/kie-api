@@ -50,6 +50,7 @@ from .artifacts import (
 from .clients import CreditsClient
 from .clients import DownloadClient
 from .config import KieSettings
+from .enums import MediaRole
 from .fixtures import REQUEST_FIXTURES, RequestFixture, get_request_fixture
 from .models import (
     AppliedDefault,
@@ -125,6 +126,7 @@ __all__ = [
     "list_runs_by_tag",
     "load_run_artifact",
     "MediaReference",
+    "MediaRole",
     "MissingInput",
     "NormalizedRequest",
     "ObservedResponseFixture",
