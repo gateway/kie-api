@@ -10,24 +10,29 @@ from ..adapters.market import normalize_market_status_response
 from ..config import KieSettings
 from ..exceptions import MissingConfigurationError
 from ..models import StatusResult
+from ._transport import ManagedHttpClientMixin, request_json
 
 
-class StatusClient:
+class StatusClient(ManagedHttpClientMixin):
     """Thin status client that normalizes provider state variants."""
 
     def __init__(self, settings: KieSettings, http_client: Optional[httpx.Client] = None):
         self.settings = settings
-        self.http_client = http_client or httpx.Client(timeout=settings.json_timeout())
+        self._set_http_client(http_client, timeout=settings.json_timeout())
 
     def get_status(self, task_id: str) -> StatusResult:
         self._require_api_key()
-        response = self.http_client.get(
+        response, payload = request_json(
+            self.http_client,
+            "GET",
             f"{self.settings.market_base_url}{self.settings.status_path}",
+            endpoint_label=self.settings.status_path,
+            error_label="KIE status request failed",
             headers=self.settings.auth_headers(),
             params={"taskId": task_id},
         )
         return self.normalize_status_response(
-            response.json(),
+            payload,
             task_id=task_id,
             http_status=response.status_code,
         )

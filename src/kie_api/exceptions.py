@@ -51,6 +51,22 @@ class ProviderResponseError(KieApiError):
         self.raw_response = raw_response or {}
 
 
+class ProviderTransportError(KieApiError):
+    """Raised when a transport-level HTTP failure prevents a provider request."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        endpoint: Optional[str] = None,
+        original_error: Optional[Exception] = None,
+    ):
+        super().__init__(message)
+        self.message = message
+        self.endpoint = endpoint
+        self.original_error = original_error
+
+
 class MissingConfigurationError(KieApiError):
     """Raised when required runtime configuration is absent."""
 

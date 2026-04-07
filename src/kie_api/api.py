@@ -12,6 +12,7 @@ from .clients.submit import SubmitClient
 from .clients.upload import UploadClient
 from .config import KieSettings
 from .enums import JobState, ValidationState
+from .exceptions import ProviderResponseError, ProviderTransportError
 from .artifacts import (
     ArtifactDerivativeSettings,
     RunArtifact,
@@ -57,6 +58,9 @@ from .services import (
 )
 from .services.normalizer import RequestNormalizer
 from .services.validator import RequestValidator
+
+_WAIT_RETRYABLE_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
+_WAIT_TRANSIENT_FAILURE_LIMIT = 3
 
 
 def _resolve_registry(registry: Optional[SpecRegistry] = None) -> SpecRegistry:
@@ -165,9 +169,32 @@ def wait_for_task(
     client = StatusClient(resolved_settings)
     history = []
     start = time.monotonic()
+    consecutive_transient_failures = 0
 
     while True:
-        status = client.get_status(task_id)
+        try:
+            status = client.get_status(task_id)
+        except (ProviderTransportError, ProviderResponseError) as exc:
+            elapsed = time.monotonic() - start
+            if elapsed >= timeout and history:
+                return TaskWaitResult(
+                    task_id=task_id,
+                    terminal=False,
+                    timed_out=True,
+                    final_status=history[-1],
+                    history=history,
+                    elapsed_seconds=round(elapsed, 3),
+                )
+            if (
+                not _is_retryable_wait_error(exc)
+                or consecutive_transient_failures >= _WAIT_TRANSIENT_FAILURE_LIMIT
+            ):
+                raise
+            consecutive_transient_failures += 1
+            _sleep_for_wait_interval(poll_interval, timeout - elapsed)
+            continue
+
+        consecutive_transient_failures = 0
         history.append(status)
         if status.state in {JobState.SUCCEEDED, JobState.FAILED}:
             return TaskWaitResult(
@@ -189,7 +216,7 @@ def wait_for_task(
                 history=history,
                 elapsed_seconds=round(elapsed, 3),
             )
-        time.sleep(poll_interval)
+        _sleep_for_wait_interval(poll_interval, timeout - elapsed)
 
 
 def download_output_file(
@@ -203,6 +230,20 @@ def download_output_file(
         source_url,
         destination_path,
     )
+
+
+def _is_retryable_wait_error(exc: Exception) -> bool:
+    if isinstance(exc, ProviderTransportError):
+        return True
+    if isinstance(exc, ProviderResponseError):
+        return exc.http_status in _WAIT_RETRYABLE_HTTP_STATUSES
+    return False
+
+
+def _sleep_for_wait_interval(poll_interval: float, remaining_timeout: float) -> None:
+    sleep_seconds = max(min(poll_interval, remaining_timeout), 0.0)
+    if sleep_seconds > 0:
+        time.sleep(sleep_seconds)
 
 
 def create_run_artifact(

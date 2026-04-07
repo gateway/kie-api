@@ -15,9 +15,10 @@ from ..exceptions import MissingConfigurationError
 from ..models import NormalizedRequest, SubmissionResult
 from ..registry.loader import SpecRegistry
 from ..services.preparation import RequestPreparationService
+from ._transport import ManagedHttpClientMixin, request_json
 
 
-class SubmitClient:
+class SubmitClient(ManagedHttpClientMixin):
     """Thin submission client that isolates provider field mapping."""
 
     def __init__(
@@ -28,7 +29,7 @@ class SubmitClient:
     ):
         self.settings = settings
         self.registry = registry
-        self.http_client = http_client or httpx.Client(timeout=settings.json_timeout())
+        self._set_http_client(http_client, timeout=settings.json_timeout())
 
     def build_payload(self, request: NormalizedRequest) -> Dict[str, Any]:
         RequestPreparationService(self.registry, self.settings).ensure_submit_ready(request)
@@ -38,13 +39,17 @@ class SubmitClient:
     def submit(self, request: NormalizedRequest) -> SubmissionResult:
         self._require_api_key()
         payload = self.build_payload(request)
-        response = self.http_client.post(
+        response, response_payload = request_json(
+            self.http_client,
+            "POST",
             f"{self.settings.market_base_url}{self.settings.create_task_path}",
+            endpoint_label=self.settings.create_task_path,
+            error_label="KIE task submission failed",
             headers=self.settings.auth_headers(),
             json=payload,
         )
         return normalize_market_submission_response(
-            response.json(),
+            response_payload,
             payload,
             http_status=response.status_code,
         )

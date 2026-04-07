@@ -11,14 +11,15 @@ import httpx
 from ..config import KieSettings
 from ..exceptions import DownloadPolicyError
 from ..models import DownloadResult
+from ._transport import ManagedHttpClientMixin
 
 
-class DownloadClient:
+class DownloadClient(ManagedHttpClientMixin):
     """Thin client for downloading output assets from result URLs."""
 
     def __init__(self, settings: Optional[KieSettings] = None, http_client: Optional[httpx.Client] = None):
         self.settings = settings or KieSettings()
-        self.http_client = http_client or httpx.Client(timeout=self.settings.json_timeout())
+        self._set_http_client(http_client, timeout=self.settings.json_timeout())
 
     def download_to_path(self, source_url: str, destination_path: str) -> DownloadResult:
         self._validate_source_url(source_url)

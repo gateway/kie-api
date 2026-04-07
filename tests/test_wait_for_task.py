@@ -1,8 +1,11 @@
 from collections import deque
 
+import pytest
+
 from kie_api import wait_for_task
 from kie_api.config import KieSettings
 from kie_api.enums import JobState
+from kie_api.exceptions import ProviderTransportError
 from kie_api.models import StatusResult
 
 
@@ -105,3 +108,72 @@ def test_wait_for_task_times_out_without_terminal_state(monkeypatch) -> None:
     assert result.timed_out is True
     assert result.final_status is not None
     assert result.final_status.state == JobState.QUEUED
+
+
+def test_wait_for_task_retries_transient_transport_errors(monkeypatch) -> None:
+    responses = deque(
+        [
+            ProviderTransportError("temporary status outage"),
+            ProviderTransportError("temporary status outage"),
+            StatusResult(
+                task_id="task_4",
+                state=JobState.SUCCEEDED,
+                provider_status="success",
+                output_urls=["https://tempfile.aiquickdraw.com/out.jpeg"],
+            ),
+        ]
+    )
+
+    class StubStatusClient:
+        def __init__(self, settings):
+            self.settings = settings
+
+        def get_status(self, task_id: str) -> StatusResult:
+            next_response = responses.popleft()
+            if isinstance(next_response, Exception):
+                raise next_response
+            return next_response
+
+    monkeypatch.setattr("kie_api.api.StatusClient", StubStatusClient)
+    monkeypatch.setattr("kie_api.api.time.sleep", lambda _: None)
+
+    result = wait_for_task(
+        "task_4",
+        settings=KieSettings(api_key="test-key"),
+        poll_interval_seconds=0.0,
+        timeout_seconds=1.0,
+    )
+
+    assert result.terminal is True
+    assert result.final_status is not None
+    assert result.final_status.state == JobState.SUCCEEDED
+    assert len(result.history) == 1
+
+
+def test_wait_for_task_raises_after_retry_budget_exhausted(monkeypatch) -> None:
+    responses = deque(
+        [
+            ProviderTransportError("temporary status outage"),
+            ProviderTransportError("temporary status outage"),
+            ProviderTransportError("temporary status outage"),
+            ProviderTransportError("temporary status outage"),
+        ]
+    )
+
+    class StubStatusClient:
+        def __init__(self, settings):
+            self.settings = settings
+
+        def get_status(self, task_id: str) -> StatusResult:
+            raise responses.popleft()
+
+    monkeypatch.setattr("kie_api.api.StatusClient", StubStatusClient)
+    monkeypatch.setattr("kie_api.api.time.sleep", lambda _: None)
+
+    with pytest.raises(ProviderTransportError, match="temporary status outage"):
+        wait_for_task(
+            "task_5",
+            settings=KieSettings(api_key="test-key"),
+            poll_interval_seconds=0.0,
+            timeout_seconds=1.0,
+        )

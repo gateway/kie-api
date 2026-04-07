@@ -8,16 +8,17 @@ import httpx
 
 from ..adapters.market import normalize_market_credit_response
 from ..config import KieSettings
-from ..exceptions import MissingConfigurationError, ProviderResponseError
+from ..exceptions import MissingConfigurationError, ProviderResponseError, ProviderTransportError
 from ..models import CreditBalanceResult
+from ._transport import ManagedHttpClientMixin, request_json
 
 
-class CreditsClient:
+class CreditsClient(ManagedHttpClientMixin):
     """Thin client for KIE account credit discovery."""
 
     def __init__(self, settings: KieSettings, http_client: Optional[httpx.Client] = None):
         self.settings = settings
-        self.http_client = http_client or httpx.Client(timeout=settings.json_timeout())
+        self._set_http_client(http_client, timeout=settings.json_timeout())
 
     def get_balance(self) -> CreditBalanceResult:
         self._require_api_key()
@@ -25,16 +26,18 @@ class CreditsClient:
         paths = self._candidate_paths()
         errors: List[str] = []
         for path in paths:
-            response = self.http_client.get(
-                f"{self.settings.market_base_url}{path}",
-                headers=self.settings.auth_headers(),
-            )
             try:
-                payload = response.json()
-            except ValueError as exc:
-                errors.append(f"{path}: invalid JSON response ({exc})")
+                response, payload = request_json(
+                    self.http_client,
+                    "GET",
+                    f"{self.settings.market_base_url}{path}",
+                    endpoint_label=path,
+                    error_label="KIE credit request failed",
+                    headers=self.settings.auth_headers(),
+                )
+            except ProviderTransportError as exc:
+                errors.append(f"{path}: transport failure ({exc})")
                 continue
-
             try:
                 return normalize_market_credit_response(
                     payload,
@@ -44,6 +47,9 @@ class CreditsClient:
             except ProviderResponseError as exc:
                 if response.status_code == 404:
                     errors.append(f"{path}: endpoint not found")
+                    continue
+                if exc.http_status is not None and exc.http_status >= 500:
+                    errors.append(f"{path}: provider error ({exc.message})")
                     continue
                 raise
 
