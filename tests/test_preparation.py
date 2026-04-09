@@ -59,10 +59,14 @@ def test_prepare_request_uploads_local_image_path_via_stream_upload(tmp_path: Pa
         upload_client=upload_client,
     )
 
-    assert upload_client.stream_calls == [(str(image_path), "portrait.png")]
+    assert len(upload_client.stream_calls) == 1
+    stream_path, stream_name = upload_client.stream_calls[0]
+    assert stream_path == str(image_path)
+    assert stream_name.startswith("portrait-")
+    assert stream_name.endswith(".png")
     assert prepared.normalized_request.images[0].url.startswith("https://tempfile.redpandaai.co/")
     assert prepared.normalized_request.images[0].path is None
-    assert prepared.upload_results[0].file_path.endswith("portrait.png")
+    assert prepared.upload_results[0].file_path.endswith(stream_name)
     assert prepared.debug["original_media"]["images"][0]["path"] == str(image_path)
 
 
@@ -82,7 +86,11 @@ def test_prepare_request_uploads_remote_image_url_via_url_upload() -> None:
         upload_client=upload_client,
     )
 
-    assert upload_client.url_calls == [("https://example.com/source/portrait.png", "portrait.png")]
+    assert len(upload_client.url_calls) == 1
+    upload_url, upload_name = upload_client.url_calls[0]
+    assert upload_url == "https://example.com/source/portrait.png"
+    assert upload_name.startswith("portrait-")
+    assert upload_name.endswith(".png")
     assert prepared.normalized_request.images[0].url.startswith("https://tempfile.redpandaai.co/")
     assert prepared.upload_results[0].download_url is not None
 
@@ -197,8 +205,12 @@ def test_prepare_request_preserves_seedance_media_roles_and_payload_shape() -> N
         settings=KieSettings(api_key="test-key"),
     )
 
-    assert payload["input"]["first_frame_url"].endswith("/first.png")
-    assert payload["input"]["reference_video_urls"][0].endswith("/ref.mp4")
+    assert payload["input"]["first_frame_url"].startswith("https://tempfile.redpandaai.co/")
+    assert "/first-" in payload["input"]["first_frame_url"]
+    assert payload["input"]["first_frame_url"].endswith(".png")
+    assert payload["input"]["reference_video_urls"][0].startswith("https://tempfile.redpandaai.co/")
+    assert "/ref-" in payload["input"]["reference_video_urls"][0]
+    assert payload["input"]["reference_video_urls"][0].endswith(".mp4")
 
 
 def test_build_submission_payload_rejects_non_uploaded_media_urls() -> None:
@@ -254,3 +266,43 @@ def test_prepare_request_blocks_nano_banana_2_when_image_limit_is_exceeded() -> 
 
     assert upload_client.stream_calls == []
     assert upload_client.url_calls == []
+
+
+def test_prepare_request_uses_unique_upload_names_for_same_basename(tmp_path: Path) -> None:
+    registry = load_registry()
+    upload_client = DummyUploadClient()
+    first_dir = tmp_path / "first"
+    second_dir = tmp_path / "second"
+    first_dir.mkdir()
+    second_dir.mkdir()
+    first_image = first_dir / "output_01.png"
+    second_image = second_dir / "output_01.png"
+    first_image.write_bytes(b"first-image")
+    second_image.write_bytes(b"second-image")
+
+    first_prepared = prepare_request_for_submission(
+        RawUserRequest(
+            model_key="nano-banana-2",
+            prompt="Use the first generated asset.",
+            images=[str(first_image)],
+        ),
+        registry=registry,
+        settings=KieSettings(api_key="test-key"),
+        upload_client=upload_client,
+    )
+    second_prepared = prepare_request_for_submission(
+        RawUserRequest(
+            model_key="nano-banana-2",
+            prompt="Use the second generated asset.",
+            images=[str(second_image)],
+        ),
+        registry=registry,
+        settings=KieSettings(api_key="test-key"),
+        upload_client=upload_client,
+    )
+
+    assert len(upload_client.stream_calls) == 2
+    _, first_name = upload_client.stream_calls[0]
+    _, second_name = upload_client.stream_calls[1]
+    assert first_name != second_name
+    assert first_prepared.normalized_request.images[0].url != second_prepared.normalized_request.images[0].url

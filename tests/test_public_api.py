@@ -67,9 +67,10 @@ def test_public_api_helpers_support_wrapper_friendly_flow() -> None:
 
     assert result.state == ValidationState.READY
     assert payload["model"] == "nano-banana-pro"
-    assert payload["input"]["image_input"] == [
-        "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/portrait.png"
-    ]
+    assert len(payload["input"]["image_input"]) == 1
+    assert payload["input"]["image_input"][0].startswith("https://tempfile.redpandaai.co/")
+    assert "/portrait-" in payload["input"]["image_input"][0]
+    assert payload["input"]["image_input"][0].endswith(".png")
 
 
 def test_public_api_exports_request_fixtures() -> None:

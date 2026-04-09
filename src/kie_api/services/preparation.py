@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import re
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
+from urllib.parse import urlparse
 
 from ..config import KieSettings
 from ..enums import ValidationState
@@ -22,6 +26,7 @@ from ..clients.upload import UploadClient
 
 
 ReadyRequest = Union[RawUserRequest, NormalizedRequest, ValidationResult]
+UPLOAD_NAME_SANITIZE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 
 
 class RequestPreparationService:
@@ -124,15 +129,16 @@ class RequestPreparationService:
                 reused_media.append(media.model_copy(deep=True))
                 continue
 
+            upload_name = _build_unique_upload_name(media)
             if media.path:
                 upload_result = self.upload_client.upload_file_stream(
                     media.path,
-                    file_name=media.filename,
+                    file_name=upload_name,
                 )
             elif media.url:
                 upload_result = self.upload_client.upload_from_url(
                     media.url,
-                    file_name=media.filename,
+                    file_name=upload_name,
                 )
             else:  # pragma: no cover - guarded by MediaReference validation
                 raise RequestPreparationError("media reference did not contain a path or URL")
@@ -178,3 +184,33 @@ def _require_ready_validation(validation: ValidationResult) -> NormalizedRequest
             f"received {validation.state}."
         )
     return validation.normalized_request
+
+
+def _build_unique_upload_name(media: MediaReference) -> str:
+    original_name = media.filename
+    if not original_name:
+        if media.path:
+            original_name = Path(media.path).name
+        elif media.url:
+            original_name = Path(urlparse(media.url).path).name
+    original_name = original_name or f"{media.media_type.value}-upload"
+
+    parsed_name = Path(original_name)
+    suffix = parsed_name.suffix.lower()
+    stem = parsed_name.stem or f"{media.media_type.value}-upload"
+    safe_stem = UPLOAD_NAME_SANITIZE_RE.sub("-", stem).strip("-._") or f"{media.media_type.value}-upload"
+
+    if media.path:
+        resolved = Path(media.path)
+        try:
+            stat = resolved.stat()
+            uniqueness_source = f"path:{resolved.resolve()}:{stat.st_size}:{stat.st_mtime_ns}"
+        except OSError:
+            uniqueness_source = f"path:{resolved}"
+    elif media.url:
+        uniqueness_source = f"url:{media.url}"
+    else:  # pragma: no cover - guarded by MediaReference validation
+        uniqueness_source = f"{media.media_type.value}:{original_name}"
+
+    digest = hashlib.sha1(uniqueness_source.encode("utf-8")).hexdigest()[:12]
+    return f"{safe_stem}-{digest}{suffix}"
