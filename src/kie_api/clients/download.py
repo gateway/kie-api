@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -25,7 +26,7 @@ class DownloadClient(ManagedHttpClientMixin):
         self._validate_source_url(source_url)
         destination = self._resolve_destination(destination_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        temp_destination = destination.with_name(f".{destination.name}.part")
+        temp_destination = destination.with_name(f".{destination.name}.{uuid.uuid4().hex}.part")
 
         try:
             with self.http_client.stream("GET", source_url) as response:

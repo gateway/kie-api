@@ -94,7 +94,7 @@ def test_download_client_deletes_partial_file_when_stream_exceeds_limit(tmp_path
         )
 
     assert not destination.exists()
-    assert not (destination.parent / ".out.jpeg.part").exists()
+    assert not list(destination.parent.glob(".out.jpeg*.part"))
 
 
 def test_download_client_enforces_optional_output_root(tmp_path: Path) -> None:
