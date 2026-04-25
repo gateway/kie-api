@@ -62,6 +62,12 @@ For advanced provider-specific shapes such as Kling 3.0 multi-shot mode:
 - validate cross-field rules explicitly
 - do not hide docs-only shape differences inside generic passthrough options
 
+For image-edit models that use a nonstandard image URL field:
+- set `transport.image_input_field` in the model spec
+- keep the request shape as `image_edit` when the model still takes prompt plus image references
+- add a payload test proving the provider field name, such as `input_urls` instead of `image_input`
+- add validator tests for documented cross-field constraints before live spend
+
 For multimodal video models such as Seedance 2.0:
 - treat first-frame, first+last-frame, and multimodal-reference as mutually-exclusive validated scenarios if the provider documents them that way
 - do not force them into a Kling-style multi-shot abstraction unless the provider request shape actually exposes shot arrays

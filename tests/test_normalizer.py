@@ -35,6 +35,23 @@ def test_normalizer_resolves_nano_banana_with_images_to_image_edit() -> None:
     assert len(normalized.images) == 1
 
 
+def test_normalizer_resolves_gpt_image_2_i2i_defaults() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="gpt-image-2-image-to-image",
+            prompt="turn this sketch into a polished poster",
+            images=["https://example.com/source.png"],
+        )
+    )
+
+    assert normalized.model_key == "gpt-image-2-image-to-image"
+    assert normalized.task_mode == TaskMode.IMAGE_EDIT
+    assert normalized.options["aspect_ratio"] == "auto"
+    assert [item.field for item in normalized.defaulted_fields] == ["aspect_ratio"]
+
+
 def test_normalizer_resolves_generic_kling_3_family_to_i2v_when_image_present() -> None:
     normalizer = RequestNormalizer(load_registry())
 

@@ -12,14 +12,24 @@ from kie_api.registry.loader import load_latest_pricing_snapshot, load_model_spe
 def test_registry_loads_verified_model_specs() -> None:
     registry = load_registry()
 
-    assert len(registry.model_specs) == 8
+    assert len(registry.model_specs) == 9
     assert registry.get_model("nano-banana-pro").inputs["image"].required_max == 8
     assert registry.get_model("nano-banana-2").inputs["image"].required_max == 14
+    assert registry.get_model("gpt-image-2-image-to-image").inputs["image"].required_max == 16
     assert registry.get_model("kling-3.0-i2v").inputs["image"].required_max == 2
     assert registry.get_model("seedance-2.0").provider_model == "bytedance/seedance-2"
     assert registry.get_model("seedance-2.0").task_modes[-1] == "reference_to_video"
     assert registry.get_model("nano-banana-pro").options["resolution"].allowed == ["1K", "2K", "4K"]
     assert registry.get_model("nano-banana-2").options["output_format"].allowed == ["jpg", "png"]
+    assert registry.get_model("gpt-image-2-image-to-image").transport.image_input_field == "input_urls"
+    assert registry.get_model("gpt-image-2-image-to-image").options["aspect_ratio"].allowed == [
+        "auto",
+        "1:1",
+        "9:16",
+        "16:9",
+        "4:3",
+        "3:4",
+    ]
 
 
 def test_registry_exposes_split_kling_models() -> None:
@@ -46,6 +56,13 @@ def test_registry_loads_new_prompt_preset_metadata() -> None:
     assert [str(item) for item in preset.applies_to_input_patterns] == ["first_last_frames"]
     assert "{{user_prompt}}" in preset.template
 
+    gpt_preset = registry.get_prompt_profile("gpt_image_2_image_to_image_v1")
+
+    assert gpt_preset.applies_to_models == ["gpt-image-2-image-to-image"]
+    assert [str(item) for item in gpt_preset.applies_to_task_modes] == ["image_edit"]
+    assert [str(item) for item in gpt_preset.applies_to_input_patterns] == ["image_edit"]
+    assert "{{user_prompt}}" in gpt_preset.template
+
 
 def test_registry_exposes_field_level_provenance() -> None:
     registry = load_registry()
@@ -63,6 +80,7 @@ def test_registry_can_load_bundled_package_specs() -> None:
     registry = load_registry(bundled_root, bundled_profiles_root)
 
     assert registry.get_model("nano-banana-2").provider_model == "nano-banana-2"
+    assert registry.get_model("gpt-image-2-image-to-image").provider_model == "gpt-image-2-image-to-image"
     assert registry.get_model("kling-3.0-motion").options["background_source"].type == "string"
 
 

@@ -71,7 +71,8 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
             input_payload["reference_audio_urls"] = reference_audios
     elif request.task_mode in {TaskMode.TEXT_TO_IMAGE, TaskMode.IMAGE_EDIT}:
         if request.images:
-            input_payload["image_input"] = [media.url or media.path for media in request.images]
+            image_input_field = spec.transport.image_input_field or "image_input"
+            input_payload[image_input_field] = [media.url or media.path for media in request.images]
     elif request.task_mode in {TaskMode.TEXT_TO_VIDEO, TaskMode.IMAGE_TO_VIDEO}:
         if request.images:
             input_payload["image_urls"] = [media.url or media.path for media in request.images]

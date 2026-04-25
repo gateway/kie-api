@@ -40,6 +40,61 @@ def test_validator_returns_needs_input_for_kling_motion_without_image() -> None:
     assert result.missing_inputs[0].field == "image"
 
 
+def test_validator_requires_gpt_image_2_i2i_input_image() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="gpt-image-2-image-to-image",
+            prompt="make a polished product poster",
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.NEEDS_INPUT
+    assert result.missing_inputs[0].field == "image"
+
+
+def test_validator_rejects_gpt_image_2_i2i_invalid_resolution_combinations() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    auto_high_resolution = normalizer.normalize(
+        RawUserRequest(
+            model_key="gpt-image-2-image-to-image",
+            prompt="make a polished product poster",
+            images=["https://example.com/product.png"],
+            options={"resolution": "2K"},
+        )
+    )
+    auto_result = validator.validate(auto_high_resolution)
+
+    assert auto_result.state == ValidationState.INVALID
+    assert any(
+        item.code == "gpt_image_2_auto_aspect_high_resolution_not_allowed"
+        for item in auto_result.impossible_inputs
+    )
+
+    square_4k = normalizer.normalize(
+        RawUserRequest(
+            model_key="gpt-image-2-image-to-image",
+            prompt="make a polished product poster",
+            images=["https://example.com/product.png"],
+            options={"aspect_ratio": "1:1", "resolution": "4K"},
+        )
+    )
+    square_result = validator.validate(square_4k)
+
+    assert square_result.state == ValidationState.INVALID
+    assert any(
+        item.code == "gpt_image_2_square_4k_not_allowed"
+        for item in square_result.impossible_inputs
+    )
+
+
 def test_validator_returns_ready_with_warning_for_kling_i2v_aspect_ratio_inference() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

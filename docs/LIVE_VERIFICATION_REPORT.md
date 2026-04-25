@@ -21,6 +21,12 @@ This file records what was actually observed live versus what is still pending.
   - `GET https://api.kie.ai/api/v1/jobs/recordInfo`
   - image jobs can remain `waiting` for several minutes before completing
   - successful output URLs were returned inside `data.resultJson` as a JSON string
+- Authenticated GPT Image 2 Image to Image submit/status/download was observed with a real API key:
+  - `POST https://api.kie.ai/api/v1/jobs/createTask`
+  - provider model `gpt-image-2-image-to-image`
+  - documented image field `input_urls` was accepted after upload-first preparation
+  - smoke task `8ccd5d163ca958b4d281cd0850167fa5` returned provider status `success`
+  - output download and local artifact creation succeeded under `outputs/live_smoke_gpt_image_2_i2i/`
 - The pricing site API returned structured rows for:
   - Nano Banana 2 image pricing tiers
   - Nano Banana Pro image pricing tiers

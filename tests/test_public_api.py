@@ -132,6 +132,25 @@ def test_public_api_supports_prompt_resolution_and_final_prompt_application() ->
     assert updated.enhanced_prompt == "cleaned final prompt for submission"
 
 
+def test_public_api_resolves_gpt_image_2_i2i_prompt_profile() -> None:
+    normalized = normalize_request(
+        RawUserRequest.model_validate(
+            {
+                "model_key": "gpt-image-2-image-to-image",
+                "prompt": "turn this source image into a campaign poster",
+                "images": [
+                    "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/source.png"
+                ],
+            }
+        )
+    )
+    context = resolve_prompt_context(normalized)
+
+    assert context.resolved_preset_key == "gpt_image_2_image_to_image_v1"
+    assert str(context.input_pattern) == "image_edit"
+    assert "final image-to-image prompt for GPT Image 2" in (context.rendered_system_prompt or "")
+
+
 def test_public_api_accepts_prompt_preset_key_alias() -> None:
     normalized = normalize_request(
         RawUserRequest.model_validate(

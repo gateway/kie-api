@@ -244,3 +244,18 @@ This log is append-only. Each entry records one completed slice with:
   - `resolve_prompt_context(...)` now returns request-shape-aware preset metadata, input pattern, resolution source, raw template, and rendered system prompt.
   - The wrapper contract remains thin: the wrapper chooses or overrides presets, calls its own LLM, and writes the enhanced prompt back through `apply_enhanced_prompt(...)`.
   - Control API CRUD is still intentionally out of scope; this slice only documents the future precedence model for explicit request keys, DB overrides, and built-in defaults.
+
+## 2026-04-25 — Slice 27: GPT Image 2 Image to Image onboarding
+- Summary: Added the KIE `gpt-image-2-image-to-image` model as a standalone image-edit spec, introduced a transport-level `image_input_field` for provider-specific image URL field names, added a built-in GPT Image 2 image-to-image prompt preset, validated documented resolution/aspect-ratio constraints, synced the packaged model-spec mirror, and completed one live submit/status/download/artifact smoke.
+- Files: `src/kie_api/registry/models.py`, `src/kie_api/adapters/market.py`, `src/kie_api/services/validator.py`, `specs/models/gpt_image_2_image_to_image.yaml`, `src/kie_api/resources/specs/models/gpt_image_2_image_to_image.yaml`, `src/kie_api/resources/prompt_profiles/gpt_image_2_image_to_image_v1/*`, `tests/test_registry_loader.py`, `tests/test_normalizer.py`, `tests/test_validator.py`, `tests/test_submit_client.py`, `tests/test_public_api.py`, `docs/MODEL_ONBOARDING.md`, `docs/PROMPT_PROFILES.md`, `docs/LIVE_VERIFICATION_REPORT.md`, `docs/planning/TASKS.md`.
+- Tests run: `.venv/bin/python -m pytest` — passed (157 tests), skipped (5 smoke tests without env). Live smoke task `8ccd5d163ca958b4d281cd0850167fa5` also succeeded.
+- Live sources checked: `https://docs.kie.ai/market/gpt/gpt-image-2-image-to-image` and `https://docs.kie.ai/market/gpt/gpt-image-2-image-to-image.md`.
+- Notes:
+  - The docs OpenAPI contract requires `input.prompt` and `input.input_urls`, with up to 16 image URLs.
+  - The documented provider payload uses `input_urls`, not the Nano Banana `image_input` field.
+  - The docs allow `aspect_ratio` values `auto`, `1:1`, `9:16`, `16:9`, `4:3`, and `3:4`, and `resolution` values `1K`, `2K`, and `4K`.
+  - The local validator now rejects `1:1 + 4K` and `auto + 2K/4K` before submission.
+  - Live smoke used one uploaded input image, `aspect_ratio=4:3`, and `resolution=1K`.
+  - Provider task `8ccd5d163ca958b4d281cd0850167fa5` reached `success` in about 42 seconds and returned one output URL.
+  - Output download and local artifact creation succeeded under `outputs/live_smoke_gpt_image_2_i2i/artifacts/2026-04-25/20260425_140708_gpt_image_2_image_to_image_live_smoke`.
+  - Pricing remains unverified in the local pricing snapshot because KIE's public pricing API did not expose a GPT Image 2 row during this check.

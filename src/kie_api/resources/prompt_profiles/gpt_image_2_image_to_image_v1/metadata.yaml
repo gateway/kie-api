@@ -1,0 +1,20 @@
+key: gpt_image_2_image_to_image_v1
+label: GPT Image 2 Image to Image Preset v1
+version: v1
+description: Built-in preset for GPT Image 2 image-to-image requests.
+applies_to_models:
+  - gpt-image-2-image-to-image
+applies_to_task_modes:
+  - image_edit
+applies_to_input_patterns:
+  - image_edit
+variables:
+  - user_prompt
+  - image_count
+rules:
+  - preserve reference image details that the user does not ask to change
+  - use explicit edit instructions
+  - support text-heavy and layout-sensitive image edits
+source: builtin
+notes:
+  - Built-in request-shape-aware preset for wrapper-side enhancement.

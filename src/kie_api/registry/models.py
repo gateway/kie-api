@@ -81,6 +81,7 @@ class TransportSpec(BaseModel):
     create_path: str
     status_path: str
     callback_supported: bool = False
+    image_input_field: Optional[str] = None
 
 
 class VerificationSpec(BaseModel):

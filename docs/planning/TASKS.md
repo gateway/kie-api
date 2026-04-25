@@ -163,3 +163,10 @@
 - [COMPLETED] Document preset resolution, Control API override precedence, and future model onboarding expectations — 2026-03-26
 - [COMPLETED] Add dry-run tests for preset selection, placeholder rendering, alias handling, and wrapper flow — 2026-03-26
 - [COMPLETED] Run the full test suite for the prompt preset slice — 2026-03-26
+
+## 27. GPT Image 2 Image to Image onboarding
+- [COMPLETED] Add spec and packaged mirror for `gpt-image-2-image-to-image` — 2026-04-25
+- [COMPLETED] Add transport-level image input field mapping for `input_urls` — 2026-04-25
+- [COMPLETED] Add built-in GPT Image 2 image-to-image prompt preset — 2026-04-25
+- [COMPLETED] Add dry-run registry, normalizer, validator, payload, and public API tests — 2026-04-25
+- [COMPLETED] Run a live submit/status/download/artifact smoke for task `8ccd5d163ca958b4d281cd0850167fa5` — 2026-04-25

@@ -51,6 +51,34 @@ def test_submit_client_builds_nano_banana_2_prompt_only_payload() -> None:
     assert payload["input"]["output_format"] == "jpg"
 
 
+def test_submit_client_builds_gpt_image_2_i2i_payload_with_input_urls() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="gpt-image-2-image-to-image",
+            prompt="turn this product photo into a premium ecommerce poster",
+            images=[
+                "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/product.png"
+            ],
+            options={"aspect_ratio": "4:3", "resolution": "2K"},
+            callback_url="https://callback.example.com/kie",
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert payload["model"] == "gpt-image-2-image-to-image"
+    assert payload["callBackUrl"] == "https://callback.example.com/kie"
+    assert payload["input"]["input_urls"] == [
+        "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/product.png"
+    ]
+    assert "image_input" not in payload["input"]
+    assert payload["input"]["aspect_ratio"] == "4:3"
+    assert payload["input"]["resolution"] == "2K"
+
+
 def test_submit_client_prefers_final_prompt_used_over_raw_prompt() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)
