@@ -90,6 +90,11 @@ def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     assert snapshot.version == "2026-03-26-site-pricing-page"
     assert snapshot.released_on == "2026-03-26"
     assert any(rule.model_key == "kling-3.0-t2v" for rule in snapshot.rules)
+    assert any(rule.model_key == "gpt-image-2-image-to-image" for rule in snapshot.rules)
+    gpt_rule = next(rule for rule in snapshot.rules if rule.model_key == "gpt-image-2-image-to-image")
+    assert gpt_rule.pricing_status == "local_policy"
+    assert gpt_rule.base_credits == 18
+    assert any("Merged fallback pricing rules" in note for note in snapshot.notes)
 
 
 def test_latest_pricing_snapshot_prefers_metadata_date_over_filename_order(tmp_path: Path) -> None:

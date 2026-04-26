@@ -20,6 +20,22 @@ def test_pricing_registry_returns_snapshot_backed_estimate() -> None:
     assert estimate.pricing_status == "observed_site_pricing"
 
 
+def test_pricing_registry_uses_local_policy_fallback_for_models_missing_public_snapshot_rules() -> None:
+    registry = PricingRegistry()
+
+    estimate = registry.estimate(
+        "gpt-image-2-image-to-image",
+        options={"resolution": "4K"},
+    )
+
+    assert estimate.has_numeric_estimate is True
+    assert estimate.is_known is False
+    assert estimate.is_authoritative is False
+    assert estimate.pricing_version == "2026-03-26-site-pricing-page"
+    assert estimate.pricing_status == "local_policy"
+    assert estimate.estimated_credits == pytest.approx(40.5)
+
+
 def test_pricing_registry_applies_option_multipliers() -> None:
     registry = PricingRegistry()
     request = NormalizedRequest(

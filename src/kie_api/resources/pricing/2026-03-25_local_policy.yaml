@@ -93,3 +93,15 @@ rules:
         pro: 1.7
     notes:
       - Local policy estimate for Kling 3.0 motion control.
+  - model_key: gpt-image-2-image-to-image
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 18
+    multipliers:
+      resolution:
+        '1k': 1.0
+        '2k': 1.5
+        '4k': 2.25
+    notes:
+      - Local policy estimate for GPT Image 2 image-to-image while KIE public site pricing is unavailable.
+      - This baseline assumes request-level pricing and does not yet add image-count-sensitive billing.

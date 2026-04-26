@@ -259,7 +259,45 @@ def load_latest_pricing_snapshot(pricing_root: Optional[SpecsRoot] = None) -> Pr
     if not candidates:
         raise SpecValidationError(f"no pricing snapshot files found in: {resolved_root}")
     candidates.sort(key=lambda item: _pricing_snapshot_sort_key(item[1], item[0]))
-    return candidates[-1][1]
+    latest_snapshot = candidates[-1][1]
+
+    policy_candidates = [item for item in candidates if item[1].source_kind == "local_policy"]
+    if not policy_candidates:
+        return latest_snapshot
+
+    latest_policy_snapshot = policy_candidates[-1][1]
+    if latest_snapshot.source_kind == "local_policy":
+        return latest_snapshot
+
+    merged_rules = {rule.model_key: rule for rule in latest_snapshot.rules}
+    added_policy_keys = []
+    for rule in latest_policy_snapshot.rules:
+        if rule.model_key in merged_rules:
+            continue
+        merged_rules[rule.model_key] = rule
+        added_policy_keys.append(rule.model_key)
+
+    if not added_policy_keys:
+        return latest_snapshot
+
+    merged_notes = list(latest_snapshot.notes)
+    merged_notes.append(
+        "Merged fallback pricing rules from the latest local policy snapshot for models missing public site pricing."
+    )
+    merged_notes.append(
+        "Local policy fallback models: " + ", ".join(sorted(added_policy_keys))
+    )
+
+    return PricingSnapshot(
+        version=latest_snapshot.version,
+        label=latest_snapshot.label,
+        released_on=latest_snapshot.released_on,
+        currency=latest_snapshot.currency,
+        source_kind=latest_snapshot.source_kind,
+        source_url=latest_snapshot.source_url,
+        notes=merged_notes,
+        rules=list(merged_rules.values()),
+    )
 
 
 def _iter_prompt_profile_entries(path: SpecsRoot) -> Iterable[SpecsRoot]:
