@@ -164,6 +164,9 @@ class PricingRule(BaseModel):
     multipliers: Dict[str, Dict[str, float]] = Field(default_factory=dict)
     adders_credits: Dict[str, Dict[str, float]] = Field(default_factory=dict)
     adders_cost_usd: Dict[str, Dict[str, float]] = Field(default_factory=dict)
+    observed_at: Optional[str] = None
+    source_row_labels: List[str] = Field(default_factory=list)
+    source_anchor_urls: List[str] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)
 
     @property
@@ -186,3 +189,6 @@ class PricingSnapshot(BaseModel):
     source_url: Optional[str] = None
     notes: List[str] = Field(default_factory=list)
     rules: List[PricingRule] = Field(default_factory=list)
+    priced_model_keys: List[str] = Field(default_factory=list)
+    missing_model_keys: List[str] = Field(default_factory=list)
+    unmapped_source_rows: List[Dict[str, Any]] = Field(default_factory=list)

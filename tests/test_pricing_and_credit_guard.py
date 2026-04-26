@@ -16,24 +16,25 @@ def test_pricing_registry_returns_snapshot_backed_estimate() -> None:
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-03-26-site-pricing-page"
+    assert estimate.pricing_version == "2026-04-26-site-pricing-page"
     assert estimate.pricing_status == "observed_site_pricing"
 
 
-def test_pricing_registry_uses_local_policy_fallback_for_models_missing_public_snapshot_rules() -> None:
+def test_pricing_registry_uses_observed_gpt_image_2_pricing_over_local_policy_fallback() -> None:
     registry = PricingRegistry()
 
     estimate = registry.estimate(
-        "gpt-image-2-image-to-image",
+        "gpt-image-2-text-to-image",
         options={"resolution": "4K"},
     )
 
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-03-26-site-pricing-page"
-    assert estimate.pricing_status == "local_policy"
-    assert estimate.estimated_credits == pytest.approx(40.5)
+    assert estimate.pricing_version == "2026-04-26-site-pricing-page"
+    assert estimate.pricing_status == "observed_site_pricing"
+    assert estimate.estimated_credits == pytest.approx(16.0)
+    assert estimate.estimated_cost_usd == pytest.approx(0.08)
 
 
 def test_pricing_registry_applies_option_multipliers() -> None:
@@ -51,11 +52,9 @@ def test_pricing_registry_applies_option_multipliers() -> None:
 
     assert estimate.has_numeric_estimate is True
     assert estimate.is_authoritative is False
-    assert estimate.applied_multipliers == {
-        "duration": 10.0,
-        "mode": 1.2857142857,
-        "sound": 1.4285714286,
-    }
+    assert estimate.applied_multipliers["duration"] == pytest.approx(10.0)
+    assert estimate.applied_multipliers["mode"] == pytest.approx(1.2857142857)
+    assert estimate.applied_multipliers["sound"] == pytest.approx(1.4285714286)
     assert estimate.estimated_credits is not None
     assert estimate.estimated_credits > 200
 

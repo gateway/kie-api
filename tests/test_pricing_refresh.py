@@ -36,7 +36,7 @@ def test_extract_next_data_labels_reads_next_data_pricing_text() -> None:
 
 def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     count = PricingPageCount.model_validate(
-        {"all": 17, "image": 5, "video": 12, "music": 0, "chat": 0}
+        {"all": 24, "image": 12, "video": 12, "music": 0, "chat": 0}
     )
     row_payloads = [
         {
@@ -95,6 +95,83 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "anchor": "https://kie.ai/nano-banana-pro",
         },
         {
+            "modelDescription": "gpt image 2, image-to-image, 4k",
+            "interfaceType": "image",
+            "provider": "OpenAI",
+            "creditPrice": "16",
+            "creditUnit": "per image",
+            "usdPrice": "0.08",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/gpt-image-2?model=gpt-image-2-image-to-image",
+        },
+        {
+            "modelDescription": "gpt image 2, image-to-image, 2k",
+            "interfaceType": "image",
+            "provider": "OpenAI",
+            "creditPrice": "10",
+            "creditUnit": "per image",
+            "usdPrice": "0.05",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/gpt-image-2?model=gpt-image-2-image-to-image",
+        },
+        {
+            "modelDescription": "gpt image 2, image-to-image, 1k",
+            "interfaceType": "image",
+            "provider": "OpenAI",
+            "creditPrice": "6",
+            "creditUnit": "per image",
+            "usdPrice": "0.03",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/gpt-image-2?model=gpt-image-2-image-to-image",
+        },
+        {
+            "modelDescription": "gpt image 2, text-to-image, 4k",
+            "interfaceType": "image",
+            "provider": "OpenAI",
+            "creditPrice": "16",
+            "creditUnit": "per image",
+            "usdPrice": "0.08",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/gpt-image-2?model=gpt-image-2-text-to-image",
+        },
+        {
+            "modelDescription": "gpt image 2, text-to-image, 2k",
+            "interfaceType": "image",
+            "provider": "OpenAI",
+            "creditPrice": "10",
+            "creditUnit": "per image",
+            "usdPrice": "0.05",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/gpt-image-2?model=gpt-image-2-text-to-image",
+        },
+        {
+            "modelDescription": "gpt image 2, text-to-image, 1k",
+            "interfaceType": "image",
+            "provider": "OpenAI",
+            "creditPrice": "6",
+            "creditUnit": "per image",
+            "usdPrice": "0.03",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/gpt-image-2?model=gpt-image-2-text-to-image",
+        },
+        {
+            "modelDescription": "gpt image 2, text-to-image, experimental tier",
+            "interfaceType": "image",
+            "provider": "OpenAI",
+            "creditPrice": "99",
+            "creditUnit": "per image",
+            "usdPrice": "0.495",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/gpt-image-2?model=gpt-image-2-text-to-image",
+        },
+        {
             "modelDescription": "kling 2.6, text-to-video, without audio-5.0s",
             "interfaceType": "video",
             "provider": "Kling",
@@ -126,6 +203,39 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "falPrice": "0.6",
             "discountRate": 8.33,
             "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Ftext-to-video",
+        },
+        {
+            "modelDescription": "kling 2.6, image-to-video, without audio-5.0s",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "55.0",
+            "creditUnit": "per video",
+            "usdPrice": "0.275",
+            "falPrice": "0.3",
+            "discountRate": 8.33,
+            "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Fimage-to-video",
+        },
+        {
+            "modelDescription": "kling 2.6, image-to-video, with audio-5.0s",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "110.0",
+            "creditUnit": "per video",
+            "usdPrice": "0.55",
+            "falPrice": "0.6",
+            "discountRate": 8.33,
+            "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Fimage-to-video",
+        },
+        {
+            "modelDescription": "kling 2.6, image-to-video, without audio-10.0s",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "110.0",
+            "creditUnit": "per video",
+            "usdPrice": "0.55",
+            "falPrice": "0.6",
+            "discountRate": 8.33,
+            "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Fimage-to-video",
         },
         {
             "modelDescription": "kling 3.0, video, with audio-1080P",
@@ -269,8 +379,22 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert snapshot.source_kind == "site_pricing_page_api"
     assert rules["nano-banana-2"].base_credits == 8.0
     assert rules["nano-banana-2"].multipliers["resolution"]["4k"] == 2.25
+    assert rules["gpt-image-2-text-to-image"].base_credits == 6.0
+    assert rules["gpt-image-2-text-to-image"].base_cost_usd == 0.03
+    assert rules["gpt-image-2-text-to-image"].multipliers["resolution"]["2k"] == 10.0 / 6.0
+    assert rules["gpt-image-2-text-to-image"].multipliers["resolution"]["4k"] == 16.0 / 6.0
+    assert rules["gpt-image-2-image-to-image"].base_credits == 6.0
+    assert rules["gpt-image-2-image-to-image"].source_anchor_urls == [
+        "https://kie.ai/gpt-image-2?model=gpt-image-2-image-to-image"
+    ]
     assert rules["kling-2.6-t2v"].billing_unit == "video"
     assert rules["kling-3.0-t2v"].billing_unit == "second"
     assert rules["kling-3.0-motion"].multipliers["mode"]["1080p"] == 1.35
     assert rules["seedance-2.0"].billing_unit == "second"
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["720p_with_video_input"] == 25.0 / 19.0
+    assert snapshot.missing_model_keys == []
+    assert "gpt-image-2-text-to-image" in snapshot.priced_model_keys
+    assert any(
+        row["model_description"] == "gpt image 2, text-to-image, experimental tier"
+        for row in snapshot.unmapped_source_rows
+    )

@@ -312,7 +312,10 @@ class RequestValidator:
                         )
                     )
 
-        if request.model_key == "gpt-image-2-image-to-image":
+        if request.model_key in {
+            "gpt-image-2-image-to-image",
+            "gpt-image-2-text-to-image",
+        }:
             aspect_ratio = normalized.options.get("aspect_ratio")
             resolution = normalized.options.get("resolution")
             if resolution == "4K" and aspect_ratio == "1:1":
@@ -321,8 +324,8 @@ class RequestValidator:
                         field="resolution",
                         code="gpt_image_2_square_4k_not_allowed",
                         message=(
-                            "GPT Image 2 Image to Image does not allow 4K resolution "
-                            "with a 1:1 aspect ratio."
+                            "GPT Image 2 does not allow 4K resolution with a 1:1 "
+                            "aspect ratio."
                         ),
                         received={"aspect_ratio": aspect_ratio, "resolution": resolution},
                     )
@@ -333,8 +336,8 @@ class RequestValidator:
                         field="resolution",
                         code="gpt_image_2_auto_aspect_high_resolution_not_allowed",
                         message=(
-                            "GPT Image 2 Image to Image only supports 1K output when "
-                            "aspect_ratio is auto or omitted."
+                            "GPT Image 2 only supports 1K output when aspect_ratio "
+                            "is auto or omitted."
                         ),
                         received={"aspect_ratio": aspect_ratio, "resolution": resolution},
                     )

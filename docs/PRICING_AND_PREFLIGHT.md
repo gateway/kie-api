@@ -54,7 +54,17 @@ Each rule can define:
 - `multipliers`
 - `adders_credits`
 - `adders_cost_usd`
+- `observed_at`
+- `source_row_labels`
+- `source_anchor_urls`
 - `notes`
+
+Each snapshot can also report coverage metadata:
+- `priced_model_keys`
+- `missing_model_keys`
+- `unmapped_source_rows`
+
+Wrappers should pass this metadata through when they expose pricing status to an operator. `missing_model_keys` means a supported model exists without a numeric pricing rule. `unmapped_source_rows` means KIE published rows that matched the known registry/provider surface but were not safe to attach to a model rule.
 
 ## How to change pricing without Python code
 
@@ -114,11 +124,17 @@ That code is:
 - not authoritative
 - not a replacement for a verified billing API contract
 
-Current example:
+Current examples:
 - Seedance 2.0 pricing is now derived from the public site pricing API rows for:
   - `480p` vs `720p`
   - `with video input` vs `no video input`
 - the runtime turns that into a dry-run `pricing_variant` internally based on request shape, so wrappers do not need to send pricing-only fields
+- GPT Image 2 text-to-image and image-to-image pricing is now mapped generically from KIE rows that share the same model anchor and publish `1k`, `2k`, and `4k` resolution labels:
+  - `1K`: 6 credits / $0.03
+  - `2K`: 10 credits / $0.05
+  - `4K`: 16 credits / $0.08
+
+The refresh builder first handles model-specific rows where pricing requires custom option semantics, then falls back to registry-driven image-resolution mapping by `model_key`, `provider_model`, `?model=...` anchor values, and normalized row descriptions.
 
 Manual candidate refresh:
 

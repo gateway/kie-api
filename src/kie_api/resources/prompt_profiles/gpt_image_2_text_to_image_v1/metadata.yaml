@@ -1,0 +1,19 @@
+key: gpt_image_2_text_to_image_v1
+label: GPT Image 2 Text to Image Preset v1
+version: v1
+description: Built-in preset for GPT Image 2 text-to-image requests.
+applies_to_models:
+  - gpt-image-2-text-to-image
+applies_to_task_modes:
+  - text_to_image
+applies_to_input_patterns:
+  - prompt_only
+variables:
+  - user_prompt
+rules:
+  - write clear visual generation instructions
+  - specify composition, style, lighting, subject details, and any requested text
+  - keep the final prompt concise and production-ready
+source: builtin
+notes:
+  - Built-in request-shape-aware preset for wrapper-side enhancement.

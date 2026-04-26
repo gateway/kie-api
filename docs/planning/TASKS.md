@@ -170,3 +170,17 @@
 - [COMPLETED] Add built-in GPT Image 2 image-to-image prompt preset — 2026-04-25
 - [COMPLETED] Add dry-run registry, normalizer, validator, payload, and public API tests — 2026-04-25
 - [COMPLETED] Run a live submit/status/download/artifact smoke for task `8ccd5d163ca958b4d281cd0850167fa5` — 2026-04-25
+
+## 28. GPT Image 2 Text to Image onboarding
+- [COMPLETED] Add spec and packaged mirror for `gpt-image-2-text-to-image` — 2026-04-26
+- [COMPLETED] Add built-in GPT Image 2 text-to-image prompt preset — 2026-04-26
+- [COMPLETED] Add local pricing fallback for `gpt-image-2-text-to-image` — 2026-04-26
+- [COMPLETED] Add dry-run registry, normalizer, validator, payload, and public API tests — 2026-04-26
+- [COMPLETED] Run a live submit/status/download/artifact smoke for task `8444d6014c75d8ed2c19b820e006cf87` — 2026-04-26
+
+## 29. Registry-driven pricing accuracy
+- [COMPLETED] Match KIE pricing rows to registry specs by model key, provider model, anchor model value, and normalized row text — 2026-04-26
+- [COMPLETED] Generate generic image-resolution pricing rules for registry models with 1K, 2K, and 4K rows — 2026-04-26
+- [COMPLETED] Refresh GPT Image 2 text-to-image and image-to-image pricing as observed site pricing — 2026-04-26
+- [COMPLETED] Add rule provenance and snapshot coverage metadata for pricing consumers — 2026-04-26
+- [COMPLETED] Add pricing refresh and estimate regression tests for GPT Image 2 and coverage gaps — 2026-04-26

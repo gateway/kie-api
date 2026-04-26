@@ -52,6 +52,22 @@ def test_normalizer_resolves_gpt_image_2_i2i_defaults() -> None:
     assert [item.field for item in normalized.defaulted_fields] == ["aspect_ratio"]
 
 
+def test_normalizer_resolves_gpt_image_2_t2i_defaults() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="gpt-image-2-text-to-image",
+            prompt="a cinematic city poster with neon reflections",
+        )
+    )
+
+    assert normalized.model_key == "gpt-image-2-text-to-image"
+    assert normalized.task_mode == TaskMode.TEXT_TO_IMAGE
+    assert normalized.options["aspect_ratio"] == "auto"
+    assert [item.field for item in normalized.defaulted_fields] == ["aspect_ratio"]
+
+
 def test_normalizer_resolves_generic_kling_3_family_to_i2v_when_image_present() -> None:
     normalizer = RequestNormalizer(load_registry())
 

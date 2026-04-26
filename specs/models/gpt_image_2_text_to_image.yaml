@@ -1,0 +1,83 @@
+key: gpt-image-2-text-to-image
+label: GPT Image 2 Text to Image
+family: market
+provider_model: gpt-image-2-text-to-image
+task_modes:
+  - text_to_image
+inputs:
+  image:
+    required_min: 0
+    required_max: 0
+  video:
+    required_min: 0
+    required_max: 0
+  audio:
+    required_min: 0
+    required_max: 0
+options:
+  aspect_ratio:
+    type: enum
+    allowed: [auto, '1:1', '9:16', '16:9', '4:3', '3:4']
+    default: auto
+  resolution:
+    type: enum
+    allowed: ['1K', '2K', '4K']
+    default: null
+prompt:
+  required: true
+  max_chars: 20000
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_keys_by_input_pattern:
+    prompt_only: gpt_image_2_text_to_image_v1
+defaults: {}
+transport:
+  endpoint_family: market
+  create_path: /api/v1/jobs/createTask
+  status_path: /api/v1/jobs/recordInfo
+  callback_supported: true
+verification:
+  verified_from:
+    - docs_kie_openapi_markdown
+    - docs_kie_request_example
+    - live_smoke_submit_status_download
+  verified_on: '2026-04-26'
+  verification_notes:
+    - Verified from https://docs.kie.ai/market/gpt/gpt-image-2-text-to-image.md and the rendered docs request example.
+    - The OpenAPI schema requires model and input, and the input object requires prompt.
+    - The provider model enum is exactly gpt-image-2-text-to-image.
+    - The request shape does not document any image, video, or audio inputs.
+    - The documented aspect_ratio values are auto, 1:1, 9:16, 16:9, 4:3, and 3:4.
+    - The documented resolution values are 1K, 2K, and 4K.
+    - The docs state that 1:1 images cannot be converted to 4K.
+    - The docs state that auto or omitted aspect_ratio only supports 1K resolution, otherwise task creation fails.
+    - Live smoke task 8444d6014c75d8ed2c19b820e006cf87 succeeded on 2026-04-26 with aspect_ratio 16:9 and resolution 1K.
+    - The live smoke confirmed createTask submission, recordInfo status polling, output download, and local artifact creation.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    provider_model: verified_docs
+    task_modes: inferred
+    inputs.image.required_min: inferred
+    inputs.image.required_max: inferred
+    inputs.video.required_min: inferred
+    inputs.video.required_max: inferred
+    inputs.audio.required_min: inferred
+    inputs.audio.required_max: inferred
+    options.aspect_ratio.type: inferred
+    options.aspect_ratio.allowed: verified_docs
+    options.aspect_ratio.default: verified_docs
+    options.resolution.type: inferred
+    options.resolution.allowed: verified_docs
+    options.resolution.default: inferred
+    prompt.required: verified_docs
+    prompt.max_chars: verified_docs
+    prompt.enhancement_supported: inferred
+    prompt.enhancement_default_policy: inferred
+    prompt.default_profile_keys_by_input_pattern: inferred
+    defaults: inferred
+    transport.endpoint_family: inferred
+    transport.create_path: verified_docs
+    transport.status_path: verified_docs
+    transport.callback_supported: verified_docs

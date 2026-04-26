@@ -105,3 +105,15 @@ rules:
     notes:
       - Local policy estimate for GPT Image 2 image-to-image while KIE public site pricing is unavailable.
       - This baseline assumes request-level pricing and does not yet add image-count-sensitive billing.
+  - model_key: gpt-image-2-text-to-image
+    pricing_status: local_policy
+    billing_unit: request
+    base_credits: 18
+    multipliers:
+      resolution:
+        '1k': 1.0
+        '2k': 1.5
+        '4k': 2.25
+    notes:
+      - Local policy estimate for GPT Image 2 text-to-image while KIE public site pricing is unavailable.
+      - This baseline mirrors the GPT Image 2 image-to-image resolution multipliers until public pricing is available.

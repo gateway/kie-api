@@ -12,10 +12,11 @@ from kie_api.registry.loader import load_latest_pricing_snapshot, load_model_spe
 def test_registry_loads_verified_model_specs() -> None:
     registry = load_registry()
 
-    assert len(registry.model_specs) == 9
+    assert len(registry.model_specs) == 10
     assert registry.get_model("nano-banana-pro").inputs["image"].required_max == 8
     assert registry.get_model("nano-banana-2").inputs["image"].required_max == 14
     assert registry.get_model("gpt-image-2-image-to-image").inputs["image"].required_max == 16
+    assert registry.get_model("gpt-image-2-text-to-image").inputs["image"].required_max == 0
     assert registry.get_model("kling-3.0-i2v").inputs["image"].required_max == 2
     assert registry.get_model("seedance-2.0").provider_model == "bytedance/seedance-2"
     assert registry.get_model("seedance-2.0").task_modes[-1] == "reference_to_video"
@@ -30,6 +31,12 @@ def test_registry_loads_verified_model_specs() -> None:
         "4:3",
         "3:4",
     ]
+    assert (
+        registry.get_model("gpt-image-2-text-to-image").prompt.default_profile_keys_by_input_pattern[
+            "prompt_only"
+        ]
+        == "gpt_image_2_text_to_image_v1"
+    )
 
 
 def test_registry_exposes_split_kling_models() -> None:
@@ -63,6 +70,13 @@ def test_registry_loads_new_prompt_preset_metadata() -> None:
     assert [str(item) for item in gpt_preset.applies_to_input_patterns] == ["image_edit"]
     assert "{{user_prompt}}" in gpt_preset.template
 
+    gpt_t2i_preset = registry.get_prompt_profile("gpt_image_2_text_to_image_v1")
+
+    assert gpt_t2i_preset.applies_to_models == ["gpt-image-2-text-to-image"]
+    assert [str(item) for item in gpt_t2i_preset.applies_to_task_modes] == ["text_to_image"]
+    assert [str(item) for item in gpt_t2i_preset.applies_to_input_patterns] == ["prompt_only"]
+    assert "{{user_prompt}}" in gpt_t2i_preset.template
+
 
 def test_registry_exposes_field_level_provenance() -> None:
     registry = load_registry()
@@ -81,20 +95,29 @@ def test_registry_can_load_bundled_package_specs() -> None:
 
     assert registry.get_model("nano-banana-2").provider_model == "nano-banana-2"
     assert registry.get_model("gpt-image-2-image-to-image").provider_model == "gpt-image-2-image-to-image"
+    assert registry.get_model("gpt-image-2-text-to-image").provider_model == "gpt-image-2-text-to-image"
     assert registry.get_model("kling-3.0-motion").options["background_source"].type == "string"
 
 
 def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     snapshot = load_latest_pricing_snapshot()
 
-    assert snapshot.version == "2026-03-26-site-pricing-page"
-    assert snapshot.released_on == "2026-03-26"
+    assert snapshot.version == "2026-04-26-site-pricing-page"
+    assert snapshot.released_on == "2026-04-26"
     assert any(rule.model_key == "kling-3.0-t2v" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-image-to-image" for rule in snapshot.rules)
+    assert any(rule.model_key == "gpt-image-2-text-to-image" for rule in snapshot.rules)
     gpt_rule = next(rule for rule in snapshot.rules if rule.model_key == "gpt-image-2-image-to-image")
-    assert gpt_rule.pricing_status == "local_policy"
-    assert gpt_rule.base_credits == 18
-    assert any("Merged fallback pricing rules" in note for note in snapshot.notes)
+    assert gpt_rule.pricing_status == "observed_site_pricing"
+    assert gpt_rule.base_credits == 6
+    assert gpt_rule.source_anchor_urls == [
+        "https://kie.ai/gpt-image-2?model=gpt-image-2-image-to-image"
+    ]
+    gpt_t2i_rule = next(rule for rule in snapshot.rules if rule.model_key == "gpt-image-2-text-to-image")
+    assert gpt_t2i_rule.pricing_status == "observed_site_pricing"
+    assert gpt_t2i_rule.base_credits == 6
+    assert snapshot.missing_model_keys == []
+    assert "gpt-image-2-text-to-image" in snapshot.priced_model_keys
 
 
 def test_latest_pricing_snapshot_prefers_metadata_date_over_filename_order(tmp_path: Path) -> None:

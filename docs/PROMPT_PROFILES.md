@@ -17,6 +17,8 @@ Example:
 - `src/kie_api/resources/prompt_profiles/nano_banana_pro_image_edit_v1/prompt.md`
 - `src/kie_api/resources/prompt_profiles/gpt_image_2_image_to_image_v1/metadata.yaml`
 - `src/kie_api/resources/prompt_profiles/gpt_image_2_image_to_image_v1/prompt.md`
+- `src/kie_api/resources/prompt_profiles/gpt_image_2_text_to_image_v1/metadata.yaml`
+- `src/kie_api/resources/prompt_profiles/gpt_image_2_text_to_image_v1/prompt.md`
 
 ## File format
 

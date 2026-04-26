@@ -79,6 +79,30 @@ def test_submit_client_builds_gpt_image_2_i2i_payload_with_input_urls() -> None:
     assert payload["input"]["resolution"] == "2K"
 
 
+def test_submit_client_builds_gpt_image_2_t2i_payload_without_image_input() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="gpt-image-2-text-to-image",
+            prompt="a cinematic night city poster with neon reflections",
+            options={"aspect_ratio": "16:9", "resolution": "2K"},
+            callback_url="https://callback.example.com/kie",
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert payload["model"] == "gpt-image-2-text-to-image"
+    assert payload["callBackUrl"] == "https://callback.example.com/kie"
+    assert "image_input" not in payload["input"]
+    assert "input_urls" not in payload["input"]
+    assert payload["input"]["prompt"] == "a cinematic night city poster with neon reflections"
+    assert payload["input"]["aspect_ratio"] == "16:9"
+    assert payload["input"]["resolution"] == "2K"
+
+
 def test_submit_client_prefers_final_prompt_used_over_raw_prompt() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

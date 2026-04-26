@@ -259,3 +259,29 @@ This log is append-only. Each entry records one completed slice with:
   - Provider task `8ccd5d163ca958b4d281cd0850167fa5` reached `success` in about 42 seconds and returned one output URL.
   - Output download and local artifact creation succeeded under `outputs/live_smoke_gpt_image_2_i2i/artifacts/2026-04-25/20260425_140708_gpt_image_2_image_to_image_live_smoke`.
   - Pricing remains unverified in the local pricing snapshot because KIE's public pricing API did not expose a GPT Image 2 row during this check.
+
+## 2026-04-26 — Slice 28: GPT Image 2 Text to Image onboarding
+
+- Summary: Added the KIE `gpt-image-2-text-to-image` model as a standalone text-to-image spec, introduced a built-in GPT Image 2 text-to-image prompt preset, reused the documented GPT Image 2 resolution/aspect-ratio validator constraints, added a local pricing fallback, added dry-run registry, normalization, validation, payload, and public API coverage, and completed one live submit/status/download/artifact smoke.
+- Files: `specs/models/gpt_image_2_text_to_image.yaml`, `src/kie_api/resources/specs/models/gpt_image_2_text_to_image.yaml`, `src/kie_api/resources/prompt_profiles/gpt_image_2_text_to_image_v1/*`, `src/kie_api/services/validator.py`, `src/kie_api/resources/pricing/2026-03-25_local_policy.yaml`, `tests/test_registry_loader.py`, `tests/test_normalizer.py`, `tests/test_validator.py`, `tests/test_submit_client.py`, `tests/test_public_api.py`, `tests/test_pricing_and_credit_guard.py`, `docs/PROMPT_PROFILES.md`, `docs/LIVE_VERIFICATION_REPORT.md`, `docs/planning/TASKS.md`.
+- Tests run: `.venv/bin/python -m pytest tests/test_registry_loader.py tests/test_normalizer.py tests/test_validator.py tests/test_submit_client.py tests/test_public_api.py tests/test_pricing_and_credit_guard.py` — passed (77 tests). `.venv/bin/python -m pytest` — passed (162 tests), skipped (5 smoke tests without env). `.venv/bin/python scripts/sync_packaged_specs.py --check` — passed.
+- Live sources checked: `https://docs.kie.ai/market/gpt/gpt-image-2-text-to-image` and `https://docs.kie.ai/market/gpt/gpt-image-2-text-to-image.md`.
+- Notes:
+  - The docs OpenAPI contract requires `input.prompt` and does not document image, video, or audio inputs.
+  - The docs allow `aspect_ratio` values `auto`, `1:1`, `9:16`, `16:9`, `4:3`, and `3:4`, and `resolution` values `1K`, `2K`, and `4K`.
+  - The local validator now rejects `1:1 + 4K` and `auto + 2K/4K` for both GPT Image 2 request shapes before submission.
+  - Live smoke used `aspect_ratio=16:9` and `resolution=1K`.
+  - Provider task `8444d6014c75d8ed2c19b820e006cf87` reached `succeeded` in about 32 seconds and returned one output URL.
+  - Output download and local artifact creation succeeded under `outputs/live_smoke_gpt_image_2_t2i/artifacts/2026-04-26/20260426_062959_gpt_image_2_text_to_image_gpt_image_2_text_to_image_live_smoke`.
+
+## 2026-04-26 — Slice 29: Registry-driven pricing coverage metadata
+
+- Summary: Upgraded the public site-pricing refresh to be registry-aware, added rule-level and snapshot-level provenance/coverage metadata, mapped GPT Image 2 text-to-image and image-to-image pricing from live site rows, refreshed the checked-in site pricing snapshot, and expanded pricing estimate tests around observed-vs-local-policy precedence.
+- Files: `src/kie_api/registry/models.py`, `src/kie_api/services/pricing_refresh.py`, `src/kie_api/resources/pricing/2026-03-26_site_pricing_page.yaml`, `tests/test_pricing_refresh.py`, `tests/test_registry_loader.py`, `tests/test_pricing_and_credit_guard.py`, `tests/test_public_api.py`, `docs/PRICING_AND_PREFLIGHT.md`, `docs/LIVE_VERIFICATION_REPORT.md`, `docs/planning/TASKS.md`.
+- Tests run: `.venv/bin/python -m pytest tests/test_registry_loader.py tests/test_pricing_and_credit_guard.py tests/test_public_api.py tests/test_pricing_refresh.py` — passed (29 tests). `.venv/bin/python -m pytest` — passed (162 tests), skipped (5 smoke tests without env). `.venv/bin/python scripts/sync_packaged_specs.py --check` — passed.
+- Live sources checked: `https://api.kie.ai/client/v1/model-pricing/page`.
+- Notes:
+  - The refreshed site snapshot is versioned `2026-04-26-site-pricing-page` and covers every current registry model.
+  - GPT Image 2 text-to-image and image-to-image now use observed site rows for `1K=6`, `2K=10`, and `4K=16` credits, superseding the temporary local-policy fallback for normal snapshot loading.
+  - `observed_site_pricing` remains non-authoritative billing truth; actual-vs-estimated reconciliation is still deferred.
+  - Coverage metadata now reports `priced_model_keys`, `missing_model_keys`, and `unmapped_source_rows` so wrappers can surface gaps instead of silently hiding them.

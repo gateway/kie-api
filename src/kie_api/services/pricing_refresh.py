@@ -5,11 +5,14 @@ from __future__ import annotations
 import json
 import re
 from datetime import date
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
+from urllib.parse import parse_qs, unquote, urlparse
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..registry.loader import SpecRegistry, load_registry
+from ..registry.models import ModelSpec
 from ..registry.models import PricingRule, PricingSnapshot
 
 
@@ -154,18 +157,22 @@ def build_supported_model_snapshot(
     capture: PricingCatalogCapture,
     *,
     released_on: Optional[str] = None,
+    registry: Optional[SpecRegistry] = None,
 ) -> PricingSnapshot:
     released = released_on or date.today().isoformat()
     rules: List[PricingRule] = []
+    used_rows: Set[str] = set()
     notes = list(capture.notes)
     notes.append(
         "This snapshot is derived from KIE's public pricing page API and should be treated as non-authoritative."
     )
+    resolved_registry = registry or load_registry()
 
     nano_2_rows = _rows_with_anchor(capture.rows, "https://kie.ai/nano-banana-2")
     if nano_2_rows:
+        _mark_rows_used(used_rows, nano_2_rows)
         base = _select_row(nano_2_rows, "1k") or nano_2_rows[0]
-        rules.append(
+        rules.append(_with_row_provenance(
             PricingRule(
                 model_key="nano-banana-2",
                 pricing_status="observed_site_pricing",
@@ -185,16 +192,19 @@ def build_supported_model_snapshot(
                     }
                 },
                 notes=[
-                    "Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.",
+                    f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {released}.",
                 ],
-            )
-        )
+            ),
+            rows=nano_2_rows,
+            observed_at=released,
+        ))
 
     nano_pro_rows = _rows_with_anchor(capture.rows, "https://kie.ai/nano-banana-pro")
     if nano_pro_rows:
+        _mark_rows_used(used_rows, nano_pro_rows)
         base = nano_pro_rows[0]
         multiplier_4k = _ratio(_credit_for(nano_pro_rows, "4k"), base.credit_price)
-        rules.append(
+        rules.append(_with_row_provenance(
             PricingRule(
                 model_key="nano-banana-pro",
                 pricing_status="observed_site_pricing",
@@ -214,36 +224,64 @@ def build_supported_model_snapshot(
                     }
                 },
                 notes=[
-                    "Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.",
+                    f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {released}.",
                     "KIE's site pricing groups Nano Banana Pro 1K and 2K into a combined '1/2K' tier.",
                 ],
-            )
-        )
+            ),
+            rows=nano_pro_rows,
+            observed_at=released,
+        ))
 
     kling_26_t2v_rows = _rows_with_phrase(capture.rows, "kling 2.6, text-to-video")
     if kling_26_t2v_rows:
-        rules.append(_build_kling_26_video_rule("kling-2.6-t2v", kling_26_t2v_rows))
+        _mark_rows_used(used_rows, kling_26_t2v_rows)
+        rules.append(_build_kling_26_video_rule("kling-2.6-t2v", kling_26_t2v_rows, observed_at=released))
 
     kling_26_i2v_rows = _rows_with_phrase(capture.rows, "kling 2.6, image-to-video")
     if kling_26_i2v_rows:
-        rules.append(_build_kling_26_video_rule("kling-2.6-i2v", kling_26_i2v_rows))
+        _mark_rows_used(used_rows, kling_26_i2v_rows)
+        rules.append(_build_kling_26_video_rule("kling-2.6-i2v", kling_26_i2v_rows, observed_at=released))
 
     kling_30_rows = _rows_with_anchor(capture.rows, "https://kie.ai/kling-3-0")
     if kling_30_rows:
+        _mark_rows_used(used_rows, kling_30_rows)
         rules.extend(
             [
-                _build_kling_30_video_rule("kling-3.0-t2v", kling_30_rows),
-                _build_kling_30_video_rule("kling-3.0-i2v", kling_30_rows),
+                _build_kling_30_video_rule("kling-3.0-t2v", kling_30_rows, observed_at=released),
+                _build_kling_30_video_rule("kling-3.0-i2v", kling_30_rows, observed_at=released),
             ]
         )
 
     kling_30_motion_rows = _rows_with_anchor(capture.rows, "https://kie.ai/kling-3-motion-control")
     if kling_30_motion_rows:
-        rules.append(_build_kling_30_motion_rule(kling_30_motion_rows))
+        _mark_rows_used(used_rows, kling_30_motion_rows)
+        rules.append(_build_kling_30_motion_rule(kling_30_motion_rows, observed_at=released))
 
     seedance_rows = _rows_with_phrase(capture.rows, "bytedance/seedance-2,")
     if seedance_rows:
-        rules.append(_build_seedance_2_rule(seedance_rows))
+        _mark_rows_used(used_rows, seedance_rows)
+        rules.append(_build_seedance_2_rule(seedance_rows, observed_at=released))
+
+    existing_model_keys = {rule.model_key for rule in rules}
+    for spec in sorted(resolved_registry.iter_models(), key=lambda item: item.key):
+        if spec.key in existing_model_keys:
+            continue
+        image_rows = _rows_matching_model_spec(capture.rows, spec)
+        image_rule = _build_generic_image_resolution_rule(
+            spec,
+            image_rows,
+            observed_at=released,
+        )
+        if image_rule:
+            _mark_rows_used(
+                used_rows,
+                [row for row in image_rows if row.model_description in image_rule.source_row_labels],
+            )
+            rules.append(image_rule)
+            existing_model_keys.add(spec.key)
+
+    priced_model_keys = sorted({rule.model_key for rule in rules})
+    supported_model_keys = sorted(spec.key for spec in resolved_registry.iter_models())
 
     return PricingSnapshot(
         version=f"{released}-site-pricing-page",
@@ -254,6 +292,15 @@ def build_supported_model_snapshot(
         source_url=capture.page_url,
         notes=notes,
         rules=rules,
+        priced_model_keys=priced_model_keys,
+        missing_model_keys=[
+            key for key in supported_model_keys if key not in set(priced_model_keys)
+        ],
+        unmapped_source_rows=[
+            _row_public_payload(row)
+            for row in capture.rows
+            if _row_key(row) not in used_rows and _row_is_relevant_to_registry(row, resolved_registry)
+        ],
     )
 
 
@@ -336,126 +383,324 @@ def _ratio(value: Optional[float], base: Optional[float]) -> float:
     return float(value) / float(base)
 
 
-def _build_kling_26_video_rule(model_key: str, rows: List[PricingCatalogRow]) -> PricingRule:
+def _build_kling_26_video_rule(
+    model_key: str,
+    rows: List[PricingCatalogRow],
+    *,
+    observed_at: str,
+) -> PricingRule:
     base = _select_row(rows, "without audio-5.0s") or rows[0]
-    return PricingRule(
-        model_key=model_key,
-        pricing_status="observed_site_pricing",
-        billing_unit="video",
-        provider="Kling",
-        interface_type="video",
-        anchor_url=base.anchor,
-        raw_credit_text=base.credit_price_text,
-        raw_usd_text=base.usd_price_text,
-        base_credits=base.credit_price,
-        base_cost_usd=base.usd_price,
-        multipliers={
-            "duration": {
-                "5": 1.0,
-                "10": _ratio(_credit_for(rows, "without audio-10.0s"), base.credit_price),
+    return _with_row_provenance(
+        PricingRule(
+            model_key=model_key,
+            pricing_status="observed_site_pricing",
+            billing_unit="video",
+            provider="Kling",
+            interface_type="video",
+            anchor_url=base.anchor,
+            raw_credit_text=base.credit_price_text,
+            raw_usd_text=base.usd_price_text,
+            base_credits=base.credit_price,
+            base_cost_usd=base.usd_price,
+            multipliers={
+                "duration": {
+                    "5": 1.0,
+                    "10": _ratio(_credit_for(rows, "without audio-10.0s"), base.credit_price),
+                },
+                "sound": {
+                    "false": 1.0,
+                    "true": _ratio(_credit_for(rows, "with audio-5.0s"), base.credit_price),
+                },
             },
-            "sound": {
-                "false": 1.0,
-                "true": _ratio(_credit_for(rows, "with audio-5.0s"), base.credit_price),
-            },
-        },
-        notes=[
-            "Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.",
-        ],
+            notes=[
+                f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+            ],
+        ),
+        rows=rows,
+        observed_at=observed_at,
     )
 
 
-def _build_kling_30_video_rule(model_key: str, rows: List[PricingCatalogRow]) -> PricingRule:
+def _build_kling_30_video_rule(
+    model_key: str,
+    rows: List[PricingCatalogRow],
+    *,
+    observed_at: str,
+) -> PricingRule:
     base = _select_row(rows, "without audio-720p") or rows[0]
     mode_multiplier = _ratio(_credit_for(rows, "without audio-1080p"), base.credit_price)
     sound_multiplier = _ratio(_credit_for(rows, "with audio-720p"), base.credit_price)
-    return PricingRule(
-        model_key=model_key,
-        pricing_status="observed_site_pricing",
-        billing_unit="second",
-        provider="Kling",
-        interface_type="video",
-        anchor_url="https://kie.ai/kling-3-0",
-        raw_credit_text=base.credit_price_text,
-        raw_usd_text=base.usd_price_text,
-        base_credits=base.credit_price,
-        base_cost_usd=base.usd_price,
-        multipliers={
-            "duration": {"5": 5.0, "10": 10.0},
-            "mode": {
-                "std": 1.0,
-                "pro": mode_multiplier,
-                "720p": 1.0,
-                "1080p": mode_multiplier,
+    return _with_row_provenance(
+        PricingRule(
+            model_key=model_key,
+            pricing_status="observed_site_pricing",
+            billing_unit="second",
+            provider="Kling",
+            interface_type="video",
+            anchor_url="https://kie.ai/kling-3-0",
+            raw_credit_text=base.credit_price_text,
+            raw_usd_text=base.usd_price_text,
+            base_credits=base.credit_price,
+            base_cost_usd=base.usd_price,
+            multipliers={
+                "duration": {"5": 5.0, "10": 10.0},
+                "mode": {
+                    "std": 1.0,
+                    "pro": mode_multiplier,
+                    "720p": 1.0,
+                    "1080p": mode_multiplier,
+                },
+                "sound": {
+                    "false": 1.0,
+                    "true": sound_multiplier,
+                },
             },
-            "sound": {
-                "false": 1.0,
-                "true": sound_multiplier,
-            },
-        },
-        notes=[
-            "Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.",
-            "The site pricing page does not distinguish Kling 3.0 text-to-video from image-to-video pricing.",
-        ],
+            notes=[
+                f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+                "The site pricing page does not distinguish Kling 3.0 text-to-video from image-to-video pricing.",
+            ],
+        ),
+        rows=rows,
+        observed_at=observed_at,
     )
 
 
-def _build_kling_30_motion_rule(rows: List[PricingCatalogRow]) -> PricingRule:
+def _build_kling_30_motion_rule(
+    rows: List[PricingCatalogRow],
+    *,
+    observed_at: str,
+) -> PricingRule:
     base = _select_row(rows, "720p") or rows[0]
     mode_multiplier = _ratio(_credit_for(rows, "1080p"), base.credit_price)
-    return PricingRule(
-        model_key="kling-3.0-motion",
-        pricing_status="observed_site_pricing",
-        billing_unit="second",
-        provider="Kling",
-        interface_type="video",
-        anchor_url="https://kie.ai/kling-3-motion-control",
-        raw_credit_text=base.credit_price_text,
-        raw_usd_text=base.usd_price_text,
-        base_credits=base.credit_price,
-        base_cost_usd=base.usd_price,
-        multipliers={
-            "duration": {"5": 5.0, "10": 10.0},
-            "mode": {
-                "720p": 1.0,
-                "1080p": mode_multiplier,
-                "std": 1.0,
-                "pro": mode_multiplier,
+    return _with_row_provenance(
+        PricingRule(
+            model_key="kling-3.0-motion",
+            pricing_status="observed_site_pricing",
+            billing_unit="second",
+            provider="Kling",
+            interface_type="video",
+            anchor_url="https://kie.ai/kling-3-motion-control",
+            raw_credit_text=base.credit_price_text,
+            raw_usd_text=base.usd_price_text,
+            base_credits=base.credit_price,
+            base_cost_usd=base.usd_price,
+            multipliers={
+                "duration": {"5": 5.0, "10": 10.0},
+                "mode": {
+                    "720p": 1.0,
+                    "1080p": mode_multiplier,
+                    "std": 1.0,
+                    "pro": mode_multiplier,
+                },
             },
-        },
-        notes=[
-            "Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-03-26.",
-        ],
+            notes=[
+                f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+            ],
+        ),
+        rows=rows,
+        observed_at=observed_at,
     )
 
 
-def _build_seedance_2_rule(rows: List[PricingCatalogRow]) -> PricingRule:
+def _build_seedance_2_rule(
+    rows: List[PricingCatalogRow],
+    *,
+    observed_at: str,
+) -> PricingRule:
     base = _select_row(rows, "480p no video input") or rows[0]
-    return PricingRule(
-        model_key="seedance-2.0",
-        pricing_status="observed_site_pricing",
-        billing_unit="second",
-        provider="ByteDance",
-        interface_type="video",
-        anchor_url="https://kie.ai/seedance-2-0",
-        raw_credit_text=base.credit_price_text,
-        raw_usd_text=base.usd_price_text,
-        base_credits=base.credit_price,
-        base_cost_usd=base.usd_price,
-        multipliers={
-            "duration": {str(value): float(value) for value in range(4, 16)},
-            "pricing_variant": {
-                "480p_no_video_input": 1.0,
-                "720p_no_video_input": _ratio(_credit_for(rows, "720p no video input"), base.credit_price),
-                "480p_with_video_input": _ratio(_credit_for(rows, "480p with video input"), base.credit_price),
-                "720p_with_video_input": _ratio(_credit_for(rows, "720p with video input"), base.credit_price),
+    return _with_row_provenance(
+        PricingRule(
+            model_key="seedance-2.0",
+            pricing_status="observed_site_pricing",
+            billing_unit="second",
+            provider="ByteDance",
+            interface_type="video",
+            anchor_url="https://kie.ai/seedance-2-0",
+            raw_credit_text=base.credit_price_text,
+            raw_usd_text=base.usd_price_text,
+            base_credits=base.credit_price,
+            base_cost_usd=base.usd_price,
+            multipliers={
+                "duration": {str(value): float(value) for value in range(4, 16)},
+                "pricing_variant": {
+                    "480p_no_video_input": 1.0,
+                    "720p_no_video_input": _ratio(_credit_for(rows, "720p no video input"), base.credit_price),
+                    "480p_with_video_input": _ratio(_credit_for(rows, "480p with video input"), base.credit_price),
+                    "720p_with_video_input": _ratio(_credit_for(rows, "720p with video input"), base.credit_price),
+                },
             },
-        },
-        notes=[
-            "Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-04-04.",
-            "Seedance pricing is modeled with an internal pricing_variant derived from request resolution plus whether reference_video_urls are present.",
-            "The site pricing API publishes separate rows for 'with video input' and 'no video input'; this rule maps those exactly for dry-run estimation.",
-        ],
+            notes=[
+                f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+                "Seedance pricing is modeled with an internal pricing_variant derived from request resolution plus whether reference_video_urls are present.",
+                "The site pricing API publishes separate rows for 'with video input' and 'no video input'; this rule maps those exactly for dry-run estimation.",
+            ],
+        ),
+        rows=rows,
+        observed_at=observed_at,
+    )
+
+
+def _build_generic_image_resolution_rule(
+    spec: ModelSpec,
+    rows: List[PricingCatalogRow],
+    *,
+    observed_at: str,
+) -> Optional[PricingRule]:
+    image_rows = [
+        row
+        for row in rows
+        if row.interface_type.lower() == "image"
+        and row.credit_price is not None
+        and _row_resolution(row) is not None
+    ]
+    if not image_rows:
+        return None
+
+    base = _select_resolution_row(image_rows, "1k") or image_rows[0]
+    if base.credit_price in (None, 0):
+        return None
+
+    multipliers: Dict[str, float] = {}
+    for resolution in ("1k", "2k", "4k"):
+        row = _select_resolution_row(image_rows, resolution)
+        if row and row.credit_price is not None:
+            multipliers[resolution] = _ratio(row.credit_price, base.credit_price)
+
+    notes = [
+        f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+        "Mapped by matching KIE pricing rows to the model registry and image resolution labels.",
+    ]
+    if set(multipliers) != {"1k", "2k", "4k"}:
+        notes.append("KIE pricing rows did not expose every common 1K/2K/4K resolution tier.")
+
+    return _with_row_provenance(
+        PricingRule(
+            model_key=spec.key,
+            pricing_status="observed_site_pricing",
+            billing_unit="request",
+            provider=base.provider,
+            interface_type=base.interface_type,
+            anchor_url=base.anchor,
+            raw_credit_text=base.credit_price_text,
+            raw_usd_text=base.usd_price_text,
+            base_credits=base.credit_price,
+            base_cost_usd=base.usd_price,
+            multipliers={"resolution": multipliers} if multipliers else {},
+            notes=notes,
+        ),
+        rows=image_rows,
+        observed_at=observed_at,
+    )
+
+
+def _rows_matching_model_spec(rows: List[PricingCatalogRow], spec: ModelSpec) -> List[PricingCatalogRow]:
+    expected_values = {
+        _normalize_match_text(spec.key),
+        _normalize_match_text(spec.provider_model),
+        _normalize_match_text(spec.label),
+    }
+    expected_values = {value for value in expected_values if value}
+    matches = []
+    for row in rows:
+        row_model = _anchor_model_value(row.anchor)
+        if row_model and row_model in {spec.key, spec.provider_model}:
+            matches.append(row)
+            continue
+        description = _normalize_match_text(row.model_description)
+        anchor = _normalize_match_text(row.anchor or "")
+        if any(value and (value in description or value in anchor) for value in expected_values):
+            matches.append(row)
+    return matches
+
+
+def _anchor_model_value(anchor: Optional[str]) -> Optional[str]:
+    if not anchor:
+        return None
+    parsed = urlparse(anchor)
+    model_values = parse_qs(parsed.query).get("model")
+    if not model_values:
+        return None
+    return unquote(model_values[0]).strip() or None
+
+
+def _normalize_match_text(value: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
+
+
+def _row_resolution(row: PricingCatalogRow) -> Optional[str]:
+    description = row.model_description.lower()
+    for resolution in ("1k", "2k", "4k"):
+        if re.search(rf"(^|[^a-z0-9]){resolution}([^a-z0-9]|$)", description):
+            return resolution
+    return None
+
+
+def _select_resolution_row(
+    rows: List[PricingCatalogRow],
+    resolution: str,
+) -> Optional[PricingCatalogRow]:
+    for row in rows:
+        if _row_resolution(row) == resolution:
+            return row
+    return None
+
+
+def _with_row_provenance(
+    rule: PricingRule,
+    *,
+    rows: List[PricingCatalogRow],
+    observed_at: str,
+) -> PricingRule:
+    return rule.model_copy(
+        update={
+            "observed_at": observed_at,
+            "source_row_labels": sorted({row.model_description for row in rows if row.model_description}),
+            "source_anchor_urls": sorted({row.anchor for row in rows if row.anchor}),
+        }
+    )
+
+
+def _mark_rows_used(used_rows: Set[str], rows: List[PricingCatalogRow]) -> None:
+    for row in rows:
+        used_rows.add(_row_key(row))
+
+
+def _row_key(row: PricingCatalogRow) -> str:
+    return "|".join(
+        [
+            row.model_description,
+            row.interface_type,
+            row.provider or "",
+            row.credit_price_text or "",
+            row.usd_price_text or "",
+            row.anchor or "",
+        ]
+    )
+
+
+def _row_public_payload(row: PricingCatalogRow) -> Dict[str, Any]:
+    return {
+        "model_description": row.model_description,
+        "interface_type": row.interface_type,
+        "provider": row.provider,
+        "credit_price_text": row.credit_price_text,
+        "usd_price_text": row.usd_price_text,
+        "anchor": row.anchor,
+    }
+
+
+def _row_is_relevant_to_registry(row: PricingCatalogRow, registry: SpecRegistry) -> bool:
+    row_model = _anchor_model_value(row.anchor)
+    if row_model and any(
+        row_model in {spec.key, spec.provider_model} for spec in registry.iter_models()
+    ):
+        return True
+    row_text = _normalize_match_text(" ".join([row.model_description, row.anchor or ""]))
+    return any(
+        _normalize_match_text(spec.key) in row_text
+        or _normalize_match_text(spec.provider_model) in row_text
+        or _normalize_match_text(spec.label) in row_text
+        for spec in registry.iter_models()
     )
 
 
