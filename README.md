@@ -19,6 +19,8 @@ These two docs explain:
 
 This repo also ships a lightweight Codex plugin package under `plugins/kie-ai-workflows` for users who want a more guided skill-first entry point.
 
+The Codex, Claude, and agent-facing files in `.claude/agents`, `agent_skills/codex`, `plugins/kie-ai-workflows`, and related docs are intentional public workflow assets. They should describe reusable model workflows and prompting guidance only. Do not add private operator notes, customer data, secrets, or local machine paths to those files.
+
 ## What is Kie.ai?
 
 Kie.ai is a marketplace-style API platform for creative AI models. Instead of one model or one workflow, it gives you access to multiple image and video models behind one account and one API key.

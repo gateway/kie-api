@@ -31,7 +31,7 @@ cp .env.example .env.live
 Edit `.env.live` and set your real key:
 
 ```bash
-KIE_API_KEY=your-real-kie-key
+KIE_API_KEY=replace-with-your-kie-api-key
 ```
 
 Load it into your current shell:
@@ -45,7 +45,7 @@ set +a
 If you prefer, you can export the key directly instead:
 
 ```bash
-export KIE_API_KEY="your-real-kie-key"
+export KIE_API_KEY="replace-with-your-kie-api-key"
 ```
 
 ## 4. Run the local test suite
