@@ -20,6 +20,10 @@ def test_registry_loads_verified_model_specs() -> None:
     assert registry.get_model("kling-3.0-i2v").inputs["image"].required_max == 2
     assert registry.get_model("seedance-2.0").provider_model == "bytedance/seedance-2"
     assert registry.get_model("seedance-2.0").task_modes[-1] == "reference_to_video"
+    assert registry.get_model("seedance-2.0").options["resolution"].allowed == ["480p", "720p", "1080p"]
+    assert registry.get_model("kling-3.0-t2v").options["mode"].allowed == ["std", "pro", "4K"]
+    assert registry.get_model("kling-3.0-t2v").options["mode"].hidden_from_studio is False
+    assert registry.get_model("kling-3.0-t2v").options["mode"].label is None
     assert registry.get_model("nano-banana-pro").options["resolution"].allowed == ["1K", "2K", "4K"]
     assert registry.get_model("nano-banana-2").options["output_format"].allowed == ["jpg", "png"]
     assert registry.get_model("gpt-image-2-image-to-image").transport.image_input_field == "input_urls"
@@ -52,6 +56,21 @@ def test_registry_exposes_split_kling_models() -> None:
     )
     assert registry.get_model("kling-2.6-t2v").options["duration"].allowed == [5, 10]
     assert registry.get_model("kling-2.6-t2v").options["aspect_ratio"].allowed == ["1:1", "16:9", "9:16"]
+
+
+def test_registry_exposes_provider_capability_updates() -> None:
+    registry = load_registry()
+
+    kling = registry.get_model("kling-3.0-t2v")
+    seedance = registry.get_model("seedance-2.0")
+    gpt_image = registry.get_model("gpt-image-2-text-to-image")
+
+    assert "4K" in kling.options["mode"].allowed
+    assert kling.options["mode"].value_aliases["4k"] == "4K"
+    assert kling.options["duration"].min == 3
+    assert kling.options["duration"].max == 15
+    assert "1080p" in seedance.options["resolution"].allowed
+    assert "16:9" in gpt_image.options["aspect_ratio"].allowed
 
 
 def test_registry_loads_new_prompt_preset_metadata() -> None:
@@ -102,8 +121,8 @@ def test_registry_can_load_bundled_package_specs() -> None:
 def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     snapshot = load_latest_pricing_snapshot()
 
-    assert snapshot.version == "2026-04-26-site-pricing-page"
-    assert snapshot.released_on == "2026-04-26"
+    assert snapshot.version == "2026-04-29-site-pricing-page"
+    assert snapshot.released_on == "2026-04-29"
     assert any(rule.model_key == "kling-3.0-t2v" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-image-to-image" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-text-to-image" for rule in snapshot.rules)
@@ -116,6 +135,10 @@ def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     gpt_t2i_rule = next(rule for rule in snapshot.rules if rule.model_key == "gpt-image-2-text-to-image")
     assert gpt_t2i_rule.pricing_status == "observed_site_pricing"
     assert gpt_t2i_rule.base_credits == 6
+    kling_rule = next(rule for rule in snapshot.rules if rule.model_key == "kling-3.0-t2v")
+    assert kling_rule.multipliers["pricing_variant"]["4k_true"] == pytest.approx(67.0 / 14.0)
+    seedance_rule = next(rule for rule in snapshot.rules if rule.model_key == "seedance-2.0")
+    assert seedance_rule.multipliers["pricing_variant"]["1080p_no_video_input"] == pytest.approx(102.0 / 19.0)
     assert snapshot.missing_model_keys == []
     assert "gpt-image-2-text-to-image" in snapshot.priced_model_keys
 

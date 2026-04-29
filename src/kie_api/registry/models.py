@@ -53,6 +53,13 @@ class OptionSpec(BaseModel):
     allow_infer_from_media: bool = False
     value_aliases: Dict[str, str] = Field(default_factory=dict)
     notes: Optional[str] = None
+    label: Optional[str] = None
+    help_text: Optional[str] = None
+    ui_group: Optional[str] = None
+    ui_order: Optional[int] = None
+    advanced: bool = False
+    hidden_from_studio: bool = False
+    ui_control: Optional[str] = None
 
 
 class PromptSpec(BaseModel):

@@ -126,9 +126,10 @@ That code is:
 
 Current examples:
 - Seedance 2.0 pricing is now derived from the public site pricing API rows for:
-  - `480p` vs `720p`
+  - `480p` vs `720p` vs `1080p`
   - `with video input` vs `no video input`
 - the runtime turns that into a dry-run `pricing_variant` internally based on request shape, so wrappers do not need to send pricing-only fields
+- Kling 3.0 video pricing is now derived from public site rows for 720P, 1080P, and 4K, with mode plus sound modeled as an internal `pricing_variant` because 4K rows do not add a separate audio surcharge.
 - GPT Image 2 text-to-image and image-to-image pricing is now mapped generically from KIE rows that share the same model anchor and publish `1k`, `2k`, and `4k` resolution labels:
   - `1K`: 6 credits / $0.03
   - `2K`: 10 credits / $0.05

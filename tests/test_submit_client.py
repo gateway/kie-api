@@ -194,6 +194,26 @@ def test_submit_client_builds_kling_3_video_payload() -> None:
     assert payload["input"]["mode"] == "pro"
 
 
+def test_submit_client_builds_kling_3_4k_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            prompt="a detailed cinematic product reveal",
+            options={"duration": 5, "mode": "4k", "sound": False},
+        )
+    )
+    result = validate_request(normalized, registry)
+    payload = client.build_payload(result.normalized_request)
+
+    assert payload["model"] == "kling-3.0/video"
+    assert payload["input"]["mode"] == "4K"
+    assert payload["input"]["sound"] is False
+
+
 def test_submit_client_preserves_first_last_frame_order_for_kling_3_i2v() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

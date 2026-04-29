@@ -13,6 +13,41 @@ Use this checklist every time a new KIE model or mode is brought online in `kie-
 7. Verify download, artifacts, and derivatives.
 8. Update docs and changelog.
 
+## Provider capability updates
+
+Classify provider announcements before changing code:
+
+- Spec-only update: new enum values, higher resolutions, longer existing duration ranges, new aspect ratios, value aliases, updated defaults, pricing rows, or clearer docs for an already-modeled input pattern.
+- Studio workflow update: new media slot concepts, new task modes, new input patterns, mixed media requirements that do not fit existing slots, provider-specific request arrays, or option types Studio cannot render safely.
+
+For spec-only updates:
+
+1. Update the canonical spec under `specs/models/`.
+2. Keep option names aligned with pricing rules and Media Studio request options.
+3. Add value aliases when provider casing differs from user-facing casing, such as `4k -> 4K`.
+4. Refresh pricing if provider pricing changed.
+5. Run registry, validator, payload, pricing, and packaged-spec sync checks.
+6. Start Media Studio against this checkout and confirm `/media/models` exposes the changed option values through `studio_dynamic_options`.
+
+For Studio workflow updates:
+
+1. Hide or leave the model unexposed until Studio has an explicit composer contract.
+2. Add or update prompt input-pattern metadata only after the request shape is understood.
+3. Add Media Studio support-classifier coverage before exposing the model in the Studio picker.
+4. Browser-smoke `/models` first; unsupported models should explain why they are hidden.
+
+Option metadata may include UI-safe fields for downstream clients:
+
+- `label`
+- `help_text`
+- `ui_group`
+- `ui_order`
+- `advanced`
+- `hidden_from_studio`
+- `ui_control` for explicit controls such as freeform `string` text inputs
+
+Clients should treat KIE validation as authoritative. Media Studio may auto-render known option types from `/media/models`, but it should not invent provider payload fields or expose unknown input workflows.
+
 ## Prompt preset readiness
 
 Every supported request shape should have either:

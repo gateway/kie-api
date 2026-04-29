@@ -157,6 +157,16 @@ def _is_authoritative_pricing(pricing_status: str, source_kind: str) -> bool:
 def _derive_request_pricing_options(request: NormalizedRequest) -> Dict[str, Any]:
     derived: Dict[str, Any] = {}
 
+    if request.model_key in {"kling-3.0-t2v", "kling-3.0-i2v"}:
+        mode = _normalize_option_value(request.options.get("mode") or "std")
+        resolution = {
+            "std": "720p",
+            "pro": "1080p",
+            "4k": "4k",
+        }.get(mode, mode)
+        sound = _normalize_option_value(request.options.get("sound", True))
+        derived["pricing_variant"] = f"{resolution}_{sound}"
+
     if request.model_key == "seedance-2.0":
         resolution = _normalize_option_value(request.options.get("resolution") or "720p")
         has_video_input = bool(request.videos)

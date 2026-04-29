@@ -17,9 +17,12 @@ inputs:
 options:
   mode:
     type: enum
-    allowed: [std, pro]
+    allowed: [std, pro, '4K']
     default: std
     required: true
+    value_aliases:
+      4k: '4K'
+    notes: "KIE docs list std, pro, and 4K generation modes. The SDK accepts lowercase 4k as an alias and normalizes it to the provider value 4K."
   sound:
     type: bool
     default: true
@@ -53,12 +56,14 @@ verification:
   verified_from:
     - live_page_api_surface
     - docs_kie_secondary
-  verified_on: '2026-03-25'
+    - site_pricing_api
+  verified_on: '2026-04-29'
   verification_notes:
     - Verified from the live https://kie.ai/kling-3-0 page API surface.
     - The live page shows prompt, duration, mode, sound, multi_shots, and aspect_ratio for the base video form.
     - The live page supports up to 15 seconds and marks aspect_ratio choices as 1:1, 9:16, and 16:9.
-    - The live page help text states std has standard resolution and pro has higher resolution.
+    - The docs page now lists std, pro, and 4K generation modes; 4K mode is modeled as provider value 4K.
+    - The KIE public pricing API publishes Kling 3.0 video rows for 720P, 1080P, and 4K tiers.
     - The live page marks prompt as required and shows sound toggled on.
     - Kling 3.0 image-to-video rejected an omitted sound value on 2026-03-26, so the SDK defaults sound=true for the shared Kling 3.0 video family unless the caller explicitly sets false.
     - The SDK defaults mode to std and multi_shots to false, but those default values are SDK choices and not yet confirmed as provider defaults.
@@ -75,9 +80,11 @@ verification:
     inputs.audio.required_min: inferred
     inputs.audio.required_max: inferred
     options.mode.type: inferred
-    options.mode.allowed: verified_live
+    options.mode.allowed: verified_docs
     options.mode.default: inferred
     options.mode.required: verified_live
+    options.mode.value_aliases: inferred
+    options.mode.notes: inferred
     options.sound.type: inferred
     options.sound.default: inferred
     options.sound.notes: inferred

@@ -79,13 +79,13 @@ These descriptions are based on the current public Kie.ai model pages and live p
 ### Seedance 2.0
 
 - Good at: multimodal guided video generation with first-frame, first+last-frame, and mixed image/video/audio references
-- What it does: creates videos from plain prompts or reference-driven payloads, supports first and last frame guidance, multiple reference assets, optional audio generation, and reference-aware prompting
+- What it does: creates videos from plain prompts or reference-driven payloads, supports first and last frame guidance, multiple reference assets, optional audio generation, reference-aware prompting, and 480p/720p/1080p output tiers
 - Who it is by: ByteDance on Kie.ai
 
 ### Kling 3.0
 
 - Good at: higher-end cinematic video generation, stronger consistency, multi-shot direction, and image-to-video workflows
-- What it does: creates videos from text or images, supports 3 to 15 second generations, multi-shot prompting, stronger scene consistency, and native audio generation
+- What it does: creates videos from text or images, supports 3 to 15 second generations, std/pro/4K generation modes, multi-shot prompting, stronger scene consistency, and native audio generation
 - Who it is by: Kling AI on Kie.ai
 
 ### Kling 3.0 Motion Control

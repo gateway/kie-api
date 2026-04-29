@@ -428,8 +428,6 @@ def _build_kling_30_video_rule(
     observed_at: str,
 ) -> PricingRule:
     base = _select_row(rows, "without audio-720p") or rows[0]
-    mode_multiplier = _ratio(_credit_for(rows, "without audio-1080p"), base.credit_price)
-    sound_multiplier = _ratio(_credit_for(rows, "with audio-720p"), base.credit_price)
     return _with_row_provenance(
         PricingRule(
             model_key=model_key,
@@ -444,20 +442,19 @@ def _build_kling_30_video_rule(
             base_cost_usd=base.usd_price,
             multipliers={
                 "duration": {"5": 5.0, "10": 10.0},
-                "mode": {
-                    "std": 1.0,
-                    "pro": mode_multiplier,
-                    "720p": 1.0,
-                    "1080p": mode_multiplier,
-                },
-                "sound": {
-                    "false": 1.0,
-                    "true": sound_multiplier,
+                "pricing_variant": {
+                    "720p_false": 1.0,
+                    "720p_true": _ratio(_credit_for(rows, "with audio-720p"), base.credit_price),
+                    "1080p_false": _ratio(_credit_for(rows, "without audio-1080p"), base.credit_price),
+                    "1080p_true": _ratio(_credit_for(rows, "with audio-1080p"), base.credit_price),
+                    "4k_false": _ratio(_credit_for(rows, "without audio-4k"), base.credit_price),
+                    "4k_true": _ratio(_credit_for(rows, "with audio-4k"), base.credit_price),
                 },
             },
             notes=[
                 f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
                 "The site pricing page does not distinguish Kling 3.0 text-to-video from image-to-video pricing.",
+                "Kling 3.0 video pricing is modeled with an internal pricing_variant derived from mode plus sound because 4K rows do not add a separate audio surcharge.",
             ],
         ),
         rows=rows,
@@ -525,8 +522,10 @@ def _build_seedance_2_rule(
                 "pricing_variant": {
                     "480p_no_video_input": 1.0,
                     "720p_no_video_input": _ratio(_credit_for(rows, "720p no video input"), base.credit_price),
+                    "1080p_no_video_input": _ratio(_credit_for(rows, "1080p no video input"), base.credit_price),
                     "480p_with_video_input": _ratio(_credit_for(rows, "480p with video input"), base.credit_price),
                     "720p_with_video_input": _ratio(_credit_for(rows, "720p with video input"), base.credit_price),
+                    "1080p_with_video_input": _ratio(_credit_for(rows, "1080p with video input"), base.credit_price),
                 },
             },
             notes=[

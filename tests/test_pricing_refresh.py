@@ -238,6 +238,28 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "anchor": "https://kie.ai/kling-2-6?model=kling-2.6%2Fimage-to-video",
         },
         {
+            "modelDescription": "kling 3.0, video, with audio-4K",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "67",
+            "creditUnit": "per second",
+            "usdPrice": "0.335",
+            "falPrice": "0.37",
+            "discountRate": 9.46,
+            "anchor": "https://kie.ai/kling-3-0",
+        },
+        {
+            "modelDescription": "kling 3.0, video, without audio-4K",
+            "interfaceType": "video",
+            "provider": "Kling",
+            "creditPrice": "67",
+            "creditUnit": "per second",
+            "usdPrice": "0.335",
+            "falPrice": "0.37",
+            "discountRate": 9.46,
+            "anchor": "https://kie.ai/kling-3-0",
+        },
+        {
             "modelDescription": "kling 3.0, video, with audio-1080P",
             "interfaceType": "video",
             "provider": "Kling",
@@ -302,6 +324,28 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "falPrice": "0.11",
             "discountRate": 9.09,
             "anchor": "https://kie.ai/kling-3-motion-control",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2, 1080p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "102",
+            "creditUnit": "per second",
+            "usdPrice": "0.51",
+            "falPrice": "0.62",
+            "discountRate": 17.74,
+            "anchor": None,
+        },
+        {
+            "modelDescription": "bytedance/seedance-2, 1080p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "62",
+            "creditUnit": "per second",
+            "usdPrice": "0.31",
+            "falPrice": "0.38",
+            "discountRate": 18.42,
+            "anchor": None,
         },
         {
             "modelDescription": "bytedance/seedance-2, 720p no video input",
@@ -389,9 +433,12 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     ]
     assert rules["kling-2.6-t2v"].billing_unit == "video"
     assert rules["kling-3.0-t2v"].billing_unit == "second"
+    assert rules["kling-3.0-t2v"].multipliers["pricing_variant"]["4k_true"] == 67.0 / 14.0
+    assert rules["kling-3.0-t2v"].multipliers["pricing_variant"]["1080p_true"] == 27.0 / 14.0
     assert rules["kling-3.0-motion"].multipliers["mode"]["1080p"] == 1.35
     assert rules["seedance-2.0"].billing_unit == "second"
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["720p_with_video_input"] == 25.0 / 19.0
+    assert rules["seedance-2.0"].multipliers["pricing_variant"]["1080p_with_video_input"] == 62.0 / 19.0
     assert snapshot.missing_model_keys == []
     assert "gpt-image-2-text-to-image" in snapshot.priced_model_keys
     assert any(

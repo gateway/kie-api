@@ -261,6 +261,24 @@ def test_validator_defaults_kling_3_sound_when_omitted() -> None:
     assert any(item.field == "sound" for item in result.defaulted_fields)
 
 
+def test_validator_accepts_kling_3_4k_mode_alias() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            prompt="a high detail product launch film",
+            options={"duration": 5, "mode": "4k"},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.READY_WITH_DEFAULTS
+    assert result.normalized_request.options["mode"] == "4K"
+
+
 def test_validator_maps_motion_mode_aliases_from_docs_to_live_values() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

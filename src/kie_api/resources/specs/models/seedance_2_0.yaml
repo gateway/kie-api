@@ -28,7 +28,7 @@ options:
     default: false
   resolution:
     type: enum
-    allowed: [480p, 720p]
+    allowed: [480p, 720p, 1080p]
     default: 720p
   aspect_ratio:
     type: enum
@@ -63,14 +63,16 @@ verification:
   verified_from:
     - live_page_api_surface
     - docs_kie_secondary
-  verified_on: '2026-04-04'
+    - site_pricing_api
+  verified_on: '2026-04-29'
   verification_notes:
     - Verified against the live https://kie.ai/seedance-2-0 playground field list and the https://docs.kie.ai/market/bytedance/seedance-2 API page on 2026-04-04.
     - The live page exposes prompt, first_frame_url, last_frame_url, reference_image_urls, reference_video_urls, reference_audio_urls, return_last_frame, generate_audio, resolution, aspect_ratio, duration, and web_search.
+    - The 2026-04-29 docs page example still shows 720p, but the KIE public pricing API now publishes 1080p rows for bytedance/seedance-2 with and without video input, so the SDK exposes 1080p as a supported resolution tier.
     - The live page shows image uploads supporting JPG, PNG, WEBP, BMP, and GIF up to 30MB each.
     - The live UI states the total length of reference videos must not exceed 15 seconds and allows up to 3 reference videos.
     - The prompt box examples reference uploaded assets with @imageN style tokens, so the SDK renders reference guidance metadata for wrapper prompts.
-    - The docs do not clearly publish authoritative pricing for Seedance 2.0 at this time, so pricing remains unknown until live verification.
+    - The public pricing API publishes non-authoritative observed pricing rows for Seedance 2.0, including 1080p tiers.
     - The docs and live page both present Seedance as one endpoint that supports text-only, first-frame, first+last-frame, and multimodal reference scenarios.
   field_provenance:
     key: inferred
