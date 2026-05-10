@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from kie_api.artifacts.inspect import ffmpeg_available, ffmpeg_path
+from kie_api.artifacts.inspect import ffmpeg_available, ffmpeg_path, ffprobe_path
 from kie_api.artifacts.videos import (
     build_poster_command,
     build_web_video_command,
@@ -76,5 +76,6 @@ def test_generate_video_derivatives_for_tiny_clip(tmp_path: Path) -> None:
     assert web.exists()
     assert poster.exists()
     assert web_record.mime_type == "video/mp4"
-    assert web_record.duration_seconds is not None
+    if ffprobe_path():
+        assert web_record.duration_seconds is not None
     assert poster_record.mime_type == "image/jpeg"
