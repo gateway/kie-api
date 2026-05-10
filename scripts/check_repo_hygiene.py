@@ -24,7 +24,7 @@ BLOCKED_TRACKED_PREFIXES = (
 )
 
 SENSITIVE_PATTERNS = (
-    re.compile(r"/Users/evilone"),
+    re.compile(r"/Users/[A-Za-z0-9._-]+"),
     re.compile(r"E:\\Development", re.IGNORECASE),
     re.compile(r"gh[pousr]_[A-Za-z0-9_]{20,}"),
     re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
