@@ -42,7 +42,8 @@ def image_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]
 
 
 def video_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]:
-    if shutil.which("ffprobe") is None:
+    ffprobe = ffprobe_path()
+    if ffprobe is None:
         return {
             "duration_seconds": None,
             "width": None,
@@ -53,7 +54,7 @@ def video_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]
             "sha256": sha256_file(path) if include_sha256 else None,
         }
     command = [
-        "ffprobe",
+        ffprobe,
         "-v",
         "error",
         "-print_format",
@@ -91,7 +92,25 @@ def video_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]
 
 
 def ffmpeg_available() -> bool:
-    return shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
+    return ffmpeg_path() is not None
+
+
+def ffmpeg_path() -> Optional[str]:
+    system_binary = shutil.which("ffmpeg")
+    if system_binary:
+        return system_binary
+    try:
+        import imageio_ffmpeg
+    except Exception:  # pragma: no cover - optional dependency import guard
+        return None
+    try:
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:  # pragma: no cover - defensive for broken installs
+        return None
+
+
+def ffprobe_path() -> Optional[str]:
+    return shutil.which("ffprobe")
 
 
 def _require_binary(name: str) -> None:

@@ -160,6 +160,7 @@ def test_create_run_artifact_keeps_video_original_when_ffmpeg_is_missing(monkeyp
     output_video.write_bytes(b"fake mp4 payload")
 
     monkeypatch.setattr("kie_api.artifacts.inspect.shutil.which", lambda _name: None)
+    monkeypatch.setattr("kie_api.artifacts.videos.ffmpeg_path", lambda: None)
 
     run = create_run_artifact(
         RunArtifactCreateRequest(

@@ -31,7 +31,7 @@ Captured metadata includes:
 
 ## Video derivatives
 
-Video derivatives use `ffmpeg` and `ffprobe`.
+Video derivatives use `ffmpeg`. KIE API first uses a system `ffmpeg` binary when one is available, then falls back to the `imageio-ffmpeg` binary installed with the Python environment. `ffprobe` is optional and is only used for richer video metadata when it is available on `PATH`.
 
 Default behavior:
 - web video: MP4, H.264, browser-friendly, max width `1280`
@@ -57,9 +57,9 @@ Image derivatives require:
 
 Video derivatives require:
 - `ffmpeg`
-- `ffprobe`
+- optional `ffprobe` for duration, dimensions, and codec metadata
 
-If `ffmpeg` or `ffprobe` are unavailable, video derivative generation raises a clear library error instead of silently pretending success.
+If `ffmpeg` is unavailable, video derivative generation raises a clear library error instead of silently pretending success. If only `ffprobe` is unavailable, derivatives are still generated and video metadata falls back to mime type, byte size, and sha256.
 
 ## Relative paths in metadata
 

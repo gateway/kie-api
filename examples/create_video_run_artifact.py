@@ -12,12 +12,15 @@ from kie_api import (
     RunArtifactCreateRequest,
     create_run_artifact,
 )
-from kie_api.artifacts.inspect import ffmpeg_available
+from kie_api.artifacts.inspect import ffmpeg_available, ffmpeg_path
 
 
 def main() -> None:
     if not ffmpeg_available():
-        raise SystemExit("ffmpeg and ffprobe are required for this example.")
+        raise SystemExit("ffmpeg is required for this example.")
+    ffmpeg = ffmpeg_path()
+    if not ffmpeg:
+        raise SystemExit("ffmpeg is required for this example.")
 
     with TemporaryDirectory() as tmp_dir:
         temp_root = Path(tmp_dir)
@@ -27,7 +30,7 @@ def main() -> None:
         for path, color in ((input_video, "orange"), (output_video, "purple")):
             subprocess.run(
                 [
-                    "ffmpeg",
+                    ffmpeg,
                     "-y",
                     "-f",
                     "lavfi",

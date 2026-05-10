@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import List
 
-from .inspect import ffmpeg_available, video_metadata
+from .inspect import ffmpeg_path, video_metadata
 from .models import DerivedAssetRecord
 from ..exceptions import ArtifactProcessingError
 
@@ -21,18 +21,20 @@ def generate_video_derivatives(
     poster_format: str = "jpg",
     enable_sha256: bool = True,
 ) -> tuple[DerivedAssetRecord, DerivedAssetRecord]:
-    if not ffmpeg_available():
-        raise ArtifactProcessingError("ffmpeg and ffprobe are required for video derivatives")
+    ffmpeg = ffmpeg_path()
+    if not ffmpeg:
+        raise ArtifactProcessingError("ffmpeg is required for video derivatives")
     source = Path(source_path)
     web_path.parent.mkdir(parents=True, exist_ok=True)
     poster_path.parent.mkdir(parents=True, exist_ok=True)
 
-    _run_ffmpeg(build_web_video_command(source, web_path, max_width=web_max_width))
+    _run_ffmpeg(build_web_video_command(source, web_path, max_width=web_max_width, ffmpeg_binary=ffmpeg))
     _run_ffmpeg(
         build_poster_command(
             source,
             poster_path.with_suffix(f".{poster_format.lstrip('.')}"),
             max_width=poster_max_width,
+            ffmpeg_binary=ffmpeg,
         )
     )
     poster_resolved_path = poster_path.with_suffix(f".{poster_format.lstrip('.')}")
@@ -43,10 +45,16 @@ def generate_video_derivatives(
     )
 
 
-def build_web_video_command(source_path: Path, destination_path: Path, *, max_width: int = 1280) -> List[str]:
+def build_web_video_command(
+    source_path: Path,
+    destination_path: Path,
+    *,
+    max_width: int = 1280,
+    ffmpeg_binary: str = "ffmpeg",
+) -> List[str]:
     scale_filter = f"scale=w='if(gt(iw,{max_width}),{max_width},iw)':h=-2"
     return [
-        "ffmpeg",
+        ffmpeg_binary,
         "-y",
         "-i",
         str(source_path),
@@ -70,10 +78,16 @@ def build_web_video_command(source_path: Path, destination_path: Path, *, max_wi
     ]
 
 
-def build_poster_command(source_path: Path, destination_path: Path, *, max_width: int = 640) -> List[str]:
+def build_poster_command(
+    source_path: Path,
+    destination_path: Path,
+    *,
+    max_width: int = 640,
+    ffmpeg_binary: str = "ffmpeg",
+) -> List[str]:
     scale_filter = f"scale=w='if(gt(iw,{max_width}),{max_width},iw)':h=-2"
     command = [
-        "ffmpeg",
+        ffmpeg_binary,
         "-y",
         "-ss",
         "00:00:00.000",

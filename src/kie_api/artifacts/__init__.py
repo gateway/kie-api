@@ -16,7 +16,7 @@ from .index import (
     rebuild_run_index,
     scan_run_artifacts,
 )
-from .inspect import detect_mime_type, ffmpeg_available, image_metadata, sha256_file, video_metadata
+from .inspect import detect_mime_type, ffmpeg_available, ffmpeg_path, ffprobe_path, image_metadata, sha256_file, video_metadata
 from .models import (
     ArtifactSource,
     ArtifactDerivativeSettings,
@@ -53,6 +53,8 @@ __all__ = [
     "DerivedAssetRecord",
     "detect_mime_type",
     "ffmpeg_available",
+    "ffmpeg_path",
+    "ffprobe_path",
     "get_latest_assets",
     "get_latest_successful_run",
     "get_run_by_id",

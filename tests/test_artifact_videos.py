@@ -1,9 +1,11 @@
 import subprocess
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-from kie_api.artifacts.inspect import ffmpeg_available
+from kie_api.artifacts.inspect import ffmpeg_available, ffmpeg_path
 from kie_api.artifacts.videos import (
     build_poster_command,
     build_web_video_command,
@@ -21,11 +23,22 @@ def test_build_video_commands_are_browser_friendly() -> None:
     assert "+faststart" in web_command
     assert poster_command[-1] == "poster.jpg"
 
+    custom_command = build_web_video_command(Path("in.mov"), Path("out.mp4"), ffmpeg_binary=r"C:\venv\ffmpeg.exe")
+    assert custom_command[0] == r"C:\venv\ffmpeg.exe"
+
+
+def test_ffmpeg_path_uses_imageio_binary_when_system_ffmpeg_is_missing(monkeypatch) -> None:
+    monkeypatch.setattr("kie_api.artifacts.inspect.shutil.which", lambda _name: None)
+    monkeypatch.setitem(sys.modules, "imageio_ffmpeg", SimpleNamespace(get_ffmpeg_exe=lambda: r"C:\venv\ffmpeg.exe"))
+
+    assert ffmpeg_path() == r"C:\venv\ffmpeg.exe"
+    assert ffmpeg_available() is True
+
 
 def test_generate_video_derivatives_raises_clear_error_without_ffmpeg(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr("kie_api.artifacts.videos.ffmpeg_available", lambda: False)
+    monkeypatch.setattr("kie_api.artifacts.videos.ffmpeg_path", lambda: None)
 
-    with pytest.raises(ArtifactProcessingError, match="ffmpeg and ffprobe are required"):
+    with pytest.raises(ArtifactProcessingError, match="ffmpeg is required"):
         generate_video_derivatives(
             tmp_path / "source.mp4",
             tmp_path / "web.mp4",
@@ -33,15 +46,17 @@ def test_generate_video_derivatives_raises_clear_error_without_ffmpeg(monkeypatc
         )
 
 
-@pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg/ffprobe are required for video derivative test")
+@pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg is required for video derivative test")
 def test_generate_video_derivatives_for_tiny_clip(tmp_path: Path) -> None:
+    ffmpeg = ffmpeg_path()
+    assert ffmpeg is not None
     source = tmp_path / "source.mp4"
     web = tmp_path / "web.mp4"
     poster = tmp_path / "poster.jpg"
 
     subprocess.run(
         [
-            "ffmpeg",
+            ffmpeg,
             "-y",
             "-f",
             "lavfi",
