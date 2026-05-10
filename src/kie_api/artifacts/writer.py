@@ -24,6 +24,7 @@ from .models import (
     RunSourceContext,
 )
 from .paths import coerce_created_at, create_run_artifact_paths
+from ..exceptions import ArtifactProcessingError
 
 
 def create_run_artifact(
@@ -32,6 +33,7 @@ def create_run_artifact(
     output_root: Union[Path, str] = "outputs",
     append_index: bool = True,
 ) -> RunArtifact:
+    warnings = list(request.warnings)
     created_at_dt = coerce_created_at(request.created_at)
     run_id, resolved_created_at, paths = create_run_artifact_paths(
         Path(output_root),
@@ -55,6 +57,7 @@ def create_run_artifact(
         paths.thumb_dir,
         derivative_settings=request.derivative_settings,
         privacy=request.privacy,
+        warnings=warnings,
     )
     prompt_record = _write_prompts(paths.run_dir, paths.prompt_txt, paths.prompt_enhanced_txt, request.prompts)
     request_path = _write_optional_json(
@@ -87,7 +90,7 @@ def create_run_artifact(
         options=request.options,
         defaults=request.defaults,
         provider_trace=provider_trace,
-        warnings=request.warnings,
+        warnings=warnings,
         errors=request.errors,
         tags=request.tags,
         notes=request.notes,
@@ -214,6 +217,7 @@ def _copy_outputs(
     *,
     derivative_settings: ArtifactDerivativeSettings,
     privacy: ArtifactPrivacySettings,
+    warnings: List[str],
 ) -> List[AssetRecord]:
     records: List[AssetRecord] = []
     for index, source in enumerate(sources, start=1):
@@ -261,23 +265,30 @@ def _copy_outputs(
 
             web_path = web_dir / f"output_{index:02d}.mp4"
             poster_path = thumb_dir / f"output_{index:02d}_poster.{derivative_settings.video_poster_format.lstrip('.')}"
-            web_record, poster_record = generate_video_derivatives(
-                destination,
-                web_path,
-                poster_path,
-                web_max_width=derivative_settings.video_web_max_width,
-                poster_max_width=derivative_settings.video_poster_width,
-                poster_format=derivative_settings.video_poster_format,
-                enable_sha256=derivative_settings.enable_sha256,
-            )
-            record.web_path = _relative(run_dir, web_path)
-            record.poster_path = poster_record.relative_path
-            record.bytes_web = web_record.bytes
-            record.bytes_poster = poster_record.bytes
-            record.derivatives = [
-                _rebase_derived(run_dir, web_record, web_path),
-                poster_record,
-            ]
+            try:
+                web_record, poster_record = generate_video_derivatives(
+                    destination,
+                    web_path,
+                    poster_path,
+                    web_max_width=derivative_settings.video_web_max_width,
+                    poster_max_width=derivative_settings.video_poster_width,
+                    poster_format=derivative_settings.video_poster_format,
+                    enable_sha256=derivative_settings.enable_sha256,
+                )
+                record.web_path = _relative(run_dir, web_path)
+                record.poster_path = poster_record.relative_path
+                record.bytes_web = web_record.bytes
+                record.bytes_poster = poster_record.bytes
+                record.derivatives = [
+                    _rebase_derived(run_dir, web_record, web_path),
+                    poster_record,
+                ]
+            except ArtifactProcessingError as exc:
+                warning = f"Video derivatives skipped: {exc}"
+                if warning not in warnings:
+                    warnings.append(warning)
+                record.web_path = record.relative_path
+                record.bytes_web = record.bytes
         records.append(record)
     return records
 

@@ -155,6 +155,35 @@ def test_create_run_artifact_honors_custom_derivative_settings(tmp_path: Path) -
     assert run.source_context.project_name == "artifact-tests"
 
 
+def test_create_run_artifact_keeps_video_original_when_ffmpeg_is_missing(monkeypatch, tmp_path: Path) -> None:
+    output_video = tmp_path / "output.mp4"
+    output_video.write_bytes(b"fake mp4 payload")
+
+    monkeypatch.setattr("kie_api.artifacts.inspect.shutil.which", lambda _name: None)
+
+    run = create_run_artifact(
+        RunArtifactCreateRequest(
+            status="succeeded",
+            model_key="kling-3.0-t2v",
+            created_at=datetime(2026, 3, 26, 22, 10, 0, tzinfo=timezone.utc).isoformat(),
+            prompts=PromptRecord(raw="Test video", final_used="Test video"),
+            outputs=[ArtifactSource(kind="video", role="output", source_path=str(output_video))],
+        ),
+        output_root=tmp_path / "outputs",
+    )
+
+    run_dir = Path(run.run_dir)
+    output = run.outputs[0]
+    assert (run_dir / "original" / "output_01.mp4").exists()
+    assert output.relative_path == "original/output_01.mp4"
+    assert output.web_path == "original/output_01.mp4"
+    assert output.poster_path is None
+    assert output.derivatives == []
+    assert output.mime_type == "video/mp4"
+    assert output.bytes == len(b"fake mp4 payload")
+    assert any("Video derivatives skipped" in warning for warning in run.warnings)
+
+
 def test_create_run_artifact_can_opt_into_full_internal_trace(tmp_path: Path) -> None:
     input_image = tmp_path / "input.png"
     output_image = tmp_path / "output.png"

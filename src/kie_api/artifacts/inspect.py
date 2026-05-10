@@ -42,7 +42,16 @@ def image_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]
 
 
 def video_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]:
-    _require_binary("ffprobe")
+    if shutil.which("ffprobe") is None:
+        return {
+            "duration_seconds": None,
+            "width": None,
+            "height": None,
+            "codec_name": None,
+            "mime_type": detect_mime_type(path) or "video/mp4",
+            "bytes": path.stat().st_size,
+            "sha256": sha256_file(path) if include_sha256 else None,
+        }
     command = [
         "ffprobe",
         "-v",
