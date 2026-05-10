@@ -30,5 +30,8 @@ jobs:
       - name: Verify packaged specs are in sync
         run: python scripts/sync_packaged_specs.py --check
 
+      - name: Check repository hygiene
+        run: python scripts/check_repo_hygiene.py
+
       - name: Run test suite
         run: python -m pytest -q

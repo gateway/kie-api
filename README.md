@@ -487,10 +487,7 @@ python -m pytest tests/smoke -m smoke -rs
 - [Prompt profiles](docs/PROMPT_PROFILES.md)
 - [Model onboarding](docs/MODEL_ONBOARDING.md)
 - [Pricing and preflight](docs/PRICING_AND_PREFLIGHT.md)
-- [Live verification report](docs/LIVE_VERIFICATION_REPORT.md)
 - [Control API integration](docs/CONTROL_API_INTEGRATION.md)
-- [Real API integration readiness](docs/REAL_API_INTEGRATION_READINESS.md)
-- [Maturity map](docs/MATURITY_MAP.md)
 
 ## Current readiness
 - Library-ready for spec loading, normalization, validation, prompt preset editing, dry-run enhancement, pricing estimation, preflight gating, payload construction, and local testing
