@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -11,6 +12,8 @@ from kie_api.artifacts.videos import (
     build_web_video_command,
     generate_video_derivatives,
 )
+from kie_api.artifacts.models import ArtifactSource, PromptRecord, RunArtifactCreateRequest
+from kie_api.artifacts.writer import create_run_artifact
 from kie_api.exceptions import ArtifactProcessingError
 
 
@@ -79,3 +82,48 @@ def test_generate_video_derivatives_for_tiny_clip(tmp_path: Path) -> None:
     if ffprobe_path():
         assert web_record.duration_seconds is not None
     assert poster_record.mime_type == "image/jpeg"
+
+
+@pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg is required for video derivative test")
+def test_video_run_artifact_stores_relative_derivative_paths(tmp_path: Path) -> None:
+    ffmpeg = ffmpeg_path()
+    assert ffmpeg is not None
+    source = tmp_path / "source.mp4"
+    subprocess.run(
+        [
+            ffmpeg,
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=purple:s=320x240:d=1",
+            "-pix_fmt",
+            "yuv420p",
+            str(source),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    run = create_run_artifact(
+        RunArtifactCreateRequest(
+            status="succeeded",
+            model_key="kling-3.0-i2v",
+            created_at=datetime(2026, 5, 11, 1, 0, 0, tzinfo=timezone.utc).isoformat(),
+            prompts=PromptRecord(raw="Test", final_used="Test"),
+            outputs=[ArtifactSource(kind="video", role="output", source_path=str(source))],
+        ),
+        output_root=tmp_path / "outputs",
+    )
+
+    output = run.outputs[0]
+    assert output.web_path == "web/output_01.mp4"
+    assert output.poster_path == "thumb/output_01_poster.jpg"
+    assert [item.relative_path for item in output.derivatives] == [
+        "web/output_01.mp4",
+        "thumb/output_01_poster.jpg",
+    ]
+    run_dir = Path(run.run_dir)
+    assert (run_dir / output.web_path).exists()
+    assert (run_dir / output.poster_path).exists()

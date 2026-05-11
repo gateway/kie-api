@@ -275,13 +275,16 @@ def _copy_outputs(
                     poster_format=derivative_settings.video_poster_format,
                     enable_sha256=derivative_settings.enable_sha256,
                 )
+                poster_resolved_path = poster_path.with_suffix(f".{derivative_settings.video_poster_format.lstrip('.')}")
+                rebased_web_record = _rebase_derived(run_dir, web_record, web_path)
+                rebased_poster_record = _rebase_derived(run_dir, poster_record, poster_resolved_path)
                 record.web_path = _relative(run_dir, web_path)
-                record.poster_path = poster_record.relative_path
+                record.poster_path = rebased_poster_record.relative_path
                 record.bytes_web = web_record.bytes
                 record.bytes_poster = poster_record.bytes
                 record.derivatives = [
-                    _rebase_derived(run_dir, web_record, web_path),
-                    poster_record,
+                    rebased_web_record,
+                    rebased_poster_record,
                 ]
             except ArtifactProcessingError as exc:
                 warning = f"Video derivatives skipped: {exc}"
