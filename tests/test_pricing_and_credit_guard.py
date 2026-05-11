@@ -77,6 +77,25 @@ def test_pricing_registry_applies_kling_4k_without_extra_sound_surcharge() -> No
     assert estimate.estimated_cost_usd == pytest.approx(1.675)
 
 
+def test_pricing_registry_applies_kling_30_per_second_duration_range() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="kling-3.0-i2v",
+        provider_model="kling-3.0/video",
+        task_mode=TaskMode.IMAGE_TO_VIDEO,
+        prompt="animate the reference frame",
+        prompt_policy=PromptPolicy.OFF,
+        options={"duration": 7, "mode": "4K", "sound": False},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == pytest.approx(7.0)
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(67.0 / 14.0)
+    assert estimate.estimated_credits == pytest.approx(469.0)
+    assert estimate.estimated_cost_usd == pytest.approx(2.345)
+
+
 def test_credit_guard_rejects_when_estimated_credits_exceed_balance() -> None:
     pricing = PricingRegistry.from_rules(
         [PricingRule(model_key="kling-3.0-t2v", pricing_status="manual", base_credits=20)],

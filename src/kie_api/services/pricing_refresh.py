@@ -441,7 +441,7 @@ def _build_kling_30_video_rule(
             base_credits=base.credit_price,
             base_cost_usd=base.usd_price,
             multipliers={
-                "duration": {"5": 5.0, "10": 10.0},
+                "duration": {str(value): float(value) for value in range(3, 16)},
                 "pricing_variant": {
                     "720p_false": 1.0,
                     "720p_true": _ratio(_credit_for(rows, "with audio-720p"), base.credit_price),

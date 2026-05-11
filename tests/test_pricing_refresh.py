@@ -433,6 +433,9 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     ]
     assert rules["kling-2.6-t2v"].billing_unit == "video"
     assert rules["kling-3.0-t2v"].billing_unit == "second"
+    assert rules["kling-3.0-t2v"].multipliers["duration"]["3"] == 3.0
+    assert rules["kling-3.0-t2v"].multipliers["duration"]["7"] == 7.0
+    assert rules["kling-3.0-t2v"].multipliers["duration"]["15"] == 15.0
     assert rules["kling-3.0-t2v"].multipliers["pricing_variant"]["4k_true"] == 67.0 / 14.0
     assert rules["kling-3.0-t2v"].multipliers["pricing_variant"]["1080p_true"] == 27.0 / 14.0
     assert rules["kling-3.0-motion"].multipliers["mode"]["1080p"] == 1.35
