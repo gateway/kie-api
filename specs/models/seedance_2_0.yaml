@@ -39,6 +39,10 @@ options:
     min: 4
     max: 15
     required: true
+    label: Duration
+    help_text: "Video length in seconds. Seedance 2.0 supports 4s through 15s generations."
+    ui_group: generation
+    ui_order: 10
   web_search:
     type: bool
     default: false

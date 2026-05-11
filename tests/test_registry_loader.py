@@ -73,6 +73,26 @@ def test_registry_exposes_provider_capability_updates() -> None:
     assert "16:9" in gpt_image.options["aspect_ratio"].allowed
 
 
+def test_video_generation_models_expose_duration_controls() -> None:
+    registry = load_registry()
+    expected_duration_specs = {
+        "kling-2.6-t2v": {"allowed": [5, 10]},
+        "kling-2.6-i2v": {"allowed": [5, 10]},
+        "kling-3.0-t2v": {"min": 3, "max": 15},
+        "kling-3.0-i2v": {"min": 3, "max": 15},
+        "seedance-2.0": {"min": 4, "max": 15},
+    }
+
+    for model_key, expected in expected_duration_specs.items():
+        duration = registry.get_model(model_key).options["duration"]
+        assert duration.label == "Duration"
+        assert duration.required is True
+        assert duration.ui_group == "generation"
+        assert duration.ui_order == 10
+        for field, value in expected.items():
+            assert getattr(duration, field) == value
+
+
 def test_registry_loads_new_prompt_preset_metadata() -> None:
     registry = load_registry()
     preset = registry.get_prompt_profile("kling_3_0_i2v_first_last_frame_v1")

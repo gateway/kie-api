@@ -29,6 +29,10 @@ options:
     allowed: [5, 10]
     default: null
     required: true
+    label: Duration
+    help_text: "Video length in seconds. Kling 2.6 supports 5s and 10s generations."
+    ui_group: generation
+    ui_order: 10
 prompt:
   required: true
   max_chars: 2500

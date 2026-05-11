@@ -33,6 +33,10 @@ options:
     max: 15
     default: null
     required: true
+    label: Duration
+    help_text: "Video length in seconds. Kling 3.0 supports 3s through 15s generations."
+    ui_group: generation
+    ui_order: 10
   aspect_ratio:
     type: enum
     allowed: ['1:1', '9:16', '16:9']
