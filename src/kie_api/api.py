@@ -152,9 +152,12 @@ def wait_for_task(
     settings: Optional[KieSettings] = None,
     poll_interval_seconds: Optional[float] = None,
     timeout_seconds: Optional[float] = None,
+    model_key: Optional[str] = None,
+    registry: Optional[SpecRegistry] = None,
 ) -> TaskWaitResult:
     """Poll KIE until a task reaches a terminal state or times out."""
 
+    resolved_registry = _resolve_registry(registry) if model_key else registry
     resolved_settings = settings or KieSettings()
     poll_interval = (
         poll_interval_seconds
@@ -166,14 +169,22 @@ def wait_for_task(
         if timeout_seconds is not None
         else resolved_settings.wait_timeout_seconds
     )
-    client = StatusClient(resolved_settings)
+    client = (
+        StatusClient(resolved_settings, registry=resolved_registry)
+        if resolved_registry
+        else StatusClient(resolved_settings)
+    )
     history = []
     start = time.monotonic()
     consecutive_transient_failures = 0
 
     while True:
         try:
-            status = client.get_status(task_id)
+            status = (
+                client.get_status(task_id, model_key=model_key)
+                if model_key
+                else client.get_status(task_id)
+            )
         except (ProviderTransportError, ProviderResponseError) as exc:
             elapsed = time.monotonic() - start
             if elapsed >= timeout and history:

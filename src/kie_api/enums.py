@@ -29,6 +29,7 @@ class TaskMode(StrEnum):
     IMAGE_TO_VIDEO = "image_to_video"
     REFERENCE_TO_VIDEO = "reference_to_video"
     MOTION_CONTROL = "motion_control"
+    TEXT_TO_MUSIC = "text_to_music"
 
 
 class PromptPolicy(StrEnum):
@@ -45,6 +46,7 @@ class PromptInputPattern(StrEnum):
     IMAGE_EDIT = "image_edit"
     MULTIMODAL_REFERENCE = "multimodal_reference"
     MOTION_CONTROL = "motion_control"
+    MUSIC_PROMPT = "music_prompt"
 
 
 class PromptResolutionSource(StrEnum):
@@ -86,6 +88,7 @@ class OptionType(StrEnum):
     ENUM = "enum"
     BOOL = "bool"
     INT_RANGE = "int_range"
+    NUMBER_RANGE = "number_range"
     STRING = "string"
 
 

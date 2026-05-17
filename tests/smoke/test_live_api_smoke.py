@@ -149,3 +149,48 @@ def test_live_seedance_first_frame_submit_smoke() -> None:
     assert submission.task_id
     assert status is not None
     assert status.task_id == submission.task_id
+
+
+def test_live_suno_prompt_mode_submit_smoke() -> None:
+    _require_live_smoke()
+    if os.getenv("KIE_SMOKE_ALLOW_SUNO") != "1":
+        pytest.skip("Set KIE_SMOKE_ALLOW_SUNO=1 to run Suno music smoke tests.")
+    callback_url = os.getenv("KIE_SMOKE_SUNO_CALLBACK_URL")
+    if not callback_url:
+        pytest.skip("Set KIE_SMOKE_SUNO_CALLBACK_URL for the Suno smoke test.")
+
+    registry = load_registry()
+    settings = KieSettings.from_env()
+    validation = validate_request(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            prompt=os.getenv(
+                "KIE_SMOKE_SUNO_PROMPT",
+                "A short bright synth pop chorus with a driving bassline.",
+            ),
+            options={"suno_model": os.getenv("KIE_SMOKE_SUNO_MODEL", "V5")},
+            callback_url=callback_url,
+        ),
+        registry,
+    )
+    if validation.normalized_request is None or validation.state not in {
+        ValidationState.READY,
+        ValidationState.READY_WITH_DEFAULTS,
+        ValidationState.READY_WITH_WARNING,
+    }:
+        pytest.skip(f"Suno smoke request did not validate cleanly: {validation.state}")
+
+    prepared = prepare_request_for_submission(validation, registry=registry, settings=settings)
+    submission = submit_prepared_request(prepared, registry=registry, settings=settings)
+    status = wait_for_task(
+        submission.task_id,
+        model_key="suno-generate-music",
+        registry=registry,
+        settings=settings,
+        poll_interval_seconds=settings.wait_poll_interval_seconds,
+        timeout_seconds=min(settings.wait_timeout_seconds, 900.0),
+    ).final_status
+
+    assert submission.task_id
+    assert status is not None
+    assert status.task_id == submission.task_id

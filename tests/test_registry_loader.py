@@ -12,7 +12,7 @@ from kie_api.registry.loader import load_latest_pricing_snapshot, load_model_spe
 def test_registry_loads_verified_model_specs() -> None:
     registry = load_registry()
 
-    assert len(registry.model_specs) == 10
+    assert len(registry.model_specs) == 11
     assert registry.get_model("nano-banana-pro").inputs["image"].required_max == 8
     assert registry.get_model("nano-banana-2").inputs["image"].required_max == 14
     assert registry.get_model("gpt-image-2-image-to-image").inputs["image"].required_max == 16
@@ -27,6 +27,19 @@ def test_registry_loads_verified_model_specs() -> None:
     assert registry.get_model("nano-banana-pro").options["resolution"].allowed == ["1K", "2K", "4K"]
     assert registry.get_model("nano-banana-2").options["output_format"].allowed == ["jpg", "png"]
     assert registry.get_model("gpt-image-2-image-to-image").transport.image_input_field == "input_urls"
+    assert registry.get_model("suno-generate-music").transport.endpoint_family == "suno"
+    assert registry.get_model("suno-generate-music").transport.create_path == "/api/v1/generate"
+    assert registry.get_model("suno-generate-music").options["suno_model"].allowed == [
+        "V4",
+        "V4_5",
+        "V4_5PLUS",
+        "V4_5ALL",
+        "V5",
+        "V5_5",
+    ]
+    assert registry.get_model("suno-generate-music").options["style"].ui_visible_when == {
+        "custom_mode": True
+    }
     assert registry.get_model("gpt-image-2-image-to-image").options["aspect_ratio"].allowed == [
         "auto",
         "1:1",
@@ -115,6 +128,13 @@ def test_registry_loads_new_prompt_preset_metadata() -> None:
     assert [str(item) for item in gpt_t2i_preset.applies_to_task_modes] == ["text_to_image"]
     assert [str(item) for item in gpt_t2i_preset.applies_to_input_patterns] == ["prompt_only"]
     assert "{{user_prompt}}" in gpt_t2i_preset.template
+
+    suno_preset = registry.get_prompt_profile("suno_generate_music_v1")
+
+    assert suno_preset.applies_to_models == ["suno-generate-music"]
+    assert [str(item) for item in suno_preset.applies_to_task_modes] == ["text_to_music"]
+    assert [str(item) for item in suno_preset.applies_to_input_patterns] == ["music_prompt"]
+    assert "{{user_prompt}}" in suno_preset.template
 
 
 def test_registry_exposes_field_level_provenance() -> None:

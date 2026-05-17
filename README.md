@@ -94,6 +94,12 @@ These descriptions are based on the current public Kie.ai model pages and live p
 - What it does: uses a reference image plus a motion-driver video to create directed motion-controlled video output
 - Who it is by: Kling AI on Kie.ai
 
+### Suno Music Generation
+
+- Good at: prompt-only or custom music generation with optional lyrics, instrumental mode, and model-family selection
+- What it does: creates audio tracks from text with Suno-specific controls such as custom mode, style, title, negative tags, persona fields, and advanced weighting sliders
+- Who it is by: Suno on Kie.ai
+
 ## How agents use it
 
 This toolkit is designed for agent-driven workflows. A coding agent, CLI wrapper, or application can use it to turn a user request into a real Kie.ai generation run safely.
@@ -408,8 +414,9 @@ Prompt presets and pricing snapshots are authored directly inside package resour
 - `src/kie_api/resources/prompt_profiles/`
 - `src/kie_api/resources/pricing/`
 
-Current default pricing snapshot:
-- `src/kie_api/resources/pricing/2026-03-26_site_pricing_page.yaml`
+The runtime loads the newest bundled pricing snapshot from `src/kie_api/resources/pricing/`
+by `released_on` and version metadata. Site-pricing snapshots are useful for planning, but they
+are not treated as authoritative billing contracts.
 
 Refresh a candidate snapshot from KIE's public site pricing API:
 
@@ -417,6 +424,16 @@ Refresh a candidate snapshot from KIE's public site pricing API:
 . .venv/bin/activate
 python scripts/refresh_site_pricing_snapshot.py --output /tmp/kie-site-pricing.yaml
 ```
+
+Install a refreshed snapshot directly into the package resources directory:
+
+```bash
+. .venv/bin/activate
+python scripts/refresh_site_pricing_snapshot.py --install
+```
+
+Suno pricing currently remains explicit `unknown` unless KIE's public pricing API publishes
+matching music rows. That keeps preflight and model coverage intact without inventing a numeric cost.
 
 Bundled model specs can be checked or synced with:
 
@@ -498,4 +515,7 @@ Pricing note:
 
 ## License
 
-This repo is licensed under the MIT License. See [LICENSE](LICENSE).
+This repo is source-available under the PolyForm Noncommercial 1.0.0 license. Noncommercial use,
+modification, and redistribution are allowed under that license. Commercial use requires separate
+permission from the copyright holder. For commercial licensing requests, contact Gateway on X:
+<https://x.com/gateway>. See [LICENSE](LICENSE).

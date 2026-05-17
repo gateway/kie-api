@@ -23,6 +23,8 @@ def _to_plain(value: Any) -> Any:
 
 
 def main() -> int:
+    repo_root = Path(__file__).resolve().parents[1]
+    default_pricing_root = repo_root / "src" / "kie_api" / "resources" / "pricing"
     parser = argparse.ArgumentParser(
         description="Refresh a KIE pricing snapshot from the public pricing page APIs."
     )
@@ -35,6 +37,17 @@ def main() -> int:
         "--released-on",
         help="Override the released_on date embedded in the snapshot (YYYY-MM-DD).",
     )
+    parser.add_argument(
+        "--install",
+        action="store_true",
+        help="Write the snapshot into the bundled pricing resources directory using a date-based filename.",
+    )
+    parser.add_argument(
+        "--pricing-root",
+        type=Path,
+        default=default_pricing_root,
+        help="Target pricing directory for --install. Defaults to src/kie_api/resources/pricing.",
+    )
     args = parser.parse_args()
 
     capture = fetch_site_pricing_catalog()
@@ -43,7 +56,14 @@ def main() -> int:
 
     if args.output:
         args.output.write_text(text)
-    else:
+        print(f"Wrote candidate snapshot to {args.output}")
+    if args.install:
+        target_name = f"{snapshot.released_on or 'unknown-date'}_site_pricing_page.yaml"
+        args.pricing_root.mkdir(parents=True, exist_ok=True)
+        target_path = args.pricing_root / target_name
+        target_path.write_text(text)
+        print(f"Installed snapshot to {target_path}")
+    if not args.output and not args.install:
         print(text, end="")
     return 0
 

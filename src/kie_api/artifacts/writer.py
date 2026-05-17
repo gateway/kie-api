@@ -144,6 +144,7 @@ def build_run_manifest(run: RunArtifact) -> RunManifest:
         output_count=len(run.outputs),
         has_video=any(asset.kind == "video" for asset in run.outputs),
         has_image=any(asset.kind == "image" for asset in run.outputs),
+        has_audio=any(asset.kind == "audio" for asset in run.outputs),
         duration_seconds=duration_seconds,
         run_folder=str(run_dir.relative_to(root_dir)),
     )
@@ -169,6 +170,7 @@ def build_run_index_entry(run: RunArtifact, manifest: Optional[RunManifest] = No
         output_count=resolved_manifest.output_count,
         has_video=resolved_manifest.has_video,
         has_image=resolved_manifest.has_image,
+        has_audio=resolved_manifest.has_audio,
         duration_seconds=resolved_manifest.duration_seconds,
         run_path=resolved_manifest.run_folder or str(run_dir.relative_to(root_dir)),
     )

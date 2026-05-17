@@ -207,3 +207,22 @@ def test_normalizer_resolves_seedance_reference_media_to_reference_to_video() ->
     )
 
     assert normalized.task_mode == TaskMode.REFERENCE_TO_VIDEO
+
+
+def test_normalizer_resolves_suno_defaults_and_aliases() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            prompt="bright synth pop chorus with a driving bassline",
+            options={"suno_model": "v5_5", "style_weight": 0.65},
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+
+    assert normalized.task_mode == TaskMode.TEXT_TO_MUSIC
+    assert normalized.options["custom_mode"] is False
+    assert normalized.options["instrumental"] is False
+    assert normalized.options["suno_model"] == "v5_5"
+    assert normalized.options["style_weight"] == 0.65

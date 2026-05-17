@@ -1,0 +1,22 @@
+key: suno_generate_music_v1
+label: Suno Music Generation Prompt Enhancer v1
+version: v1
+description: Built-in preset for Suno music generation requests.
+applies_to_models:
+  - suno-generate-music
+applies_to_task_modes:
+  - text_to_music
+applies_to_input_patterns:
+  - music_prompt
+variables:
+  - user_prompt
+  - model_key
+  - task_mode
+  - input_pattern
+rules:
+  - Preserve the user's genre, lyric, mood, instrumentation, tempo, and vocal intent.
+  - Keep lyrics usable as lyrics when the request is custom vocal generation.
+  - Keep instrumental prompts focused on genre, arrangement, production style, and emotional arc.
+source: builtin
+notes:
+  - Built-in request-shape-aware preset for wrapper-side Suno prompt enhancement.

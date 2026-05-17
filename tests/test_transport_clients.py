@@ -79,6 +79,34 @@ def test_submit_client_raises_clear_error_for_invalid_json_response() -> None:
     assert exc_info.value.raw_response["endpoint"] == settings.create_task_path
 
 
+def test_submit_client_uses_suno_generate_path_for_suno_model() -> None:
+    registry = load_registry()
+    normalized = RequestNormalizer(registry).normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            prompt="bright synth pop chorus",
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/v1/generate"
+        return httpx.Response(
+            200,
+            json={"code": 200, "data": {"taskId": "suno_task_1"}},
+        )
+
+    client = SubmitClient(
+        KieSettings(api_key="test-key"),
+        registry,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+
+    result = client.submit(normalized)
+
+    assert result.task_id == "suno_task_1"
+
+
 def test_upload_client_raises_transport_error_for_network_failure() -> None:
     settings = KieSettings(api_key="test-key")
 

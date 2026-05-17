@@ -1,0 +1,185 @@
+key: suno-generate-music
+label: Suno Music Generation
+family: suno
+provider_model: suno/generate-music
+task_modes:
+  - text_to_music
+inputs:
+  image:
+    required_min: 0
+    required_max: 0
+  video:
+    required_min: 0
+    required_max: 0
+  audio:
+    required_min: 0
+    required_max: 0
+options:
+  custom_mode:
+    type: bool
+    provider_field: customMode
+    default: false
+    label: Custom mode
+    help_text: "Enable title, style, and lyric-specific Suno controls."
+    ui_group: composition
+    ui_order: 5
+  instrumental:
+    type: bool
+    default: false
+    label: Instrumental
+    help_text: "Generate music without vocals."
+    ui_group: composition
+    ui_order: 10
+  suno_model:
+    type: enum
+    provider_field: model
+    allowed: [V4, V4_5, V4_5PLUS, V4_5ALL, V5, V5_5]
+    default: V5
+    required: true
+    label: Suno model
+    help_text: "Suno model version used for generation."
+    ui_group: generation
+    ui_order: 15
+    value_aliases:
+      v4: V4
+      v4_5: V4_5
+      v4_5plus: V4_5PLUS
+      v4_5all: V4_5ALL
+      v5: V5
+      v5_5: V5_5
+  style:
+    type: string
+    max_chars: 1000
+    label: Style
+    help_text: "Genre, instrumentation, mood, and production tags for custom mode."
+    ui_group: composition
+    ui_order: 20
+    ui_control: textarea
+    ui_visible_when:
+      custom_mode: true
+  title:
+    type: string
+    max_chars: 80
+    label: Title
+    help_text: "Song title for custom mode."
+    ui_group: composition
+    ui_order: 25
+    ui_control: text
+    ui_visible_when:
+      custom_mode: true
+  negative_tags:
+    type: string
+    provider_field: negativeTags
+    max_chars: 1000
+    label: Negative tags
+    help_text: "Styles or artifacts to avoid."
+    ui_group: advanced
+    ui_order: 30
+    advanced: true
+    ui_control: textarea
+  vocal_gender:
+    type: enum
+    provider_field: vocalGender
+    allowed: [m, f]
+    default: null
+    label: Vocal gender
+    help_text: "Optional vocal direction. Suno may not strictly follow this field."
+    ui_group: advanced
+    ui_order: 35
+    advanced: true
+    ui_visible_when:
+      instrumental: false
+  style_weight:
+    type: number_range
+    provider_field: styleWeight
+    min: 0.0
+    max: 1.0
+    default: null
+    label: Style weight
+    help_text: "Strength of adherence to the style prompt."
+    ui_group: advanced
+    ui_order: 40
+    advanced: true
+    ui_control: slider
+  weirdness_constraint:
+    type: number_range
+    provider_field: weirdnessConstraint
+    min: 0.0
+    max: 1.0
+    default: null
+    label: Weirdness
+    help_text: "Controls creative deviation."
+    ui_group: advanced
+    ui_order: 45
+    advanced: true
+    ui_control: slider
+  audio_weight:
+    type: number_range
+    provider_field: audioWeight
+    min: 0.0
+    max: 1.0
+    default: null
+    label: Audio weight
+    help_text: "Controls adherence to audio/persona guidance where supported."
+    ui_group: advanced
+    ui_order: 50
+    advanced: true
+    ui_control: slider
+  persona_id:
+    type: string
+    provider_field: personaId
+    label: Persona ID
+    help_text: "Optional Suno persona identifier."
+    ui_group: advanced
+    ui_order: 55
+    advanced: true
+    ui_control: text
+  persona_model:
+    type: enum
+    provider_field: personaModel
+    allowed: [style_persona, voice_persona]
+    default: null
+    label: Persona model
+    help_text: "Persona model type for persona-guided generation."
+    ui_group: advanced
+    ui_order: 60
+    advanced: true
+prompt:
+  required: false
+  max_chars: 5000
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_keys_by_input_pattern:
+    music_prompt: suno_generate_music_v1
+defaults: {}
+transport:
+  endpoint_family: suno
+  create_path: /api/v1/generate
+  status_path: /api/v1/generate/record-info
+  callback_supported: true
+verification:
+  verified_from:
+    - docs_kie_suno_generate_music
+    - docs_kie_suno_record_info
+    - docs_kie_suno_callbacks
+  verified_on: '2026-05-17'
+  verification_notes:
+    - Verified against https://docs.kie.ai/suno-api/generate-music/ on 2026-05-17.
+    - The Suno generate endpoint uses POST /api/v1/generate and requires callBackUrl.
+    - The Suno model dropdown is represented as the suno_model option and emitted as provider field model.
+    - Status polling uses GET /api/v1/generate/record-info with taskId.
+    - Successful responses include response.sunoData entries with audioUrl, streamAudioUrl, imageUrl, duration, title, tags, and modelName.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    provider_model: inferred
+    task_modes: inferred
+    options.suno_model.allowed: verified_docs
+    options.custom_mode.provider_field: verified_docs
+    options.instrumental.type: verified_docs
+    options.style.max_chars: verified_docs
+    options.title.max_chars: verified_docs
+    transport.create_path: verified_docs
+    transport.status_path: verified_docs
+    transport.callback_supported: verified_docs

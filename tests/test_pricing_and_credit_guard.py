@@ -37,6 +37,17 @@ def test_pricing_registry_uses_observed_gpt_image_2_pricing_over_local_policy_fa
     assert estimate.estimated_cost_usd == pytest.approx(0.08)
 
 
+def test_pricing_registry_marks_suno_pricing_unknown_until_verified() -> None:
+    registry = PricingRegistry()
+
+    estimate = registry.estimate("suno-generate-music")
+
+    assert estimate.has_numeric_estimate is False
+    assert estimate.is_known is False
+    assert estimate.is_authoritative is False
+    assert estimate.pricing_status == "unknown"
+
+
 def test_pricing_registry_applies_option_multipliers() -> None:
     registry = PricingRegistry()
     request = NormalizedRequest(

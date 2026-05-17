@@ -280,6 +280,26 @@ def build_supported_model_snapshot(
             rules.append(image_rule)
             existing_model_keys.add(spec.key)
 
+    if (
+        "suno-generate-music" not in existing_model_keys
+        and resolved_registry.model_specs.get("suno-generate-music")
+    ):
+        rules.append(
+            PricingRule(
+                model_key="suno-generate-music",
+                pricing_status="unknown",
+                billing_unit="request",
+                provider="Suno",
+                interface_type="music",
+                anchor_url="https://docs.kie.ai/suno-api/generate-music",
+                notes=[
+                    "Suno pricing is intentionally marked unknown until verified KIE pricing rows are available.",
+                    f"No matching KIE site pricing row was observed on {released}.",
+                ],
+            )
+        )
+        existing_model_keys.add("suno-generate-music")
+
     priced_model_keys = sorted({rule.model_key for rule in rules})
     supported_model_keys = sorted(spec.key for spec in resolved_registry.iter_models())
 

@@ -201,6 +201,8 @@ _PLACEHOLDER_RE = re.compile(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}")
 
 
 def _detect_input_pattern(request: NormalizedRequest) -> PromptInputPattern:
+    if request.task_mode == TaskMode.TEXT_TO_MUSIC:
+        return PromptInputPattern.MUSIC_PROMPT
     if request.task_mode == TaskMode.MOTION_CONTROL:
         return PromptInputPattern.MOTION_CONTROL
     if request.task_mode == TaskMode.IMAGE_EDIT:

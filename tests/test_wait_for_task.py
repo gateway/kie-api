@@ -46,6 +46,43 @@ def test_wait_for_task_returns_terminal_success(monkeypatch) -> None:
     assert len(result.history) == 2
 
 
+def test_wait_for_task_passes_model_key_to_status_client(monkeypatch) -> None:
+    seen = {}
+
+    class StubStatusClient:
+        def __init__(self, settings, registry=None):
+            self.settings = settings
+            self.registry = registry
+
+        def get_status(self, task_id: str, model_key=None) -> StatusResult:
+            seen["task_id"] = task_id
+            seen["model_key"] = model_key
+            seen["has_registry"] = self.registry is not None
+            return StatusResult(
+                task_id=task_id,
+                state=JobState.SUCCEEDED,
+                provider_status="success",
+                output_urls=["https://cdn.example.com/song.mp3"],
+            )
+
+    monkeypatch.setattr("kie_api.api.StatusClient", StubStatusClient)
+
+    result = wait_for_task(
+        "suno_task_1",
+        model_key="suno-generate-music",
+        settings=KieSettings(api_key="test-key"),
+        poll_interval_seconds=0.0,
+        timeout_seconds=1.0,
+    )
+
+    assert result.terminal is True
+    assert seen == {
+        "task_id": "suno_task_1",
+        "model_key": "suno-generate-music",
+        "has_registry": True,
+    }
+
+
 def test_wait_for_task_returns_terminal_failure(monkeypatch) -> None:
     responses = deque(
         [

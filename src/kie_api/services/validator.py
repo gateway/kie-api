@@ -27,6 +27,7 @@ class RequestValidator:
         spec = self.registry.get_model(request.model_key)
         missing_inputs: List[MissingInput] = []
         normalized = deepcopy(request)
+        _apply_value_aliases(spec.options, normalized.options)
         defaulted_fields = deepcopy(normalized.defaulted_fields)
         warning_details: List[ValidationMessage] = []
         impossible_inputs: List[InvalidInput] = []
@@ -343,6 +344,13 @@ class RequestValidator:
                     )
                 )
 
+        if request.model_key == "suno-generate-music":
+            _validate_suno_request(
+                normalized,
+                missing_inputs=missing_inputs,
+                impossible_inputs=impossible_inputs,
+            )
+
         for option_name, option_spec in spec.options.items():
             if option_name not in normalized.options or normalized.options[option_name] is None:
                 if option_spec.required and not (
@@ -380,9 +388,6 @@ class RequestValidator:
                 continue
 
             value = normalized.options[option_name]
-            if option_spec.value_aliases and isinstance(value, str):
-                value = option_spec.value_aliases.get(value, value)
-                normalized.options[option_name] = value
 
             if option_spec.type == OptionType.BOOL and not isinstance(value, bool):
                 impossible_inputs.append(
@@ -434,6 +439,54 @@ class RequestValidator:
                                 value,
                             )
                         )
+            elif option_spec.type == OptionType.NUMBER_RANGE:
+                if isinstance(value, bool) or not isinstance(value, (int, float)):
+                    impossible_inputs.append(
+                        self._invalid_option(
+                            option_name,
+                            "invalid_number",
+                            f"Option '{option_name}' must be a number.",
+                            value,
+                        )
+                    )
+                else:
+                    if option_spec.min is not None and value < option_spec.min:
+                        impossible_inputs.append(
+                            self._invalid_option(
+                                option_name,
+                                "below_minimum",
+                                f"Option '{option_name}' must be >= {option_spec.min}.",
+                                value,
+                            )
+                        )
+                    if option_spec.max is not None and value > option_spec.max:
+                        impossible_inputs.append(
+                            self._invalid_option(
+                                option_name,
+                                "above_maximum",
+                                f"Option '{option_name}' must be <= {option_spec.max}.",
+                                value,
+                            )
+                        )
+            elif option_spec.type == OptionType.STRING:
+                if not isinstance(value, str):
+                    impossible_inputs.append(
+                        self._invalid_option(
+                            option_name,
+                            "invalid_string",
+                            f"Option '{option_name}' must be a string.",
+                            value,
+                        )
+                    )
+                elif option_spec.max_chars is not None and len(value) > option_spec.max_chars:
+                    impossible_inputs.append(
+                        self._invalid_option(
+                            option_name,
+                            "string_too_long",
+                            f"Option '{option_name}' must be {option_spec.max_chars} characters or fewer.",
+                            len(value),
+                        )
+                    )
 
         for option_name in normalized.options:
             if option_name not in spec.options:
@@ -502,6 +555,100 @@ def _media_with_role(
     role: MediaRole,
 ) -> List[MediaReference]:
     return [item for item in media if item.role == role]
+
+
+def _apply_value_aliases(
+    option_specs: dict[str, Any],
+    options: dict[str, Any],
+) -> None:
+    for option_name, option_spec in option_specs.items():
+        if option_name not in options:
+            continue
+        value = options[option_name]
+        if option_spec.value_aliases and isinstance(value, str):
+            options[option_name] = option_spec.value_aliases.get(value, value)
+
+
+def _validate_suno_request(
+    request: NormalizedRequest,
+    *,
+    missing_inputs: List[MissingInput],
+    impossible_inputs: List[InvalidInput],
+) -> None:
+    options = request.options
+    custom_mode = options.get("custom_mode") is True
+    instrumental = options.get("instrumental") is True
+    suno_model = options.get("suno_model") or "V5"
+    prompt = request.prompt or ""
+    style = options.get("style") or ""
+    title = options.get("title") or ""
+
+    if not request.callback_url:
+        missing_inputs.append(
+            MissingInput(
+                field="callback_url",
+                message="Suno music generation requires a callback URL.",
+            )
+        )
+
+    if not custom_mode and not prompt.strip():
+        missing_inputs.append(
+            MissingInput(field="prompt", message="Suno prompt mode requires a prompt.")
+        )
+
+    if custom_mode:
+        if not instrumental and not prompt.strip():
+            missing_inputs.append(
+                MissingInput(field="prompt", message="Suno custom vocal mode requires lyrics prompt text.")
+            )
+        if not style.strip():
+            missing_inputs.append(
+                MissingInput(field="style", message="Suno custom mode requires a style.")
+            )
+        if not title.strip():
+            missing_inputs.append(
+                MissingInput(field="title", message="Suno custom mode requires a title.")
+            )
+
+    if not custom_mode and len(prompt) > 500:
+        impossible_inputs.append(
+            InvalidInput(
+                field="prompt",
+                code="suno_prompt_too_long",
+                message="Suno non-custom prompt mode supports prompts up to 500 characters.",
+                received=len(prompt),
+            )
+        )
+
+    prompt_limit = 3000 if suno_model == "V4" else 5000
+    style_limit = 200 if suno_model == "V4" else 1000
+    if custom_mode and prompt and len(prompt) > prompt_limit:
+        impossible_inputs.append(
+            InvalidInput(
+                field="prompt",
+                code="suno_custom_prompt_too_long",
+                message=f"Suno {suno_model} custom prompt supports {prompt_limit} characters or fewer.",
+                received=len(prompt),
+            )
+        )
+    if style and len(style) > style_limit:
+        impossible_inputs.append(
+            InvalidInput(
+                field="style",
+                code="suno_style_too_long",
+                message=f"Suno {suno_model} style supports {style_limit} characters or fewer.",
+                received=len(style),
+            )
+        )
+    if title and len(title) > 80:
+        impossible_inputs.append(
+            InvalidInput(
+                field="title",
+                code="suno_title_too_long",
+                message="Suno title supports 80 characters or fewer.",
+                received=len(title),
+            )
+        )
 
 
 def _sum_known_media_durations(media: List[MediaReference]) -> int | None:

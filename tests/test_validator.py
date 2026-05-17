@@ -131,6 +131,134 @@ def test_validator_rejects_gpt_image_2_t2i_invalid_resolution_combinations() -> 
     )
 
 
+def test_validator_requires_suno_callback_url() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            prompt="bright synth pop chorus",
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.NEEDS_INPUT
+    assert any(item.field == "callback_url" for item in result.missing_inputs)
+
+
+def test_validator_accepts_suno_prompt_mode_and_model_alias() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            prompt="bright synth pop chorus",
+            options={"suno_model": "v5_5", "style_weight": 0.65},
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.READY_WITH_DEFAULTS
+    assert result.normalized_request.options["suno_model"] == "V5_5"
+
+
+def test_validator_requires_suno_custom_style_title_and_prompt_for_vocals() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            options={"custom_mode": True, "instrumental": False},
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.NEEDS_INPUT
+    assert {item.field for item in result.missing_inputs} == {"prompt", "style", "title"}
+
+
+def test_validator_accepts_suno_custom_instrumental_without_prompt() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            options={
+                "custom_mode": True,
+                "instrumental": True,
+                "style": "cinematic synthwave, arpeggiated bass, wide drums",
+                "title": "Midnight Signal",
+            },
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.READY_WITH_DEFAULTS
+
+
+def test_validator_rejects_suno_limits_and_slider_ranges() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            prompt="x" * 3001,
+            options={
+                "custom_mode": True,
+                "instrumental": False,
+                "suno_model": "v4",
+                "style": "y" * 201,
+                "title": "z" * 81,
+                "style_weight": 1.5,
+            },
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert {item.code for item in result.impossible_inputs} >= {
+        "suno_custom_prompt_too_long",
+        "suno_style_too_long",
+        "suno_title_too_long",
+        "above_maximum",
+    }
+
+
+def test_validator_rejects_kling_3_duration_above_maximum() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-t2v",
+            prompt="cinematic skyline at dusk",
+            options={"duration": 16},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(
+        item.field == "duration" and item.code == "above_maximum"
+        for item in result.impossible_inputs
+    )
+
+
 def test_validator_returns_ready_with_warning_for_kling_i2v_aspect_ratio_inference() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

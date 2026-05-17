@@ -185,6 +185,47 @@ def test_create_run_artifact_keeps_video_original_when_ffmpeg_is_missing(monkeyp
     assert any("Video derivatives skipped" in warning for warning in run.warnings)
 
 
+def test_create_run_artifact_records_audio_output_without_derivatives(tmp_path: Path) -> None:
+    output_audio = tmp_path / "song.mp3"
+    output_audio.write_bytes(b"fake mp3 payload")
+
+    run = create_run_artifact(
+        RunArtifactCreateRequest(
+            status="succeeded",
+            model_key="suno-generate-music",
+            provider_model="suno/generate-music",
+            created_at=datetime(2026, 5, 17, 12, 0, 0, tzinfo=timezone.utc).isoformat(),
+            prompts=PromptRecord(raw="bright synth pop chorus", final_used="bright synth pop chorus"),
+            outputs=[
+                ArtifactSource(
+                    kind="audio",
+                    role="output",
+                    source_path=str(output_audio),
+                    metadata={"title": "Midnight Signal"},
+                )
+            ],
+        ),
+        output_root=tmp_path / "outputs",
+    )
+
+    run_dir = Path(run.run_dir)
+    output = run.outputs[0]
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    index_line = json.loads((tmp_path / "outputs" / "index.jsonl").read_text(encoding="utf-8").splitlines()[0])
+
+    assert (run_dir / "original" / "output_01.mp3").exists()
+    assert output.kind == "audio"
+    assert output.relative_path == "original/output_01.mp3"
+    assert output.web_path is None
+    assert output.thumb_path is None
+    assert output.derivatives == []
+    assert output.bytes == len(b"fake mp3 payload")
+    assert manifest["has_audio"] is True
+    assert manifest["has_image"] is False
+    assert manifest["has_video"] is False
+    assert index_line["has_audio"] is True
+
+
 def test_create_run_artifact_can_opt_into_full_internal_trace(tmp_path: Path) -> None:
     input_image = tmp_path / "input.png"
     output_image = tmp_path / "output.png"

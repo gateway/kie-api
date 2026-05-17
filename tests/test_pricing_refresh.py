@@ -442,6 +442,8 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert rules["seedance-2.0"].billing_unit == "second"
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["720p_with_video_input"] == 25.0 / 19.0
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["1080p_with_video_input"] == 62.0 / 19.0
+    assert rules["suno-generate-music"].pricing_status == "unknown"
+    assert rules["suno-generate-music"].interface_type == "music"
     assert snapshot.missing_model_keys == []
     assert "gpt-image-2-text-to-image" in snapshot.priced_model_keys
     assert any(

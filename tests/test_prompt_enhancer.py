@@ -220,3 +220,23 @@ def test_prompt_enhancer_resolves_seedance_multimodal_reference_preset() -> None
     assert "@image2 -> reference image 2 (ref2.png)" in (context.rendered_system_prompt or "")
     assert "@video1 -> reference video 1 (ref1.mp4)" in (context.rendered_system_prompt or "")
     assert "@audio1 -> reference audio 1 (ref1.mp3)" in (context.rendered_system_prompt or "")
+
+
+def test_prompt_enhancer_resolves_suno_music_preset() -> None:
+    registry = load_registry()
+    enhancer = PromptEnhancer(registry)
+
+    context = enhancer.resolve_context(
+        NormalizedRequest(
+            model_key="suno-generate-music",
+            provider_model="suno/generate-music",
+            task_mode="text_to_music",
+            prompt="bright synth pop chorus with a driving bassline",
+            raw_prompt="bright synth pop chorus with a driving bassline",
+            prompt_policy=PromptPolicy.PREVIEW,
+        )
+    )
+
+    assert str(context.input_pattern) == "music_prompt"
+    assert context.resolved_preset_key == "suno_generate_music_v1"
+    assert "bright synth pop chorus" in (context.rendered_system_prompt or "")

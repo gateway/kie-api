@@ -178,6 +178,7 @@ class RunManifest(BaseModel):
     output_count: int = 0
     has_video: bool = False
     has_image: bool = False
+    has_audio: bool = False
     duration_seconds: Optional[float] = None
     run_folder: Optional[str] = None
 
@@ -200,6 +201,7 @@ class RunIndexEntry(BaseModel):
     output_count: int = 0
     has_video: bool = False
     has_image: bool = False
+    has_audio: bool = False
     duration_seconds: Optional[float] = None
     run_path: Optional[str] = None
 

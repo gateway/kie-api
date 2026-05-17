@@ -143,3 +143,14 @@ Manual candidate refresh:
 . .venv/bin/activate
 python scripts/refresh_site_pricing_snapshot.py --output /tmp/kie-site-pricing.yaml
 ```
+
+Directly install a refreshed snapshot into the bundled pricing resource directory:
+
+```bash
+. .venv/bin/activate
+python scripts/refresh_site_pricing_snapshot.py --install
+```
+
+Suno pricing is currently kept as `unknown` on purpose when the public KIE pricing API does not
+publish a matching music row. That allows the model to stay registered and visible to preflight
+without fabricating a numeric estimate.

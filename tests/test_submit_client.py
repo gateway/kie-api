@@ -393,3 +393,56 @@ def test_submit_client_builds_seedance_multimodal_reference_payload() -> None:
         "https://kieai.redpandaai.co/kieai/183531/audios/user-uploads/ref.mp3"
     ]
     assert "first_frame_url" not in payload["input"]
+
+
+def test_submit_client_builds_suno_prompt_mode_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            prompt="bright synth pop chorus with a driving bassline",
+            options={"suno_model": "V5_5", "style_weight": 0.65},
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+    result = validate_request(normalized, registry)
+    payload = client.build_payload(result.normalized_request)
+
+    assert payload["customMode"] is False
+    assert payload["instrumental"] is False
+    assert payload["model"] == "V5_5"
+    assert payload["prompt"] == "bright synth pop chorus with a driving bassline"
+    assert "styleWeight" not in payload
+    assert payload["callBackUrl"] == "https://callback.example.com/suno"
+
+
+def test_submit_client_builds_suno_custom_instrumental_payload_without_prompt() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="suno-generate-music",
+            options={
+                "custom_mode": True,
+                "instrumental": True,
+                "suno_model": "V5",
+                "style": "cinematic synthwave, arpeggiated bass, wide drums",
+                "title": "Midnight Signal",
+            },
+            callback_url="https://callback.example.com/suno",
+        )
+    )
+    result = validate_request(normalized, registry)
+    payload = client.build_payload(result.normalized_request)
+
+    assert "prompt" not in payload
+    assert payload["customMode"] is True
+    assert payload["instrumental"] is True
+    assert payload["model"] == "V5"
+    assert payload["style"] == "cinematic synthwave, arpeggiated bass, wide drums"
+    assert payload["title"] == "Midnight Signal"

@@ -10,6 +10,10 @@ from ..adapters.market import (
     build_market_submission_payload,
     normalize_market_submission_response,
 )
+from ..adapters.suno import (
+    build_suno_submission_payload,
+    normalize_suno_submission_response,
+)
 from ..config import KieSettings
 from ..exceptions import MissingConfigurationError
 from ..models import NormalizedRequest, SubmissionResult
@@ -34,20 +38,30 @@ class SubmitClient(ManagedHttpClientMixin):
     def build_payload(self, request: NormalizedRequest) -> Dict[str, Any]:
         RequestPreparationService(self.registry, self.settings).ensure_submit_ready(request)
         spec = self.registry.get_model(request.model_key)
+        if spec.transport.endpoint_family == "suno":
+            return build_suno_submission_payload(request, spec)
         return build_market_submission_payload(request, spec)
 
     def submit(self, request: NormalizedRequest) -> SubmissionResult:
         self._require_api_key()
+        spec = self.registry.get_model(request.model_key)
         payload = self.build_payload(request)
+        endpoint_path = spec.transport.create_path or self.settings.create_task_path
         response, response_payload = request_json(
             self.http_client,
             "POST",
-            f"{self.settings.market_base_url}{self.settings.create_task_path}",
-            endpoint_label=self.settings.create_task_path,
+            f"{self.settings.market_base_url}{endpoint_path}",
+            endpoint_label=endpoint_path,
             error_label="KIE task submission failed",
             headers=self.settings.auth_headers(),
             json=payload,
         )
+        if spec.transport.endpoint_family == "suno":
+            return normalize_suno_submission_response(
+                response_payload,
+                payload,
+                http_status=response.status_code,
+            )
         return normalize_market_submission_response(
             response_payload,
             payload,

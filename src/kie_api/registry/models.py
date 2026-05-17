@@ -46,8 +46,9 @@ class OptionSpec(BaseModel):
     type: OptionType
     allowed: Optional[List[Any]] = None
     default: Optional[Any] = None
-    min: Optional[int] = None
-    max: Optional[int] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    max_chars: Optional[int] = None
     required: bool = False
     provider_field: Optional[str] = None
     allow_infer_from_media: bool = False
@@ -60,6 +61,7 @@ class OptionSpec(BaseModel):
     advanced: bool = False
     hidden_from_studio: bool = False
     ui_control: Optional[str] = None
+    ui_visible_when: Dict[str, Any] = Field(default_factory=dict)
 
 
 class PromptSpec(BaseModel):
