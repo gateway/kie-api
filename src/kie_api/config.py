@@ -24,6 +24,17 @@ def _env_csv(name: str, default: str) -> List[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+DEFAULT_TRUSTED_OUTPUT_HOSTS = (
+    "tempfile.redpandaai.co,"
+    "kieai.redpandaai.co,"
+    "tempfile.aiquickdraw.com,"
+    "musicfile.kie.ai,"
+    "cdn1.suno.ai,"
+    "cdn2.suno.ai,"
+    "ark-acg-cn-beijing.tos-cn-beijing.volces.com"
+)
+
+
 class KieSettings(BaseModel):
     """Settings for talking to KIE APIs."""
 
@@ -70,7 +81,7 @@ class KieSettings(BaseModel):
     trusted_download_hosts: List[str] = Field(
         default_factory=lambda: _env_csv(
             "KIE_TRUSTED_DOWNLOAD_HOSTS",
-            "tempfile.redpandaai.co,kieai.redpandaai.co,tempfile.aiquickdraw.com",
+            DEFAULT_TRUSTED_OUTPUT_HOSTS,
         )
     )
     download_max_bytes: int = Field(
@@ -85,7 +96,7 @@ class KieSettings(BaseModel):
     callback_trusted_output_hosts: List[str] = Field(
         default_factory=lambda: _env_csv(
             "KIE_CALLBACK_TRUSTED_OUTPUT_HOSTS",
-            "tempfile.redpandaai.co,kieai.redpandaai.co,tempfile.aiquickdraw.com",
+            DEFAULT_TRUSTED_OUTPUT_HOSTS,
         )
     )
     connect_timeout_seconds: float = Field(

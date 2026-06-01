@@ -38,6 +38,58 @@ def test_download_client_saves_output_to_disk(tmp_path: Path) -> None:
     assert result.content_length == len(body)
 
 
+def test_download_client_trusts_suno_media_host_by_default(tmp_path: Path) -> None:
+    body = b"fake-cover-image-bytes"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url == httpx.URL("https://musicfile.kie.ai/suno-cover.jpeg")
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "image/jpeg", "Content-Length": str(len(body))},
+            content=body,
+        )
+
+    client = DownloadClient(
+        KieSettings(),
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    destination = tmp_path / "downloads" / "suno-cover.jpeg"
+
+    result = client.download_to_path(
+        "https://musicfile.kie.ai/suno-cover.jpeg",
+        str(destination),
+    )
+
+    assert destination.read_bytes() == body
+    assert result.destination_path == str(destination)
+
+
+def test_download_client_trusts_seedance_volcengine_tos_host_by_default(tmp_path: Path) -> None:
+    body = b"fake-video-bytes"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url == httpx.URL("https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/out.mp4")
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "video/mp4", "Content-Length": str(len(body))},
+            content=body,
+        )
+
+    client = DownloadClient(
+        KieSettings(),
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    destination = tmp_path / "downloads" / "seedance-output.mp4"
+
+    result = client.download_to_path(
+        "https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/out.mp4",
+        str(destination),
+    )
+
+    assert destination.read_bytes() == body
+    assert result.destination_path == str(destination)
+
+
 def test_download_client_rejects_untrusted_hosts(tmp_path: Path) -> None:
     client = DownloadClient(
         KieSettings(),

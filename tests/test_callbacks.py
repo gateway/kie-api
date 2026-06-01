@@ -104,6 +104,35 @@ def test_verify_callback_request_requires_trusted_output_urls() -> None:
         )
 
 
+def test_verify_callback_request_trusts_seedance_volcengine_tos_host_by_default() -> None:
+    payload = {
+        "data": {
+            "taskId": "task_123",
+            "status": "success",
+            "outputs": ["https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/out.mp4"],
+        }
+    }
+    headers = {
+        "X-Webhook-Timestamp": "1711111111",
+        "X-Webhook-Signature": build_callback_signature(
+            task_id="task_123",
+            timestamp="1711111111",
+            secret="top-secret",
+        ),
+    }
+
+    event = verify_callback_request(
+        payload,
+        headers,
+        secret="top-secret",
+        settings=KieSettings(),
+        max_age_seconds=600,
+        now=1711111111,
+    )
+
+    assert event.output_urls == ["https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/out.mp4"]
+
+
 def test_verify_callback_request_rejects_conflicting_task_ids() -> None:
     payload = {"taskId": "outer_123", "data": {"taskId": "task_123"}}
     headers = {
