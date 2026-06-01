@@ -108,6 +108,7 @@ For multimodal video models such as Seedance 2.0:
 - do not force them into a Kling-style multi-shot abstraction unless the provider request shape actually exposes shot arrays
 - if multimodal references introduce mixed image/video/audio guidance, prefer a dedicated input-pattern binding over overloading existing `single_image` or `first_last_frames` logic
 - use role-aware media references when the same endpoint needs to distinguish first-frame, last-frame, and general reference assets
+- keep Seedance 2.0 Standard and Fast as separate model keys when the provider model string or pricing differs; Fast currently reuses the same request shape but omits `1080p`
 
 Known current TODO:
 - Kling 3.0 `kling_elements` / element-reference support is documented by Kie.ai, but is not yet modeled in the runtime request types or upload flow here

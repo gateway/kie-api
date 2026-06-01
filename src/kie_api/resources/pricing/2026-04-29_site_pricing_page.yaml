@@ -300,6 +300,51 @@ rules:
     resolution plus whether reference_video_urls are present.
   - The site pricing API publishes separate rows for 'with video input' and 'no video
     input'; this rule maps those exactly for dry-run estimation.
+- model_key: seedance-2.0-fast
+  pricing_status: observed_site_pricing
+  billing_unit: second
+  provider: ByteDance
+  interface_type: video
+  anchor_url: https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast
+  raw_credit_text: '15.5'
+  raw_usd_text: '0.0775'
+  base_credits: 15.5
+  base_cost_usd: 0.0775
+  multipliers:
+    duration:
+      '4': 4.0
+      '5': 5.0
+      '6': 6.0
+      '7': 7.0
+      '8': 8.0
+      '9': 9.0
+      '10': 10.0
+      '11': 11.0
+      '12': 12.0
+      '13': 13.0
+      '14': 14.0
+      '15': 15.0
+    pricing_variant:
+      480p_no_video_input: 1.0
+      720p_no_video_input: 2.129032258064516
+      480p_with_video_input: 0.5806451612903226
+      720p_with_video_input: 1.2903225806451613
+  adders_credits: {}
+  adders_cost_usd: {}
+  observed_at: '2026-04-29'
+  source_row_labels:
+  - bytedance/seedance-2 fast, 720p no video input
+  - bytedance/seedance-2 fast, 720p with video input
+  - bytedance/seedance-2 fast, 480p no video input
+  - bytedance/seedance-2 fast, 480p with video input
+  source_anchor_urls:
+  - https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast
+  notes:
+  - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-04-29.
+  - Seedance pricing is modeled with an internal pricing_variant derived from request
+    resolution plus whether reference_video_urls are present.
+  - The site pricing API publishes separate rows for 'with video input' and 'no video
+    input'; this rule maps those exactly for dry-run estimation.
 - model_key: gpt-image-2-image-to-image
   pricing_status: observed_site_pricing
   billing_unit: request
@@ -367,29 +412,6 @@ priced_model_keys:
 - nano-banana-2
 - nano-banana-pro
 - seedance-2.0
+- seedance-2.0-fast
 missing_model_keys: []
-unmapped_source_rows:
-- model_description: bytedance/seedance-2 fast, 720p no video input
-  interface_type: video
-  provider: ByteDance
-  credit_price_text: '33'
-  usd_price_text: '0.165'
-  anchor: https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast
-- model_description: bytedance/seedance-2 fast, 720p with video input
-  interface_type: video
-  provider: ByteDance
-  credit_price_text: '20'
-  usd_price_text: '0.10'
-  anchor: https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast
-- model_description: bytedance/seedance-2 fast, 480p no video input
-  interface_type: video
-  provider: ByteDance
-  credit_price_text: '15.5'
-  usd_price_text: '0.0775'
-  anchor: https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast
-- model_description: bytedance/seedance-2 fast, 480p with video input
-  interface_type: video
-  provider: ByteDance
-  credit_price_text: '9'
-  usd_price_text: '0.045'
-  anchor: https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast
+unmapped_source_rows: []

@@ -16,6 +16,8 @@ from ..models import (
 )
 from ..registry.models import ModelSpec
 
+SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast"}
+
 
 PROVIDER_STATUS_MAP = {
     "waiting": JobState.QUEUED,
@@ -52,7 +54,7 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
     if resolved_prompt:
         input_payload["prompt"] = resolved_prompt
 
-    if request.model_key == "seedance-2.0":
+    if request.model_key in SEEDANCE_MODEL_KEYS:
         first_frame = _first_media_url(request.images, MediaRole.FIRST_FRAME)
         last_frame = _first_media_url(request.images, MediaRole.LAST_FRAME)
         reference_images = _media_urls(request.images, MediaRole.REFERENCE)

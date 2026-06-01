@@ -3,6 +3,7 @@ label: Seedance 2.0 Multimodal Reference Prompt Enhancer v1
 version: v1
 applies_to_models:
   - seedance-2.0
+  - seedance-2.0-fast
 applies_to_task_modes:
   - reference_to_video
 applies_to_input_patterns:
@@ -18,4 +19,4 @@ rules:
   - Mention reference tokens only when they materially help the provider stay aligned to the supplied assets.
   - Use the deterministic token guide exactly as given.
 notes:
-  - Use this preset when Seedance 2.0 includes reference images, videos, or audio assets.
+  - Use this preset when Seedance 2.0 Standard or Fast includes reference images, videos, or audio assets.

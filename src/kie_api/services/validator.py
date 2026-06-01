@@ -16,6 +16,8 @@ from ..models import (
 )
 from ..registry.loader import SpecRegistry
 
+SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast"}
+
 
 class RequestValidator:
     """Validate normalized requests and return structured recoverable gaps."""
@@ -114,7 +116,7 @@ class RequestValidator:
                     )
                 )
 
-        if request.model_key == "seedance-2.0":
+        if request.model_key in SEEDANCE_MODEL_KEYS:
             first_frame_images = _media_with_role(normalized.images, MediaRole.FIRST_FRAME)
             last_frame_images = _media_with_role(normalized.images, MediaRole.LAST_FRAME)
             reference_images = _media_with_role(normalized.images, MediaRole.REFERENCE)

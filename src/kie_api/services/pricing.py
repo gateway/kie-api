@@ -8,6 +8,8 @@ from ..models import EstimatedCost, NormalizedRequest
 from ..registry.loader import load_latest_pricing_snapshot
 from ..registry.models import PricingRule, PricingSnapshot
 
+SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast"}
+
 
 class PricingRegistry:
     """Pricing lookup and estimation using versioned snapshot files."""
@@ -167,7 +169,7 @@ def _derive_request_pricing_options(request: NormalizedRequest) -> Dict[str, Any
         sound = _normalize_option_value(request.options.get("sound", True))
         derived["pricing_variant"] = f"{resolution}_{sound}"
 
-    if request.model_key == "seedance-2.0":
+    if request.model_key in SEEDANCE_MODEL_KEYS:
         resolution = _normalize_option_value(request.options.get("resolution") or "720p")
         has_video_input = bool(request.videos)
         derived["pricing_variant"] = (

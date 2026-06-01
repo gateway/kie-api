@@ -165,11 +165,15 @@ Use one model’s output as another model’s input:
 
 ### 5. Multimodal reference video
 
-Use `seedance-2.0` when you need richer video guidance:
+Use `seedance-2.0` or `seedance-2.0-fast` when you need richer video guidance:
 - plain text-to-video with no media
 - one first-frame image
 - first+last-frame image guidance
 - multimodal reference video with reference images, videos, and audio
+
+`seedance-2.0-fast` uses the same request shape with the lower-cost
+`bytedance/seedance-2-fast` provider model and supports `480p` and `720p`.
+Use `seedance-2.0` when `1080p` output is required.
 
 Seedance uses role-aware media references in the runtime request model:
 - `first_frame`

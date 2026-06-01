@@ -684,3 +684,24 @@ def test_validator_accepts_seedance_multimodal_reference_request() -> None:
 
     assert result.state == ValidationState.READY_WITH_WARNING
     assert any(item.code == "seedance_reference_audio_duration_unverified" for item in result.warning_details)
+
+
+def test_validator_rejects_seedance_fast_1080p_resolution() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0-fast",
+            prompt="fast draft at high resolution",
+            options={"duration": 4, "resolution": "1080p"},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(
+        item.field == "resolution" and item.code == "invalid_enum_value"
+        for item in result.impossible_inputs
+    )

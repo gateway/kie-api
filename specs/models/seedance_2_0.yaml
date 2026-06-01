@@ -32,7 +32,7 @@ options:
     default: 720p
   aspect_ratio:
     type: enum
-    allowed: ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9']
+    allowed: ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9', adaptive]
     default: '16:9'
   duration:
     type: int_range
@@ -78,6 +78,7 @@ verification:
     - The prompt box examples reference uploaded assets with @imageN style tokens, so the SDK renders reference guidance metadata for wrapper prompts.
     - The public pricing API publishes non-authoritative observed pricing rows for Seedance 2.0, including 1080p tiers.
     - The docs and live page both present Seedance as one endpoint that supports text-only, first-frame, first+last-frame, and multimodal reference scenarios.
+    - The 2026-06-01 docs schema exposes adaptive as an aspect_ratio option for Seedance 2.0.
   field_provenance:
     key: inferred
     label: inferred
@@ -101,7 +102,7 @@ verification:
     options.resolution.allowed: verified_live
     options.resolution.default: inferred
     options.aspect_ratio.type: inferred
-    options.aspect_ratio.allowed: verified_live
+    options.aspect_ratio.allowed: verified_docs
     options.aspect_ratio.default: inferred
     options.duration.type: inferred
     options.duration.min: verified_docs

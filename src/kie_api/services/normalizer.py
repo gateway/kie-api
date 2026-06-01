@@ -16,6 +16,7 @@ FAMILY_MODEL_ALIASES = {
     "kling-2.6": {"with_image": "kling-2.6-i2v", "without_image": "kling-2.6-t2v"},
     "kling-3.0": {"with_image": "kling-3.0-i2v", "without_image": "kling-3.0-t2v"},
 }
+SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast"}
 
 
 class RequestNormalizer:
@@ -94,7 +95,7 @@ class RequestNormalizer:
 
         if spec.key in {"nano-banana-pro", "nano-banana-2"}:
             return TaskMode.IMAGE_EDIT if raw_request.images else TaskMode.TEXT_TO_IMAGE
-        if spec.key == "seedance-2.0":
+        if spec.key in SEEDANCE_MODEL_KEYS:
             if _seedance_has_reference_media(raw_request):
                 return TaskMode.REFERENCE_TO_VIDEO
             if _seedance_frame_images(raw_request.images):

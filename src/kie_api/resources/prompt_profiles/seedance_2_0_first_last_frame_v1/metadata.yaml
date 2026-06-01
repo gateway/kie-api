@@ -3,6 +3,7 @@ label: Seedance 2.0 First+Last Frame Prompt Enhancer v1
 version: v1
 applies_to_models:
   - seedance-2.0
+  - seedance-2.0-fast
 applies_to_task_modes:
   - reference_to_video
 applies_to_input_patterns:
@@ -16,4 +17,4 @@ rules:
   - Describe motion that bridges the two endpoint frames cleanly.
   - Avoid introducing visual changes that would contradict the ending frame.
 notes:
-  - Use this preset when Seedance 2.0 has one first frame image and one last frame image.
+  - Use this preset when Seedance 2.0 Standard or Fast has one first frame image and one last frame image.

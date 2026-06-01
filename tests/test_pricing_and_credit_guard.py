@@ -218,3 +218,28 @@ def test_pricing_registry_applies_seedance_1080p_variant() -> None:
     assert estimate.applied_multipliers["duration"] == 4.0
     assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(102.0 / 19.0)
     assert estimate.estimated_credits == pytest.approx(408.0)
+
+
+def test_pricing_registry_applies_seedance_fast_variant() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="seedance-2.0-fast",
+        provider_model="bytedance/seedance-2-fast",
+        task_mode=TaskMode.REFERENCE_TO_VIDEO,
+        prompt="use the reference clip for motion timing",
+        prompt_policy=PromptPolicy.OFF,
+        videos=[
+            {
+                "media_type": "video",
+                "url": "https://example.com/ref.mp4",
+                "role": "reference",
+            }
+        ],
+        options={"duration": 10, "resolution": "720p"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == 10.0
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(20.0 / 15.5)
+    assert estimate.estimated_credits == pytest.approx(200.0)

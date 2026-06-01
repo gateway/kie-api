@@ -395,6 +395,25 @@ def test_submit_client_builds_seedance_multimodal_reference_payload() -> None:
     assert "first_frame_url" not in payload["input"]
 
 
+def test_submit_client_builds_seedance_fast_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0-fast",
+            prompt="quick product reveal with clean camera motion",
+            options={"duration": 5, "resolution": "720p"},
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert normalized.task_mode == "text_to_video"
+    assert payload["model"] == "bytedance/seedance-2-fast"
+    assert payload["input"]["resolution"] == "720p"
+
+
 def test_submit_client_builds_suno_prompt_mode_payload() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

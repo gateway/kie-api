@@ -262,6 +262,18 @@ def build_supported_model_snapshot(
         _mark_rows_used(used_rows, seedance_rows)
         rules.append(_build_seedance_2_rule(seedance_rows, observed_at=released))
 
+    seedance_fast_rows = _rows_with_phrase(capture.rows, "bytedance/seedance-2 fast,")
+    if seedance_fast_rows:
+        _mark_rows_used(used_rows, seedance_fast_rows)
+        rules.append(
+            _build_seedance_2_rule(
+                seedance_fast_rows,
+                model_key="seedance-2.0-fast",
+                anchor_url="https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast",
+                observed_at=released,
+            )
+        )
+
     existing_model_keys = {rule.model_key for rule in rules}
     for spec in sorted(resolved_registry.iter_models(), key=lambda item: item.key):
         if spec.key in existing_model_keys:
@@ -522,31 +534,43 @@ def _build_kling_30_motion_rule(
 def _build_seedance_2_rule(
     rows: List[PricingCatalogRow],
     *,
+    model_key: str = "seedance-2.0",
+    anchor_url: str = "https://kie.ai/seedance-2-0",
     observed_at: str,
 ) -> PricingRule:
     base = _select_row(rows, "480p no video input") or rows[0]
+    pricing_variant = {
+        "480p_no_video_input": 1.0,
+        "720p_no_video_input": _ratio(_credit_for(rows, "720p no video input"), base.credit_price),
+        "480p_with_video_input": _ratio(_credit_for(rows, "480p with video input"), base.credit_price),
+        "720p_with_video_input": _ratio(_credit_for(rows, "720p with video input"), base.credit_price),
+    }
+    if _select_row(rows, "1080p no video input"):
+        pricing_variant["1080p_no_video_input"] = _ratio(
+            _credit_for(rows, "1080p no video input"),
+            base.credit_price,
+        )
+    if _select_row(rows, "1080p with video input"):
+        pricing_variant["1080p_with_video_input"] = _ratio(
+            _credit_for(rows, "1080p with video input"),
+            base.credit_price,
+        )
+
     return _with_row_provenance(
         PricingRule(
-            model_key="seedance-2.0",
+            model_key=model_key,
             pricing_status="observed_site_pricing",
             billing_unit="second",
             provider="ByteDance",
             interface_type="video",
-            anchor_url="https://kie.ai/seedance-2-0",
+            anchor_url=anchor_url,
             raw_credit_text=base.credit_price_text,
             raw_usd_text=base.usd_price_text,
             base_credits=base.credit_price,
             base_cost_usd=base.usd_price,
             multipliers={
                 "duration": {str(value): float(value) for value in range(4, 16)},
-                "pricing_variant": {
-                    "480p_no_video_input": 1.0,
-                    "720p_no_video_input": _ratio(_credit_for(rows, "720p no video input"), base.credit_price),
-                    "1080p_no_video_input": _ratio(_credit_for(rows, "1080p no video input"), base.credit_price),
-                    "480p_with_video_input": _ratio(_credit_for(rows, "480p with video input"), base.credit_price),
-                    "720p_with_video_input": _ratio(_credit_for(rows, "720p with video input"), base.credit_price),
-                    "1080p_with_video_input": _ratio(_credit_for(rows, "1080p with video input"), base.credit_price),
-                },
+                "pricing_variant": pricing_variant,
             },
             notes=[
                 f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",

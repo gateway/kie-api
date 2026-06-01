@@ -391,6 +391,50 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "discountRate": 36.0,
             "anchor": None,
         },
+        {
+            "modelDescription": "bytedance/seedance-2 fast, 720p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "33",
+            "creditUnit": "per second",
+            "usdPrice": "0.165",
+            "falPrice": "0.2419",
+            "discountRate": 31.79,
+            "anchor": "https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2 fast, 720p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "20",
+            "creditUnit": "per second",
+            "usdPrice": "0.10",
+            "falPrice": "0.1451",
+            "discountRate": 31.08,
+            "anchor": "https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2 fast, 480p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "15.5",
+            "creditUnit": "per second",
+            "usdPrice": "0.0775",
+            "falPrice": "0.1125",
+            "discountRate": 31.11,
+            "anchor": "https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2 fast, 480p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "9",
+            "creditUnit": "per second",
+            "usdPrice": "0.045",
+            "falPrice": "0.0675",
+            "discountRate": 33.33,
+            "anchor": "https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast",
+        },
     ]
 
     rows = [
@@ -442,6 +486,10 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert rules["seedance-2.0"].billing_unit == "second"
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["720p_with_video_input"] == 25.0 / 19.0
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["1080p_with_video_input"] == 62.0 / 19.0
+    assert rules["seedance-2.0-fast"].billing_unit == "second"
+    assert rules["seedance-2.0-fast"].base_credits == 15.5
+    assert rules["seedance-2.0-fast"].multipliers["pricing_variant"]["720p_with_video_input"] == 20.0 / 15.5
+    assert "1080p_no_video_input" not in rules["seedance-2.0-fast"].multipliers["pricing_variant"]
     assert rules["suno-generate-music"].pricing_status == "unknown"
     assert rules["suno-generate-music"].interface_type == "music"
     assert snapshot.missing_model_keys == []
