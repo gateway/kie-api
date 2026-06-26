@@ -88,6 +88,12 @@ These descriptions are based on the current public Kie.ai model pages and live p
 - What it does: creates videos from text or images, supports 3 to 15 second generations, std/pro/4K generation modes, multi-shot prompting, stronger scene consistency, and native audio generation
 - Who it is by: Kling AI on Kie.ai
 
+### Kling 3.0 Turbo Image to Video
+
+- Good at: faster, lower-cost image-to-video generation when 720p or 1080p output is enough
+- What it does: animates one or more source images using `kling/v3-turbo-image-to-video`, 3 to 15 second duration, and 720p/1080p resolution controls
+- Who it is by: Kling AI on Kie.ai
+
 ### Kling 3.0 Motion Control
 
 - Good at: transferring motion or performance from a reference video onto a subject or scene defined by an image
@@ -165,7 +171,7 @@ Use one model’s output as another model’s input:
 
 ### 5. Multimodal reference video
 
-Use `seedance-2.0` or `seedance-2.0-fast` when you need richer video guidance:
+Use `seedance-2.0`, `seedance-2.0-fast`, or `seedance-2.0-mini` when you need richer video guidance:
 - plain text-to-video with no media
 - one first-frame image
 - first+last-frame image guidance
@@ -173,6 +179,8 @@ Use `seedance-2.0` or `seedance-2.0-fast` when you need richer video guidance:
 
 `seedance-2.0-fast` uses the same request shape with the lower-cost
 `bytedance/seedance-2-fast` provider model and supports `480p` and `720p`.
+`seedance-2.0-mini` uses the same request shape with the lower-cost
+`bytedance/seedance-2-mini` provider model and supports `480p` and `720p`.
 Use `seedance-2.0` when `1080p` output is required.
 
 Seedance uses role-aware media references in the runtime request model:

@@ -16,7 +16,7 @@ FAMILY_MODEL_ALIASES = {
     "kling-2.6": {"with_image": "kling-2.6-i2v", "without_image": "kling-2.6-t2v"},
     "kling-3.0": {"with_image": "kling-3.0-i2v", "without_image": "kling-3.0-t2v"},
 }
-SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast"}
+SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast", "seedance-2.0-mini"}
 
 
 class RequestNormalizer:

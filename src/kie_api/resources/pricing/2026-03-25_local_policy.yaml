@@ -46,6 +46,22 @@ rules:
         'false': 1.0
     notes:
       - Local policy estimate for Kling 2.6 image-to-video.
+  - model_key: kling-2.6-motion
+    pricing_status: local_policy
+    billing_unit: second
+    base_credits: 11
+    base_cost_usd: 0.055
+    multipliers:
+      duration:
+        '5': 5.0
+        '10': 10.0
+      mode:
+        '720p': 1.0
+        '1080p': 1.6363636363636365
+        std: 1.0
+        pro: 1.6363636363636365
+    notes:
+      - Local policy estimate for Kling 2.6 motion control based on observed site pricing.
   - model_key: kling-3.0-t2v
     pricing_status: local_policy
     billing_unit: request

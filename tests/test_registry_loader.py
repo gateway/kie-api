@@ -12,7 +12,7 @@ from kie_api.registry.loader import load_latest_pricing_snapshot, load_model_spe
 def test_registry_loads_verified_model_specs() -> None:
     registry = load_registry()
 
-    assert len(registry.model_specs) == 12
+    assert len(registry.model_specs) == 15
     assert registry.get_model("nano-banana-pro").inputs["image"].required_max == 8
     assert registry.get_model("nano-banana-2").inputs["image"].required_max == 14
     assert registry.get_model("gpt-image-2-image-to-image").inputs["image"].required_max == 16
@@ -25,6 +25,16 @@ def test_registry_loads_verified_model_specs() -> None:
     assert registry.get_model("seedance-2.0-fast").provider_model == "bytedance/seedance-2-fast"
     assert registry.get_model("seedance-2.0-fast").options["resolution"].allowed == ["480p", "720p"]
     assert registry.get_model("seedance-2.0-fast").options["aspect_ratio"].allowed[-1] == "adaptive"
+    assert registry.get_model("seedance-2.0-mini").provider_model == "bytedance/seedance-2-mini"
+    assert registry.get_model("seedance-2.0-mini").options["resolution"].allowed == ["480p", "720p"]
+    assert registry.get_model("seedance-2.0-mini").options["aspect_ratio"].allowed[-1] == "adaptive"
+    assert "nsfw_checker" not in registry.get_model("seedance-2.0-mini").options
+    assert registry.get_model("kling-3.0-turbo-i2v").provider_model == "kling/v3-turbo-image-to-video"
+    assert registry.get_model("kling-3.0-turbo-i2v").options["resolution"].allowed == ["720p", "1080p"]
+    assert registry.get_model("kling-3.0-turbo-i2v").options["duration"].min == 3
+    assert registry.get_model("kling-3.0-turbo-i2v").options["duration"].max == 15
+    assert "sound" not in registry.get_model("kling-3.0-turbo-i2v").options
+    assert "mode" not in registry.get_model("kling-3.0-turbo-i2v").options
     assert registry.get_model("kling-3.0-t2v").options["mode"].allowed == ["std", "pro", "4K"]
     assert registry.get_model("kling-3.0-t2v").options["mode"].hidden_from_studio is False
     assert registry.get_model("kling-3.0-t2v").options["mode"].label is None
@@ -73,6 +83,15 @@ def test_registry_exposes_split_kling_models() -> None:
     )
     assert registry.get_model("kling-2.6-t2v").options["duration"].allowed == [5, 10]
     assert registry.get_model("kling-2.6-t2v").options["aspect_ratio"].allowed == ["1:1", "16:9", "9:16"]
+    assert registry.get_model("kling-2.6-motion").provider_model == "kling-2.6/motion-control"
+    assert registry.get_model("kling-2.6-motion").inputs["image"].required_max == 1
+    assert registry.get_model("kling-2.6-motion").inputs["video"].required_max == 1
+    assert registry.get_model("kling-2.6-motion").options["mode"].required is True
+    assert registry.get_model("kling-2.6-motion").options["character_orientation"].required is True
+    assert (
+        registry.get_model("kling-2.6-motion").prompt.default_profile_key
+        == "kling_2_6_motion_control_v1"
+    )
 
 
 def test_registry_exposes_provider_capability_updates() -> None:
@@ -97,7 +116,9 @@ def test_video_generation_models_expose_duration_controls() -> None:
         "kling-2.6-i2v": {"allowed": [5, 10]},
         "kling-3.0-t2v": {"min": 3, "max": 15},
         "kling-3.0-i2v": {"min": 3, "max": 15},
+        "kling-3.0-turbo-i2v": {"min": 3, "max": 15},
         "seedance-2.0": {"min": 4, "max": 15},
+        "seedance-2.0-mini": {"min": 4, "max": 15},
     }
 
     for model_key, expected in expected_duration_specs.items():
@@ -140,15 +161,25 @@ def test_registry_loads_new_prompt_preset_metadata() -> None:
     assert [str(item) for item in suno_preset.applies_to_input_patterns] == ["music_prompt"]
     assert "{{user_prompt}}" in suno_preset.template
 
+    kling_26_motion_preset = registry.get_prompt_profile("kling_2_6_motion_control_v1")
+
+    assert kling_26_motion_preset.applies_to_models == ["kling-2.6-motion"]
+    assert [str(item) for item in kling_26_motion_preset.applies_to_task_modes] == ["motion_control"]
+    assert [str(item) for item in kling_26_motion_preset.applies_to_input_patterns] == ["motion_control"]
+    assert "{{user_prompt}}" in kling_26_motion_preset.template
+
 
 def test_registry_exposes_field_level_provenance() -> None:
     registry = load_registry()
 
     motion_spec = registry.get_model("kling-3.0-motion")
+    kling_26_motion = registry.get_model("kling-2.6-motion")
 
     assert motion_spec.verification.field_provenance["options.mode.allowed"] == "verified_live"
     assert motion_spec.verification.field_provenance["options.mode.value_aliases"] == "inferred"
     assert motion_spec.verification.field_provenance["transport.create_path"] == "verified_docs"
+    assert kling_26_motion.verification.field_provenance["provider_model"] == "verified_docs"
+    assert kling_26_motion.verification.field_provenance["options.mode.required"] == "verified_live"
 
 
 def test_registry_can_load_bundled_package_specs() -> None:
@@ -160,6 +191,7 @@ def test_registry_can_load_bundled_package_specs() -> None:
     assert registry.get_model("gpt-image-2-image-to-image").provider_model == "gpt-image-2-image-to-image"
     assert registry.get_model("gpt-image-2-text-to-image").provider_model == "gpt-image-2-text-to-image"
     assert registry.get_model("seedance-2.0-fast").provider_model == "bytedance/seedance-2-fast"
+    assert registry.get_model("kling-2.6-motion").provider_model == "kling-2.6/motion-control"
     assert registry.get_model("kling-3.0-motion").options["background_source"].type == "string"
 
 
@@ -180,6 +212,10 @@ def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     gpt_t2i_rule = next(rule for rule in snapshot.rules if rule.model_key == "gpt-image-2-text-to-image")
     assert gpt_t2i_rule.pricing_status == "observed_site_pricing"
     assert gpt_t2i_rule.base_credits == 6
+    kling_26_motion_rule = next(rule for rule in snapshot.rules if rule.model_key == "kling-2.6-motion")
+    assert kling_26_motion_rule.billing_unit == "second"
+    assert kling_26_motion_rule.base_credits == 11
+    assert kling_26_motion_rule.multipliers["mode"]["1080p"] == pytest.approx(18.0 / 11.0)
     kling_rule = next(rule for rule in snapshot.rules if rule.model_key == "kling-3.0-t2v")
     assert kling_rule.multipliers["pricing_variant"]["4k_true"] == pytest.approx(67.0 / 14.0)
     seedance_rule = next(rule for rule in snapshot.rules if rule.model_key == "seedance-2.0")
@@ -187,6 +223,12 @@ def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     seedance_fast_rule = next(rule for rule in snapshot.rules if rule.model_key == "seedance-2.0-fast")
     assert seedance_fast_rule.base_credits == 15.5
     assert seedance_fast_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(20.0 / 15.5)
+    seedance_mini_rule = next(rule for rule in snapshot.rules if rule.model_key == "seedance-2.0-mini")
+    assert seedance_mini_rule.base_credits == 9.5
+    assert seedance_mini_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(12.5 / 9.5)
+    kling_turbo_rule = next(rule for rule in snapshot.rules if rule.model_key == "kling-3.0-turbo-i2v")
+    assert kling_turbo_rule.base_credits == 18
+    assert kling_turbo_rule.multipliers["resolution"]["1080p"] == pytest.approx(22.5 / 18)
     assert snapshot.missing_model_keys == []
     assert "gpt-image-2-text-to-image" in snapshot.priced_model_keys
 

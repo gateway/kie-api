@@ -99,6 +99,18 @@ REQUEST_FIXTURES: Dict[str, RequestFixture] = {
         expected_model_key="kling-3.0-motion",
         notes=("Expected to surface a missing motion video requirement.",),
     ),
+    "kling_26_motion_complete": RequestFixture(
+        key="kling_26_motion_complete",
+        description="Use Kling 2.6 motion control with this image and this motion clip.",
+        request=RawUserRequest(
+            model_key="kling-2.6-motion",
+            images=["https://example.com/source/subject.png"],
+            videos=["https://example.com/source/motion.mp4"],
+            options={"character_orientation": "image", "mode": "720p"},
+        ),
+        expected_state=ValidationState.READY,
+        expected_model_key="kling-2.6-motion",
+    ),
     "kling_3_pro_audio_15s": RequestFixture(
         key="kling_3_pro_audio_15s",
         description="Make a 15 second Kling 3.0 Pro video with audio.",

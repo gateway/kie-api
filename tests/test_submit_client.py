@@ -289,6 +289,33 @@ def test_submit_client_builds_motion_payload_with_separate_image_and_video_field
     assert payload["input"]["mode"] == "720p"
 
 
+def test_submit_client_builds_kling_26_motion_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-2.6-motion",
+            prompt="The performer turns and raises one hand.",
+            images=["https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/subject.png"],
+            videos=["https://kieai.redpandaai.co/kieai/183531/videos/user-uploads/motion.mp4"],
+            options={"mode": "720p", "character_orientation": "image"},
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert payload["model"] == "kling-2.6/motion-control"
+    assert payload["input"]["input_urls"] == [
+        "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/subject.png"
+    ]
+    assert payload["input"]["video_urls"] == [
+        "https://kieai.redpandaai.co/kieai/183531/videos/user-uploads/motion.mp4"
+    ]
+    assert payload["input"]["mode"] == "720p"
+    assert payload["input"]["character_orientation"] == "image"
+
+
 def test_build_submission_payload_validates_motion_aliases_before_payload_build() -> None:
     registry = load_registry()
     result = validate_request(
@@ -412,6 +439,53 @@ def test_submit_client_builds_seedance_fast_payload() -> None:
     assert normalized.task_mode == "text_to_video"
     assert payload["model"] == "bytedance/seedance-2-fast"
     assert payload["input"]["resolution"] == "720p"
+
+
+def test_submit_client_builds_seedance_mini_payload_without_nsfw_checker() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0-mini",
+            prompt="quick lower-cost product reveal with clean camera motion",
+            options={"duration": 5, "resolution": "720p", "aspect_ratio": "adaptive"},
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert normalized.task_mode == "text_to_video"
+    assert payload["model"] == "bytedance/seedance-2-mini"
+    assert payload["input"]["resolution"] == "720p"
+    assert payload["input"]["aspect_ratio"] == "adaptive"
+    assert "nsfw_checker" not in payload["input"]
+
+
+def test_submit_client_builds_kling_3_turbo_i2v_payload() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-3.0-turbo-i2v",
+            prompt="animate the subject with a gentle handheld camera push",
+            images=["https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/start.png"],
+            options={"duration": 5, "resolution": "1080p"},
+        )
+    )
+    payload = client.build_payload(normalized)
+
+    assert normalized.task_mode == "image_to_video"
+    assert payload["model"] == "kling/v3-turbo-image-to-video"
+    assert payload["input"]["image_urls"] == [
+        "https://tempfile.redpandaai.co/kieai/183531/images/user-uploads/start.png"
+    ]
+    assert payload["input"]["duration"] == 5
+    assert payload["input"]["resolution"] == "1080p"
+    assert "mode" not in payload["input"]
+    assert "sound" not in payload["input"]
 
 
 def test_submit_client_builds_suno_prompt_mode_payload() -> None:

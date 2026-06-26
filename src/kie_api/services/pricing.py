@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional
 
 from ..models import EstimatedCost, NormalizedRequest
 from ..registry.loader import load_latest_pricing_snapshot
 from ..registry.models import PricingRule, PricingSnapshot
 
-SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast"}
+SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast", "seedance-2.0-mini"}
 
 
 class PricingRegistry:
@@ -87,6 +88,12 @@ class PricingRegistry:
             option_value = _normalize_option_value(options.get(option_name))
             multiplier = value_map.get(option_value)
             if multiplier is None:
+                multiplier = _second_billing_duration_multiplier(
+                    rule,
+                    option_name,
+                    options.get(option_name),
+                )
+            if multiplier is None:
                 continue
             applied_multipliers[option_name] = multiplier
             if estimated_credits is not None:
@@ -142,6 +149,24 @@ def _normalize_option_value(value: Any) -> str:
     return str(value).lower()
 
 
+def _second_billing_duration_multiplier(
+    rule: PricingRule,
+    option_name: str,
+    option_value: Any,
+) -> Optional[float]:
+    if rule.billing_unit != "second" or option_name != "duration":
+        return None
+    if isinstance(option_value, bool) or option_value in (None, ""):
+        return None
+    try:
+        duration = float(option_value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(duration) or duration <= 0:
+        return None
+    return float(math.ceil(duration))
+
+
 def _is_authoritative_pricing(pricing_status: str, source_kind: str) -> bool:
     authoritative_statuses = {
         "verified_provider",
@@ -176,4 +201,20 @@ def _derive_request_pricing_options(request: NormalizedRequest) -> Dict[str, Any
             f"{resolution}_{'with_video_input' if has_video_input else 'no_video_input'}"
         )
 
+    if request.model_key in {"kling-2.6-motion", "kling-3.0-motion"}:
+        duration = _first_video_duration_seconds(request)
+        if duration is not None:
+            derived["duration"] = math.ceil(duration)
+
     return derived
+
+
+def _first_video_duration_seconds(request: NormalizedRequest) -> Optional[float]:
+    for video in request.videos:
+        try:
+            duration = float(video.duration_seconds) if video.duration_seconds is not None else None
+        except (TypeError, ValueError):
+            continue
+        if duration is not None and math.isfinite(duration) and duration > 0:
+            return duration
+    return None
