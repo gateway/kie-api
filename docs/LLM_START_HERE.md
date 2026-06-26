@@ -101,6 +101,15 @@ Use:
 
 This proves your API key is loaded and the system can talk to Kie.ai.
 
+Seedance 2.0 variants currently share the same multimodal request shape:
+- `seedance-2.0` -> `bytedance/seedance-2`, supports `480p`, `720p`, and `1080p`
+- `seedance-2.0-fast` -> `bytedance/seedance-2-fast`, supports `480p` and `720p`
+- `seedance-2.0-mini` -> `bytedance/seedance-2-mini`, supports `480p` and `720p`
+
+Kling 3.0 Turbo Image to Video is separate from base Kling 3.0:
+- `kling-3.0-turbo-i2v` -> `kling/v3-turbo-image-to-video`, supports `720p` and `1080p`
+- It uses `prompt`, `image_urls`, `duration`, and `resolution`; it does not use base Kling 3.0 `mode`, `sound`, or `multi_shots` options.
+
 ### Test 2: Nano Banana Prompt-Only
 
 Use:

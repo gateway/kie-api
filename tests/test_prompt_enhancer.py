@@ -222,6 +222,29 @@ def test_prompt_enhancer_resolves_seedance_multimodal_reference_preset() -> None
     assert "@audio1 -> reference audio 1 (ref1.mp3)" in (context.rendered_system_prompt or "")
 
 
+def test_prompt_enhancer_resolves_kling_3_turbo_i2v_preset() -> None:
+    registry = load_registry()
+    enhancer = PromptEnhancer(registry)
+
+    context = enhancer.resolve_context(
+        NormalizedRequest(
+            model_key="kling-3.0-turbo-i2v",
+            provider_model="kling/v3-turbo-image-to-video",
+            task_mode="image_to_video",
+            prompt="animate the subject with a gentle handheld camera push",
+            raw_prompt="animate the subject with a gentle handheld camera push",
+            prompt_policy=PromptPolicy.PREVIEW,
+            images=[
+                {"media_type": "image", "url": "https://example.com/start.png"},
+            ],
+        )
+    )
+
+    assert str(context.input_pattern) == "single_image"
+    assert context.resolved_preset_key == "kling_3_0_turbo_i2v_v1"
+    assert "Kling 3.0 Turbo image-to-video" in (context.rendered_system_prompt or "")
+
+
 def test_prompt_enhancer_resolves_suno_music_preset() -> None:
     registry = load_registry()
     enhancer = PromptEnhancer(registry)

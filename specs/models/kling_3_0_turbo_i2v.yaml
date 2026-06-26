@@ -1,0 +1,96 @@
+key: kling-3.0-turbo-i2v
+label: Kling 3.0 Turbo Image to Video
+family: market
+provider_model: kling/v3-turbo-image-to-video
+task_modes:
+  - image_to_video
+inputs:
+  image:
+    required_min: 1
+  video:
+    required_min: 0
+    required_max: 0
+  audio:
+    required_min: 0
+    required_max: 0
+input_constraints:
+  image_formats: [jpeg, jpg, png]
+  image_max_mb: 10
+options:
+  duration:
+    type: int_range
+    min: 3
+    max: 15
+    default: 5
+    required: true
+    label: Duration
+    help_text: "Video length in seconds. Kling 3.0 Turbo Image to Video supports 3s through 15s generations."
+    ui_group: generation
+    ui_order: 10
+  resolution:
+    type: enum
+    allowed: [720p, 1080p]
+    default: 720p
+    required: true
+prompt:
+  required: true
+  max_chars: 2500
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_key: kling_3_0_turbo_i2v_v1
+  default_profile_keys_by_input_pattern:
+    single_image: kling_3_0_turbo_i2v_v1
+    first_last_frames: kling_3_0_turbo_i2v_v1
+defaults: {}
+transport:
+  endpoint_family: market
+  create_path: /api/v1/jobs/createTask
+  status_path: /api/v1/jobs/recordInfo
+  callback_supported: true
+verification:
+  verified_from:
+    - user_supplied_docs
+    - live_page_api_surface
+    - site_pricing_api
+  verified_on: '2026-06-26'
+  verification_notes:
+    - Verified against the user-supplied V3 Turbo Image To Video API documentation and https://kie.ai/kling-3-0-turbo on 2026-06-26.
+    - The live page identifies two flavors, kling/v3-turbo-image-to-video and kling/v3-turbo-text-to-video; this spec intentionally onboards image-to-video only.
+    - The createTask payload uses provider model kling/v3-turbo-image-to-video with input.prompt, input.image_urls, input.duration, and input.resolution.
+    - The docs list image/jpeg and image/png inputs up to 10MB, duration 3 through 15 seconds, and resolutions 720p and 1080p.
+    - The docs say image_urls supports multiple files but do not publish a maximum image count, so the SDK enforces the required minimum only.
+    - KIE's public pricing API publishes separate Turbo image-to-video rows for 720P and 1080P per-second pricing.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    provider_model: verified_docs
+    task_modes: inferred
+    inputs.image.required_min: verified_docs
+    inputs.image.required_max: unknown
+    inputs.video.required_min: inferred
+    inputs.video.required_max: inferred
+    inputs.audio.required_min: inferred
+    inputs.audio.required_max: inferred
+    input_constraints.image_formats: verified_docs
+    input_constraints.image_max_mb: verified_docs
+    options.duration.type: inferred
+    options.duration.min: verified_docs
+    options.duration.max: verified_docs
+    options.duration.default: verified_docs
+    options.duration.required: verified_docs
+    options.resolution.type: inferred
+    options.resolution.allowed: verified_docs
+    options.resolution.default: verified_docs
+    options.resolution.required: verified_docs
+    prompt.required: verified_docs
+    prompt.max_chars: verified_docs
+    prompt.enhancement_supported: inferred
+    prompt.enhancement_default_policy: inferred
+    prompt.default_profile_key: inferred
+    prompt.default_profile_keys_by_input_pattern: inferred
+    defaults: inferred
+    transport.endpoint_family: inferred
+    transport.create_path: verified_docs
+    transport.status_path: verified_docs
+    transport.callback_supported: verified_docs

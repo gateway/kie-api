@@ -222,6 +222,73 @@ rules:
     pricing.
   - Kling 3.0 video pricing is modeled with an internal pricing_variant derived from
     mode plus sound because 4K rows do not add a separate audio surcharge.
+- model_key: kling-3.0-turbo-i2v
+  pricing_status: observed_site_pricing
+  billing_unit: second
+  provider: Kling
+  interface_type: video
+  anchor_url: https://kie.ai/kling-3-0-turbo?model=kling%2Fv3-turbo-image-to-video
+  raw_credit_text: '18'
+  raw_usd_text: '0.09'
+  base_credits: 18.0
+  base_cost_usd: 0.09
+  multipliers:
+    duration:
+      '3': 3.0
+      '4': 4.0
+      '5': 5.0
+      '6': 6.0
+      '7': 7.0
+      '8': 8.0
+      '9': 9.0
+      '10': 10.0
+      '11': 11.0
+      '12': 12.0
+      '13': 13.0
+      '14': 14.0
+      '15': 15.0
+    resolution:
+      720p: 1.0
+      1080p: 1.25
+  adders_credits: {}
+  adders_cost_usd: {}
+  observed_at: '2026-06-26'
+  source_row_labels:
+  - kling 3.0 turbo, image-to-video, 1080P
+  - kling 3.0 turbo, image-to-video, 720P
+  source_anchor_urls: []
+  notes:
+  - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-06-26.
+  - Kling 3.0 Turbo image-to-video pricing is modeled by duration and output resolution.
+- model_key: kling-2.6-motion
+  pricing_status: observed_site_pricing
+  billing_unit: second
+  provider: Kling
+  interface_type: video
+  anchor_url: https://kie.ai/kling-2.6-motion-control
+  raw_credit_text: '11'
+  raw_usd_text: '0.055'
+  base_credits: 11.0
+  base_cost_usd: 0.055
+  multipliers:
+    duration:
+      '5': 5.0
+      '10': 10.0
+    mode:
+      720p: 1.0
+      1080p: 1.6363636363636365
+      std: 1.0
+      pro: 1.6363636363636365
+  adders_credits: {}
+  adders_cost_usd: {}
+  observed_at: '2026-04-29'
+  source_row_labels:
+  - kling 2.6 motion control, video to video, 1080P
+  - kling 2.6 motion control, video-to-video, 720P
+  source_anchor_urls:
+  - https://kie.ai/kling-2.6-motion-control
+  notes:
+  - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-04-29.
 - model_key: kling-3.0-motion
   pricing_status: observed_site_pricing
   billing_unit: second
@@ -345,6 +412,50 @@ rules:
     resolution plus whether reference_video_urls are present.
   - The site pricing API publishes separate rows for 'with video input' and 'no video
     input'; this rule maps those exactly for dry-run estimation.
+- model_key: seedance-2.0-mini
+  pricing_status: observed_site_pricing
+  billing_unit: second
+  provider: ByteDance
+  interface_type: video
+  anchor_url: https://kie.ai/seedance-2-0-mini
+  raw_credit_text: '9.5'
+  raw_usd_text: '0.0475'
+  base_credits: 9.5
+  base_cost_usd: 0.0475
+  multipliers:
+    duration:
+      '4': 4.0
+      '5': 5.0
+      '6': 6.0
+      '7': 7.0
+      '8': 8.0
+      '9': 9.0
+      '10': 10.0
+      '11': 11.0
+      '12': 12.0
+      '13': 13.0
+      '14': 14.0
+      '15': 15.0
+    pricing_variant:
+      480p_no_video_input: 1.0
+      720p_no_video_input: 2.1578947368421053
+      480p_with_video_input: 0.631578947368421
+      720p_with_video_input: 1.3157894736842106
+  adders_credits: {}
+  adders_cost_usd: {}
+  observed_at: '2026-06-26'
+  source_row_labels:
+  - bytedance/seedance-2-mini, 720P no video
+  - bytedance/seedance-2-mini, 720P with video
+  - bytedance/seedance-2-mini, 480P no video
+  - bytedance/seedance-2-mini, 480P with video
+  source_anchor_urls: []
+  notes:
+  - Observed from https://api.kie.ai/client/v1/model-pricing/page on 2026-06-26.
+  - Seedance Mini pricing is modeled with an internal pricing_variant derived from
+    request resolution plus whether reference_video_urls are present.
+  - The site pricing API publishes separate Mini rows for 'with video' and 'no video';
+    this rule maps those exactly for dry-run estimation.
 - model_key: gpt-image-2-image-to-image
   pricing_status: observed_site_pricing
   billing_unit: request
@@ -405,13 +516,16 @@ priced_model_keys:
 - gpt-image-2-image-to-image
 - gpt-image-2-text-to-image
 - kling-2.6-i2v
+- kling-2.6-motion
 - kling-2.6-t2v
 - kling-3.0-i2v
 - kling-3.0-motion
 - kling-3.0-t2v
+- kling-3.0-turbo-i2v
 - nano-banana-2
 - nano-banana-pro
 - seedance-2.0
 - seedance-2.0-fast
+- seedance-2.0-mini
 missing_model_keys: []
 unmapped_source_rows: []

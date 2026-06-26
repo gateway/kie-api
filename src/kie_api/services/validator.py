@@ -16,7 +16,7 @@ from ..models import (
 )
 from ..registry.loader import SpecRegistry
 
-SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast"}
+SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast", "seedance-2.0-mini"}
 
 
 class RequestValidator:

@@ -107,6 +107,38 @@ def test_pricing_registry_applies_kling_30_per_second_duration_range() -> None:
     assert estimate.estimated_cost_usd == pytest.approx(2.345)
 
 
+def test_pricing_registry_derives_kling_motion_duration_from_video_metadata() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="kling-2.6-motion",
+        provider_model="kling-2.6/motion-control",
+        task_mode=TaskMode.MOTION_CONTROL,
+        prompt="transfer the motion cleanly",
+        prompt_policy=PromptPolicy.OFF,
+        images=[
+            {
+                "media_type": "image",
+                "url": "https://example.com/subject.png",
+            }
+        ],
+        videos=[
+            {
+                "media_type": "video",
+                "url": "https://example.com/motion.mp4",
+                "duration_seconds": 20.083333,
+            }
+        ],
+        options={"mode": "720p", "character_orientation": "image"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == pytest.approx(21.0)
+    assert estimate.applied_multipliers["mode"] == pytest.approx(1.0)
+    assert estimate.estimated_credits == pytest.approx(231.0)
+    assert estimate.estimated_cost_usd == pytest.approx(1.155)
+
+
 def test_credit_guard_rejects_when_estimated_credits_exceed_balance() -> None:
     pricing = PricingRegistry.from_rules(
         [PricingRule(model_key="kling-3.0-t2v", pricing_status="manual", base_credits=20)],
@@ -243,3 +275,52 @@ def test_pricing_registry_applies_seedance_fast_variant() -> None:
     assert estimate.applied_multipliers["duration"] == 10.0
     assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(20.0 / 15.5)
     assert estimate.estimated_credits == pytest.approx(200.0)
+
+
+def test_pricing_registry_applies_seedance_mini_variant() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="seedance-2.0-mini",
+        provider_model="bytedance/seedance-2-mini",
+        task_mode=TaskMode.REFERENCE_TO_VIDEO,
+        prompt="use the reference clip for fast lower-cost motion timing",
+        prompt_policy=PromptPolicy.OFF,
+        videos=[
+            {
+                "media_type": "video",
+                "url": "https://example.com/ref.mp4",
+                "role": "reference",
+            }
+        ],
+        options={"duration": 10, "resolution": "720p"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == 10.0
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(12.5 / 9.5)
+    assert estimate.estimated_credits == pytest.approx(125.0)
+
+
+def test_pricing_registry_applies_kling_3_turbo_i2v_variant() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="kling-3.0-turbo-i2v",
+        provider_model="kling/v3-turbo-image-to-video",
+        task_mode=TaskMode.IMAGE_TO_VIDEO,
+        prompt="animate this product still",
+        prompt_policy=PromptPolicy.OFF,
+        images=[
+            {
+                "media_type": "image",
+                "url": "https://example.com/start.png",
+            }
+        ],
+        options={"duration": 5, "resolution": "1080p"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == 5.0
+    assert estimate.applied_multipliers["resolution"] == pytest.approx(22.5 / 18.0)
+    assert estimate.estimated_credits == pytest.approx(112.5)

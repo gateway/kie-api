@@ -23,6 +23,25 @@ def test_validator_returns_needs_input_for_kling_motion_without_video() -> None:
     assert result.missing_inputs[0].field == "video"
 
 
+def test_validator_returns_needs_input_for_kling_26_motion_without_video() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-2.6-motion",
+            prompt="make the avatar wave",
+            images=["https://example.com/subject.png"],
+            options={"mode": "720p", "character_orientation": "image"},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.NEEDS_INPUT
+    assert result.missing_inputs[0].field == "video"
+
+
 def test_validator_returns_needs_input_for_kling_motion_without_image() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)
@@ -38,6 +57,24 @@ def test_validator_returns_needs_input_for_kling_motion_without_image() -> None:
 
     assert result.state == ValidationState.NEEDS_INPUT
     assert result.missing_inputs[0].field == "image"
+
+
+def test_validator_requires_kling_26_motion_mode_and_orientation() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="kling-2.6-motion",
+            images=["https://example.com/subject.png"],
+            videos=["https://example.com/motion.mov"],
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.NEEDS_INPUT
+    assert {item.field for item in result.missing_inputs} == {"character_orientation", "mode"}
 
 
 def test_validator_requires_gpt_image_2_i2i_input_image() -> None:
@@ -695,6 +732,27 @@ def test_validator_rejects_seedance_fast_1080p_resolution() -> None:
         RawUserRequest(
             model_key="seedance-2.0-fast",
             prompt="fast draft at high resolution",
+            options={"duration": 4, "resolution": "1080p"},
+        )
+    )
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(
+        item.field == "resolution" and item.code == "invalid_enum_value"
+        for item in result.impossible_inputs
+    )
+
+
+def test_validator_rejects_seedance_mini_1080p_resolution() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0-mini",
+            prompt="mini draft at high resolution",
             options={"duration": 4, "resolution": "1080p"},
         )
     )

@@ -242,6 +242,11 @@ def build_supported_model_snapshot(
         _mark_rows_used(used_rows, kling_26_i2v_rows)
         rules.append(_build_kling_26_video_rule("kling-2.6-i2v", kling_26_i2v_rows, observed_at=released))
 
+    kling_26_motion_rows = _rows_with_anchor(capture.rows, "https://kie.ai/kling-2.6-motion-control")
+    if kling_26_motion_rows:
+        _mark_rows_used(used_rows, kling_26_motion_rows)
+        rules.append(_build_kling_26_motion_rule(kling_26_motion_rows, observed_at=released))
+
     kling_30_rows = _rows_with_anchor(capture.rows, "https://kie.ai/kling-3-0")
     if kling_30_rows:
         _mark_rows_used(used_rows, kling_30_rows)
@@ -251,6 +256,11 @@ def build_supported_model_snapshot(
                 _build_kling_30_video_rule("kling-3.0-i2v", kling_30_rows, observed_at=released),
             ]
         )
+
+    kling_30_turbo_i2v_rows = _rows_with_phrase(capture.rows, "kling 3.0 turbo, image-to-video")
+    if kling_30_turbo_i2v_rows:
+        _mark_rows_used(used_rows, kling_30_turbo_i2v_rows)
+        rules.append(_build_kling_30_turbo_i2v_rule(kling_30_turbo_i2v_rows, observed_at=released))
 
     kling_30_motion_rows = _rows_with_anchor(capture.rows, "https://kie.ai/kling-3-motion-control")
     if kling_30_motion_rows:
@@ -270,6 +280,18 @@ def build_supported_model_snapshot(
                 seedance_fast_rows,
                 model_key="seedance-2.0-fast",
                 anchor_url="https://kie.ai/seedance-2-0?model=bytedance%2Fseedance-2-fast",
+                observed_at=released,
+            )
+        )
+
+    seedance_mini_rows = _rows_with_phrase(capture.rows, "bytedance/seedance-2-mini,")
+    if seedance_mini_rows:
+        _mark_rows_used(used_rows, seedance_mini_rows)
+        rules.append(
+            _build_seedance_2_rule(
+                seedance_mini_rows,
+                model_key="seedance-2.0-mini",
+                anchor_url="https://kie.ai/seedance-2-0-mini",
                 observed_at=released,
             )
         )
@@ -453,6 +475,43 @@ def _build_kling_26_video_rule(
     )
 
 
+def _build_kling_26_motion_rule(
+    rows: List[PricingCatalogRow],
+    *,
+    observed_at: str,
+) -> PricingRule:
+    base = _select_row(rows, "720p") or rows[0]
+    mode_multiplier = _ratio(_credit_for(rows, "1080p"), base.credit_price)
+    return _with_row_provenance(
+        PricingRule(
+            model_key="kling-2.6-motion",
+            pricing_status="observed_site_pricing",
+            billing_unit="second",
+            provider="Kling",
+            interface_type="video",
+            anchor_url="https://kie.ai/kling-2.6-motion-control",
+            raw_credit_text=base.credit_price_text,
+            raw_usd_text=base.usd_price_text,
+            base_credits=base.credit_price,
+            base_cost_usd=base.usd_price,
+            multipliers={
+                "duration": {"5": 5.0, "10": 10.0},
+                "mode": {
+                    "720p": 1.0,
+                    "1080p": mode_multiplier,
+                    "std": 1.0,
+                    "pro": mode_multiplier,
+                },
+            },
+            notes=[
+                f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+            ],
+        ),
+        rows=rows,
+        observed_at=observed_at,
+    )
+
+
 def _build_kling_30_video_rule(
     model_key: str,
     rows: List[PricingCatalogRow],
@@ -531,6 +590,41 @@ def _build_kling_30_motion_rule(
     )
 
 
+def _build_kling_30_turbo_i2v_rule(
+    rows: List[PricingCatalogRow],
+    *,
+    observed_at: str,
+) -> PricingRule:
+    base = _select_row(rows, "720p") or rows[0]
+    return _with_row_provenance(
+        PricingRule(
+            model_key="kling-3.0-turbo-i2v",
+            pricing_status="observed_site_pricing",
+            billing_unit="second",
+            provider="Kling",
+            interface_type="video",
+            anchor_url="https://kie.ai/kling-3-0-turbo?model=kling%2Fv3-turbo-image-to-video",
+            raw_credit_text=base.credit_price_text,
+            raw_usd_text=base.usd_price_text,
+            base_credits=base.credit_price,
+            base_cost_usd=base.usd_price,
+            multipliers={
+                "duration": {str(value): float(value) for value in range(3, 16)},
+                "resolution": {
+                    "720p": 1.0,
+                    "1080p": _ratio(_credit_for(rows, "1080p"), base.credit_price),
+                },
+            },
+            notes=[
+                f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+                "Kling 3.0 Turbo image-to-video pricing is modeled by duration and output resolution.",
+            ],
+        ),
+        rows=rows,
+        observed_at=observed_at,
+    )
+
+
 def _build_seedance_2_rule(
     rows: List[PricingCatalogRow],
     *,
@@ -538,21 +632,21 @@ def _build_seedance_2_rule(
     anchor_url: str = "https://kie.ai/seedance-2-0",
     observed_at: str,
 ) -> PricingRule:
-    base = _select_row(rows, "480p no video input") or rows[0]
+    base = _select_row(rows, "480p no video input") or _select_row(rows, "480p no video") or rows[0]
     pricing_variant = {
         "480p_no_video_input": 1.0,
-        "720p_no_video_input": _ratio(_credit_for(rows, "720p no video input"), base.credit_price),
-        "480p_with_video_input": _ratio(_credit_for(rows, "480p with video input"), base.credit_price),
-        "720p_with_video_input": _ratio(_credit_for(rows, "720p with video input"), base.credit_price),
+        "720p_no_video_input": _ratio(_seedance_credit_for(rows, "720p", with_video=False), base.credit_price),
+        "480p_with_video_input": _ratio(_seedance_credit_for(rows, "480p", with_video=True), base.credit_price),
+        "720p_with_video_input": _ratio(_seedance_credit_for(rows, "720p", with_video=True), base.credit_price),
     }
-    if _select_row(rows, "1080p no video input"):
+    if _select_row(rows, "1080p no video input") or _select_row(rows, "1080p no video"):
         pricing_variant["1080p_no_video_input"] = _ratio(
-            _credit_for(rows, "1080p no video input"),
+            _seedance_credit_for(rows, "1080p", with_video=False),
             base.credit_price,
         )
-    if _select_row(rows, "1080p with video input"):
+    if _select_row(rows, "1080p with video input") or _select_row(rows, "1080p with video"):
         pricing_variant["1080p_with_video_input"] = _ratio(
-            _credit_for(rows, "1080p with video input"),
+            _seedance_credit_for(rows, "1080p", with_video=True),
             base.credit_price,
         )
 
@@ -581,6 +675,16 @@ def _build_seedance_2_rule(
         rows=rows,
         observed_at=observed_at,
     )
+
+
+def _seedance_credit_for(
+    rows: List[PricingCatalogRow],
+    resolution: str,
+    *,
+    with_video: bool,
+) -> Optional[float]:
+    row = _select_row(rows, f"{resolution} {'with video' if with_video else 'no video'}")
+    return row.credit_price if row else None
 
 
 def _build_generic_image_resolution_rule(
