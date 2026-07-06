@@ -370,6 +370,28 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "anchor": "https://kie.ai/kling-2.6-motion-control",
         },
         {
+            "modelDescription": "bytedance/seedance-2, 4K no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "208",
+            "creditUnit": "per second",
+            "usdPrice": "1.04",
+            "falPrice": "1.56",
+            "discountRate": 33.33,
+            "anchor": None,
+        },
+        {
+            "modelDescription": "bytedance/seedance-2, 4K with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "128",
+            "creditUnit": "per second",
+            "usdPrice": "0.64",
+            "falPrice": "0.93",
+            "discountRate": 31.18,
+            "anchor": None,
+        },
+        {
             "modelDescription": "bytedance/seedance-2, 1080p no video input",
             "interfaceType": "video",
             "provider": "ByteDance",
@@ -580,6 +602,8 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert rules["seedance-2.0"].billing_unit == "second"
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["720p_with_video_input"] == 25.0 / 19.0
     assert rules["seedance-2.0"].multipliers["pricing_variant"]["1080p_with_video_input"] == 62.0 / 19.0
+    assert rules["seedance-2.0"].multipliers["pricing_variant"]["4k_no_video_input"] == 208.0 / 19.0
+    assert rules["seedance-2.0"].multipliers["pricing_variant"]["4k_with_video_input"] == 128.0 / 19.0
     assert rules["seedance-2.0-fast"].billing_unit == "second"
     assert rules["seedance-2.0-fast"].base_credits == 15.5
     assert rules["seedance-2.0-fast"].multipliers["pricing_variant"]["720p_with_video_input"] == 20.0 / 15.5

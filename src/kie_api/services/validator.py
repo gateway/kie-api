@@ -52,6 +52,26 @@ class RequestValidator:
                 missing_inputs.append(
                     MissingInput(field="prompt", message="A prompt is required for this model.")
                 )
+        if (request.prompt or "").strip():
+            prompt_length = len(request.prompt or "")
+            if spec.prompt.min_chars is not None and prompt_length < spec.prompt.min_chars:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="prompt",
+                        code="prompt_too_short",
+                        message=f"Prompt must be at least {spec.prompt.min_chars} characters.",
+                        received=prompt_length,
+                    )
+                )
+            if spec.prompt.max_chars is not None and prompt_length > spec.prompt.max_chars:
+                impossible_inputs.append(
+                    InvalidInput(
+                        field="prompt",
+                        code="prompt_too_long",
+                        message=f"Prompt must be {spec.prompt.max_chars} characters or fewer.",
+                        received=prompt_length,
+                    )
+                )
 
         media_collections = {
             "image": normalized.images,

@@ -16,9 +16,30 @@ inputs:
     required_min: 0
     required_max: 3
 input_constraints:
-  image_formats: [jpg, jpeg, png, webp, bmp, gif]
+  image_formats: [jpg, jpeg, png, webp, bmp, tiff, gif]
   image_max_mb: 30
+  image_min_dimension_px: 300
+  image_max_dimension_px: 6000
+  image_aspect_ratio_min: 0.4
+  image_aspect_ratio_max: 2.5
+  video_formats: [mp4, mov]
+  video_max_mb: 50
+  video_duration_min_seconds: 2
   video_duration_max_seconds: 15
+  video_total_duration_max_seconds: 15
+  video_min_dimension_px: 300
+  video_max_dimension_px: 6000
+  video_aspect_ratio_min: 0.4
+  video_aspect_ratio_max: 2.5
+  video_total_pixels_min: 409600
+  video_total_pixels_max: 927408
+  video_fps_min: 24
+  video_fps_max: 60
+  audio_formats: [wav, mp3]
+  audio_max_mb: 15
+  audio_duration_min_seconds: 2
+  audio_duration_max_seconds: 15
+  audio_total_duration_max_seconds: 15
 options:
   return_last_frame:
     type: bool
@@ -28,7 +49,7 @@ options:
     default: false
   resolution:
     type: enum
-    allowed: [480p, 720p, 1080p]
+    allowed: [480p, 720p, 1080p, 4k]
     default: 720p
   aspect_ratio:
     type: enum
@@ -48,7 +69,8 @@ options:
     default: false
 prompt:
   required: true
-  max_chars: null
+  min_chars: 3
+  max_chars: 20000
   enhancement_supported: true
   enhancement_default_policy: ask
   default_profile_key: seedance_2_0_t2v_v1
@@ -68,12 +90,19 @@ verification:
     - live_page_api_surface
     - docs_kie_secondary
     - site_pricing_api
-  verified_on: '2026-04-29'
+  verified_on: '2026-07-06'
   verification_notes:
     - Verified against the live https://kie.ai/seedance-2-0 playground field list and the https://docs.kie.ai/market/bytedance/seedance-2 API page on 2026-04-04.
     - The live page exposes prompt, first_frame_url, last_frame_url, reference_image_urls, reference_video_urls, reference_audio_urls, return_last_frame, generate_audio, resolution, aspect_ratio, duration, and web_search.
     - The 2026-04-29 docs page example still shows 720p, but the KIE public pricing API now publishes 1080p rows for bytedance/seedance-2 with and without video input, so the SDK exposes 1080p as a supported resolution tier.
-    - The live page shows image uploads supporting JPG, PNG, WEBP, BMP, and GIF up to 30MB each.
+    - The live page and KIE public pricing API expose 4k as a Seedance 2.0 Standard resolution tier as of 2026-07-06.
+    - The 2026-07-06 docs schema sets prompt length to min 3 and max 20000 characters.
+    - The 2026-07-06 docs schema lists reference images as jpeg, png, webp, bmp, tiff, or gif, with aspect ratio 0.4 through 2.5, each side 300 through 6000 px, and max 30 MB.
+    - The 2026-07-06 docs schema lists reference videos as mp4 or mov, 480p/720p source resolution, 2s through 15s each, max 3 videos, total duration <= 15s, aspect ratio 0.4 through 2.5, each side 300 through 6000 px, total pixels 409600 through 927408, max 50 MB, and 24 through 60 FPS.
+    - The 2026-07-06 docs schema lists reference audio as wav or mp3, 2s through 15s each, max 3 audios, total duration <= 15s, and max 15 MB.
+    - The docs schema exposes generate_audio with default true, but the SDK keeps the option default false to avoid surprise cost increases.
+    - The docs schema exposes nsfw_checker, but this SDK intentionally leaves it unavailable so unknown safety-checker passthrough must be explicit.
+    - The live page shows image uploads supporting JPG, PNG, WEBP, BMP, and GIF up to 30MB each; the docs schema additionally lists TIFF.
     - The live UI states the total length of reference videos must not exceed 15 seconds and allows up to 3 reference videos.
     - The prompt box examples reference uploaded assets with @imageN style tokens, so the SDK renders reference guidance metadata for wrapper prompts.
     - The public pricing API publishes non-authoritative observed pricing rows for Seedance 2.0, including 1080p tiers.
@@ -91,9 +120,30 @@ verification:
     inputs.video.required_max: verified_live
     inputs.audio.required_min: inferred
     inputs.audio.required_max: verified_live
-    input_constraints.image_formats: verified_live
-    input_constraints.image_max_mb: verified_live
-    input_constraints.video_duration_max_seconds: verified_live
+    input_constraints.image_formats: verified_docs
+    input_constraints.image_max_mb: verified_docs
+    input_constraints.image_min_dimension_px: verified_docs
+    input_constraints.image_max_dimension_px: verified_docs
+    input_constraints.image_aspect_ratio_min: verified_docs
+    input_constraints.image_aspect_ratio_max: verified_docs
+    input_constraints.video_formats: verified_docs
+    input_constraints.video_max_mb: verified_docs
+    input_constraints.video_duration_min_seconds: verified_docs
+    input_constraints.video_duration_max_seconds: verified_docs
+    input_constraints.video_total_duration_max_seconds: verified_docs
+    input_constraints.video_min_dimension_px: verified_docs
+    input_constraints.video_max_dimension_px: verified_docs
+    input_constraints.video_aspect_ratio_min: verified_docs
+    input_constraints.video_aspect_ratio_max: verified_docs
+    input_constraints.video_total_pixels_min: verified_docs
+    input_constraints.video_total_pixels_max: verified_docs
+    input_constraints.video_fps_min: verified_docs
+    input_constraints.video_fps_max: verified_docs
+    input_constraints.audio_formats: verified_docs
+    input_constraints.audio_max_mb: verified_docs
+    input_constraints.audio_duration_min_seconds: verified_docs
+    input_constraints.audio_duration_max_seconds: verified_docs
+    input_constraints.audio_total_duration_max_seconds: verified_docs
     options.return_last_frame.type: inferred
     options.return_last_frame.default: inferred
     options.generate_audio.type: inferred
@@ -111,7 +161,8 @@ verification:
     options.web_search.type: inferred
     options.web_search.default: inferred
     prompt.required: verified_live
-    prompt.max_chars: unknown
+    prompt.min_chars: verified_docs
+    prompt.max_chars: verified_docs
     prompt.enhancement_supported: inferred
     prompt.enhancement_default_policy: inferred
     prompt.default_profile_key: inferred

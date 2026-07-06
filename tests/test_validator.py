@@ -699,6 +699,36 @@ def test_validator_rejects_seedance_reference_video_duration_sum_over_limit() ->
     )
 
 
+def test_validator_rejects_seedance_prompt_outside_docs_length_limits() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    too_short = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="hi",
+            options={"duration": 4},
+        )
+    )
+    too_short_result = validator.validate(too_short)
+
+    assert too_short_result.state == ValidationState.INVALID
+    assert any(item.field == "prompt" and item.code == "prompt_too_short" for item in too_short_result.impossible_inputs)
+
+    too_long = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.0",
+            prompt="x" * 20001,
+            options={"duration": 4},
+        )
+    )
+    too_long_result = validator.validate(too_long)
+
+    assert too_long_result.state == ValidationState.INVALID
+    assert any(item.field == "prompt" and item.code == "prompt_too_long" for item in too_long_result.impossible_inputs)
+
+
 def test_validator_accepts_seedance_multimodal_reference_request() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

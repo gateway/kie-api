@@ -639,16 +639,17 @@ def _build_seedance_2_rule(
         "480p_with_video_input": _ratio(_seedance_credit_for(rows, "480p", with_video=True), base.credit_price),
         "720p_with_video_input": _ratio(_seedance_credit_for(rows, "720p", with_video=True), base.credit_price),
     }
-    if _select_row(rows, "1080p no video input") or _select_row(rows, "1080p no video"):
-        pricing_variant["1080p_no_video_input"] = _ratio(
-            _seedance_credit_for(rows, "1080p", with_video=False),
-            base.credit_price,
-        )
-    if _select_row(rows, "1080p with video input") or _select_row(rows, "1080p with video"):
-        pricing_variant["1080p_with_video_input"] = _ratio(
-            _seedance_credit_for(rows, "1080p", with_video=True),
-            base.credit_price,
-        )
+    for resolution in ("1080p", "4k"):
+        if _select_row(rows, f"{resolution} no video input") or _select_row(rows, f"{resolution} no video"):
+            pricing_variant[f"{resolution}_no_video_input"] = _ratio(
+                _seedance_credit_for(rows, resolution, with_video=False),
+                base.credit_price,
+            )
+        if _select_row(rows, f"{resolution} with video input") or _select_row(rows, f"{resolution} with video"):
+            pricing_variant[f"{resolution}_with_video_input"] = _ratio(
+                _seedance_credit_for(rows, resolution, with_video=True),
+                base.credit_price,
+            )
 
     return _with_row_provenance(
         PricingRule(

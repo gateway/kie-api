@@ -29,15 +29,27 @@ class InputConstraintsSpec(BaseModel):
     image_formats: Optional[List[str]] = None
     image_max_mb: Optional[float] = None
     image_min_dimension_px: Optional[int] = None
+    image_max_dimension_px: Optional[int] = None
     image_aspect_ratio_min: Optional[float] = None
     image_aspect_ratio_max: Optional[float] = None
     video_formats: Optional[List[str]] = None
     video_max_mb: Optional[float] = None
     video_duration_min_seconds: Optional[int] = None
     video_duration_max_seconds: Optional[int] = None
+    video_total_duration_max_seconds: Optional[int] = None
     video_min_dimension_px: Optional[int] = None
+    video_max_dimension_px: Optional[int] = None
     video_aspect_ratio_min: Optional[float] = None
     video_aspect_ratio_max: Optional[float] = None
+    video_total_pixels_min: Optional[int] = None
+    video_total_pixels_max: Optional[int] = None
+    video_fps_min: Optional[int] = None
+    video_fps_max: Optional[int] = None
+    audio_formats: Optional[List[str]] = None
+    audio_max_mb: Optional[float] = None
+    audio_duration_min_seconds: Optional[int] = None
+    audio_duration_max_seconds: Optional[int] = None
+    audio_total_duration_max_seconds: Optional[int] = None
 
 
 class OptionSpec(BaseModel):
@@ -68,6 +80,7 @@ class PromptSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     required: bool = True
+    min_chars: Optional[int] = None
     max_chars: Optional[int] = None
     enhancement_supported: bool = False
     enhancement_default_policy: PromptPolicy = PromptPolicy.OFF

@@ -16,7 +16,7 @@ def test_pricing_registry_returns_snapshot_backed_estimate() -> None:
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-04-29-site-pricing-page"
+    assert estimate.pricing_version == "2026-07-06-site-pricing-page"
     assert estimate.pricing_status == "observed_site_pricing"
 
 
@@ -31,7 +31,7 @@ def test_pricing_registry_uses_observed_gpt_image_2_pricing_over_local_policy_fa
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-04-29-site-pricing-page"
+    assert estimate.pricing_version == "2026-07-06-site-pricing-page"
     assert estimate.pricing_status == "observed_site_pricing"
     assert estimate.estimated_credits == pytest.approx(16.0)
     assert estimate.estimated_cost_usd == pytest.approx(0.08)
@@ -250,6 +250,51 @@ def test_pricing_registry_applies_seedance_1080p_variant() -> None:
     assert estimate.applied_multipliers["duration"] == 4.0
     assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(102.0 / 19.0)
     assert estimate.estimated_credits == pytest.approx(408.0)
+
+
+def test_pricing_registry_applies_seedance_4k_variant() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="seedance-2.0",
+        provider_model="bytedance/seedance-2",
+        task_mode=TaskMode.TEXT_TO_VIDEO,
+        prompt="cinematic city establishing shot",
+        prompt_policy=PromptPolicy.OFF,
+        options={"duration": 4, "resolution": "4k"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == 4.0
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(208.0 / 19.0)
+    assert estimate.estimated_credits == pytest.approx(832.0)
+    assert estimate.estimated_cost_usd == pytest.approx(4.16)
+
+
+def test_pricing_registry_applies_seedance_4k_with_video_input_variant() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="seedance-2.0",
+        provider_model="bytedance/seedance-2",
+        task_mode=TaskMode.REFERENCE_TO_VIDEO,
+        prompt="use the reference clip for camera movement",
+        prompt_policy=PromptPolicy.OFF,
+        videos=[
+            {
+                "media_type": "video",
+                "url": "https://example.com/ref.mp4",
+                "role": "reference",
+            }
+        ],
+        options={"duration": 4, "resolution": "4k"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == 4.0
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(128.0 / 19.0)
+    assert estimate.estimated_credits == pytest.approx(512.0)
+    assert estimate.estimated_cost_usd == pytest.approx(2.56)
 
 
 def test_pricing_registry_applies_seedance_fast_variant() -> None:
