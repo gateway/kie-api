@@ -129,9 +129,9 @@ print(validation.normalized_request.debug["frame_guidance_mode"])
 
 Use `examples/dry_run_kling_frame_guidance.py` for a local dry-run check, including a path that can reuse the latest successful Nano Banana 2 artifact as the first frame.
 
-## Seedance 2.0 multimodal reference shape
+## Seedance multimodal reference shape
 
-Seedance 2.0 is the first model in `kie-api` that uses role-aware media references.
+Seedance 2.0 and 2.5 use the same role-aware media-reference contract.
 
 Rules:
 - keep media grouped by type:
@@ -180,6 +180,12 @@ print(context.resolved_preset_key)
 print(context.rendered_system_prompt)
 print(validation.state)
 ```
+
+For Seedance 2.5, change `model_key` to `seedance-2.5`. It additionally accepts
+`duration=-1`, `output_format="mov"`, up to 30 reference images, 10 reference videos,
+and 10 reference audios. Its verified output resolutions are only `480p` and `720p`.
+The Studio-safe defaults submit both `generate_audio=False` and `nsfw_checker=False`.
+Documented provider references such as `asset://asset-123` can be used in place of URLs.
 
 Seedance prompt context adds reference-aware render variables:
 - `first_frame_present`

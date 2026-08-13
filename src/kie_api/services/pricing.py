@@ -9,7 +9,12 @@ from ..models import EstimatedCost, NormalizedRequest
 from ..registry.loader import load_latest_pricing_snapshot
 from ..registry.models import PricingRule, PricingSnapshot
 
-SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast", "seedance-2.0-mini"}
+SEEDANCE_MODEL_KEYS = {
+    "seedance-2.0",
+    "seedance-2.0-fast",
+    "seedance-2.0-mini",
+    "seedance-2.5",
+}
 
 
 class PricingRegistry:

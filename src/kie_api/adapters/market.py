@@ -16,7 +16,12 @@ from ..models import (
 )
 from ..registry.models import ModelSpec
 
-SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast", "seedance-2.0-mini"}
+SEEDANCE_MODEL_KEYS = {
+    "seedance-2.0",
+    "seedance-2.0-fast",
+    "seedance-2.0-mini",
+    "seedance-2.5",
+}
 
 
 PROVIDER_STATUS_MAP = {
@@ -295,6 +300,10 @@ def _collect_output_urls(data: Dict[str, Any]) -> List[str]:
         "result_url",
         "resultUrls",
         "result_urls",
+        "firstFrameUrl",
+        "first_frame_url",
+        "lastFrameUrl",
+        "last_frame_url",
         "imageUrls",
         "videoUrl",
     ):
@@ -317,6 +326,20 @@ def _collect_output_urls(data: Dict[str, Any]) -> List[str]:
         urls.extend(_collect_output_urls(result_json))
     elif isinstance(result_json, list):
         urls.extend(item for item in result_json if isinstance(item, str))
+    result_object = data.get("resultObject") or data.get("result_object")
+    if isinstance(result_object, str) and result_object.strip():
+        try:
+            parsed_object = json.loads(result_object)
+        except json.JSONDecodeError:
+            parsed_object = None
+        if isinstance(parsed_object, dict):
+            urls.extend(_collect_output_urls(parsed_object))
+        elif isinstance(parsed_object, list):
+            urls.extend(item for item in parsed_object if isinstance(item, str))
+    elif isinstance(result_object, dict):
+        urls.extend(_collect_output_urls(result_object))
+    elif isinstance(result_object, list):
+        urls.extend(item for item in result_object if isinstance(item, str))
     deduped: List[str] = []
     for url in urls:
         if url not in deduped:

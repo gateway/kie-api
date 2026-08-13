@@ -222,6 +222,26 @@ def test_prompt_enhancer_resolves_seedance_multimodal_reference_preset() -> None
     assert "@audio1 -> reference audio 1 (ref1.mp3)" in (context.rendered_system_prompt or "")
 
 
+def test_prompt_enhancer_reuses_seedance_profiles_for_seedance_25() -> None:
+    registry = load_registry()
+    enhancer = PromptEnhancer(registry)
+
+    context = enhancer.resolve_context(
+        NormalizedRequest(
+            model_key="seedance-2.5",
+            provider_model="bytedance/seedance-2-5",
+            task_mode="text_to_video",
+            prompt="a cinematic desert crossing",
+            raw_prompt="a cinematic desert crossing",
+            prompt_policy=PromptPolicy.PREVIEW,
+            options={"duration": 8},
+        )
+    )
+
+    assert context.resolved_preset_key == "seedance_2_0_t2v_v1"
+    assert "production-ready Seedance text-to-video prompt" in (context.rendered_system_prompt or "")
+
+
 def test_prompt_enhancer_resolves_kling_3_turbo_i2v_preset() -> None:
     registry = load_registry()
     enhancer = PromptEnhancer(registry)

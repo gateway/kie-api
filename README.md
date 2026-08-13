@@ -29,6 +29,7 @@ Examples of model families currently covered by this repo:
 - Nano Banana 2
 - Nano Banana Pro
 - Seedance 2.0
+- Seedance 2.5
 - Kling 2.6 text-to-video
 - Kling 2.6 image-to-video
 - Kling 3.0 text-to-video
@@ -81,6 +82,13 @@ These descriptions are based on the current public Kie.ai model pages and live p
 - Good at: multimodal guided video generation with first-frame, first+last-frame, and mixed image/video/audio references
 - What it does: creates videos from plain prompts or reference-driven payloads, supports first and last frame guidance, multiple reference assets, optional audio generation, reference-aware prompting, and 480p/720p/1080p output tiers
 - Who it is by: ByteDance on Kie.ai
+
+### Seedance 2.5
+
+- Good at: longer, reference-heavy multimodal video generation with image, video, and audio guidance
+- What it does: supports text-only, first-frame, first+last-frame, and mutually exclusive multimodal-reference flows; up to 30 reference images, 10 reference videos, 10 reference audios, 4–30 second or automatic duration, MP4/MOV output, and 480p/720p generation
+- Studio policy: `nsfw_checker` is supported and defaults to `false`; `generate_audio` also defaults to `false` to avoid surprise cost
+- Who it is by: ByteDance on Kie.ai, using provider model `bytedance/seedance-2-5`
 
 ### Kling 3.0
 
@@ -171,7 +179,7 @@ Use one model’s output as another model’s input:
 
 ### 5. Multimodal reference video
 
-Use `seedance-2.0`, `seedance-2.0-fast`, or `seedance-2.0-mini` when you need richer video guidance:
+Use `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini`, or `seedance-2.5` when you need richer video guidance:
 - plain text-to-video with no media
 - one first-frame image
 - first+last-frame image guidance
@@ -182,6 +190,10 @@ Use `seedance-2.0`, `seedance-2.0-fast`, or `seedance-2.0-mini` when you need ri
 `seedance-2.0-mini` uses the same request shape with the lower-cost
 `bytedance/seedance-2-mini` provider model and supports `480p` and `720p`.
 Use `seedance-2.0` when `1080p` output is required.
+Use `seedance-2.5` for its expanded 30-image/10-video/10-audio reference limits,
+30-second maximum duration, automatic duration via `-1`, MOV output, and provider `asset://`
+references. Its verified API surface is limited to `480p` and `720p`; the SDK does not
+infer 4K support from marketing copy.
 
 Seedance uses role-aware media references in the runtime request model:
 - `first_frame`

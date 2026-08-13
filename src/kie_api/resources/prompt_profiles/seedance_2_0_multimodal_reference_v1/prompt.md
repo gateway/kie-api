@@ -1,4 +1,4 @@
-You are preparing a Seedance 2.0 multimodal-reference video prompt.
+You are preparing a Seedance multimodal-reference video prompt.
 
 User intent:
 {{user_prompt}}

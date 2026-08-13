@@ -793,3 +793,62 @@ def test_validator_rejects_seedance_mini_1080p_resolution() -> None:
         item.field == "resolution" and item.code == "invalid_enum_value"
         for item in result.impossible_inputs
     )
+
+
+def test_validator_accepts_seedance_25_auto_duration_and_documented_limits() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.5",
+            prompt="use these clips for motion timing",
+            videos=[
+                {
+                    "url": "asset://clip-one",
+                    "role": "reference",
+                    "duration_seconds": 15.25,
+                },
+                {
+                    "url": "asset://clip-two",
+                    "role": "reference",
+                    "duration_seconds": 14.75,
+                },
+            ],
+            options={"duration": -1, "resolution": "480p"},
+        )
+    )
+
+    result = validator.validate(normalized)
+
+    assert result.state in {ValidationState.READY_WITH_DEFAULTS, ValidationState.READY}
+    assert not result.impossible_inputs
+
+
+def test_validator_rejects_seedance_25_values_beyond_documented_limits() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    validator = RequestValidator(registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.5",
+            prompt="use these clips for motion timing",
+            videos=[
+                {
+                    "url": "https://example.com/ref.mp4",
+                    "role": "reference",
+                    "duration_seconds": 30.1,
+                }
+            ],
+            options={"duration": 31, "resolution": "1080p"},
+        )
+    )
+
+    result = validator.validate(normalized)
+
+    assert result.state == ValidationState.INVALID
+    assert any(item.code == "reference_video_duration_limit_exceeded" for item in result.impossible_inputs)
+    assert any(item.field == "duration" and item.code == "above_maximum" for item in result.impossible_inputs)
+    assert any(item.field == "resolution" and item.code == "invalid_enum_value" for item in result.impossible_inputs)

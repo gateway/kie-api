@@ -296,6 +296,20 @@ def build_supported_model_snapshot(
             )
         )
 
+    seedance_25_rows = _rows_with_phrase(capture.rows, "bytedance/seedance-2-5,")
+    if seedance_25_rows:
+        _mark_rows_used(used_rows, seedance_25_rows)
+        rules.append(
+            _build_seedance_2_rule(
+                seedance_25_rows,
+                model_key="seedance-2.5",
+                anchor_url="https://kie.ai/seedance-2-5",
+                max_duration=30,
+                auto_duration=True,
+                observed_at=released,
+            )
+        )
+
     existing_model_keys = {rule.model_key for rule in rules}
     for spec in sorted(resolved_registry.iter_models(), key=lambda item: item.key):
         if spec.key in existing_model_keys:
@@ -630,6 +644,8 @@ def _build_seedance_2_rule(
     *,
     model_key: str = "seedance-2.0",
     anchor_url: str = "https://kie.ai/seedance-2-0",
+    max_duration: int = 15,
+    auto_duration: bool = False,
     observed_at: str,
 ) -> PricingRule:
     base = _select_row(rows, "480p no video input") or _select_row(rows, "480p no video") or rows[0]
@@ -651,6 +667,22 @@ def _build_seedance_2_rule(
                 base.credit_price,
             )
 
+    duration_multipliers = {
+        str(value): float(value) for value in range(4, max_duration + 1)
+    }
+    if auto_duration:
+        duration_multipliers["-1"] = float(max_duration)
+
+    notes = [
+        f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
+        "Seedance pricing is modeled with an internal pricing_variant derived from request resolution plus whether reference_video_urls are present.",
+        "The site pricing API publishes separate rows for 'with video input' and 'no video input'; this rule maps those exactly for dry-run estimation.",
+    ]
+    if auto_duration:
+        notes.append(
+            f"Duration -1 is estimated conservatively at the {max_duration}-second maximum because the provider selects the final duration."
+        )
+
     return _with_row_provenance(
         PricingRule(
             model_key=model_key,
@@ -664,14 +696,10 @@ def _build_seedance_2_rule(
             base_credits=base.credit_price,
             base_cost_usd=base.usd_price,
             multipliers={
-                "duration": {str(value): float(value) for value in range(4, 16)},
+                "duration": duration_multipliers,
                 "pricing_variant": pricing_variant,
             },
-            notes=[
-                f"Observed from https://api.kie.ai/client/v1/model-pricing/page on {observed_at}.",
-                "Seedance pricing is modeled with an internal pricing_variant derived from request resolution plus whether reference_video_urls are present.",
-                "The site pricing API publishes separate rows for 'with video input' and 'no video input'; this rule maps those exactly for dry-run estimation.",
-            ],
+            notes=notes,
         ),
         rows=rows,
         observed_at=observed_at,

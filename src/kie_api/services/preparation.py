@@ -58,16 +58,19 @@ class RequestPreparationService:
             prepared_request.images,
             upload_results=upload_results,
             reused_media=reused_media,
+            allow_provider_assets=prepared_request.model_key == "seedance-2.5",
         )
         prepared_request.videos = self._prepare_media_list(
             prepared_request.videos,
             upload_results=upload_results,
             reused_media=reused_media,
+            allow_provider_assets=prepared_request.model_key == "seedance-2.5",
         )
         prepared_request.audios = self._prepare_media_list(
             prepared_request.audios,
             upload_results=upload_results,
             reused_media=reused_media,
+            allow_provider_assets=prepared_request.model_key == "seedance-2.5",
         )
 
         prepared_request.debug = {
@@ -105,7 +108,13 @@ class RequestPreparationService:
                         f"{field_name}[{index}] still points to local path {media.path!r}"
                     )
                     continue
-                if media.url and not self.settings.is_trusted_uploaded_url(media.url):
+                if media.url and not (
+                    self.settings.is_trusted_uploaded_url(media.url)
+                    or (
+                        request.model_key == "seedance-2.5"
+                        and _is_provider_asset_url(media.url)
+                    )
+                ):
                     invalid_media.append(
                         f"{field_name}[{index}] points to non-KIE URL host {media.url!r}"
                     )
@@ -121,10 +130,14 @@ class RequestPreparationService:
         *,
         upload_results: List[UploadResult],
         reused_media: List[MediaReference],
+        allow_provider_assets: bool,
     ) -> List[MediaReference]:
         prepared: List[MediaReference] = []
         for media in media_list:
-            if media.url and self.settings.is_trusted_uploaded_url(media.url):
+            if media.url and (
+                self.settings.is_trusted_uploaded_url(media.url)
+                or (allow_provider_assets and _is_provider_asset_url(media.url))
+            ):
                 prepared.append(media.model_copy(deep=True))
                 reused_media.append(media.model_copy(deep=True))
                 continue
@@ -184,6 +197,10 @@ def _require_ready_validation(validation: ValidationResult) -> NormalizedRequest
             f"received {validation.state}."
         )
     return validation.normalized_request
+
+
+def _is_provider_asset_url(value: str) -> bool:
+    return urlparse(value).scheme.lower() == "asset"
 
 
 def _build_unique_upload_name(media: MediaReference) -> str:

@@ -1,11 +1,19 @@
 import os
+from pathlib import Path
+from typing import Optional
 
 import pytest
 
-from kie_api import prepare_request_for_submission, submit_prepared_request, validate_request, wait_for_task
+from kie_api import (
+    download_output_file,
+    prepare_request_for_submission,
+    submit_prepared_request,
+    validate_request,
+    wait_for_task,
+)
 from kie_api.clients import CreditsClient, UploadClient
 from kie_api.config import KieSettings
-from kie_api.enums import ValidationState
+from kie_api.enums import JobState, ValidationState
 from kie_api.models import RawUserRequest
 from kie_api.registry.loader import load_registry
 
@@ -107,26 +115,49 @@ def test_live_status_smoke(live_submitted_task_id: str) -> None:
     assert result.provider_status is not None
 
 
-def test_live_seedance_first_frame_submit_smoke() -> None:
-    _require_live_smoke()
-    if os.getenv("KIE_SMOKE_ALLOW_SEEDANCE") != "1":
-        pytest.skip("Set KIE_SMOKE_ALLOW_SEEDANCE=1 to run Seedance 2.0 smoke tests.")
-
+def _run_live_seedance_smoke(
+    model_key: str,
+    prompt_env: str,
+    tmp_path: Path,
+    *,
+    reference_video_path: Optional[str] = None,
+) -> None:
     source_url = os.getenv("KIE_SMOKE_SEEDANCE_FIRST_FRAME_URL")
-    if not source_url:
-        pytest.skip("Set KIE_SMOKE_SEEDANCE_FIRST_FRAME_URL for the Seedance 2.0 smoke test.")
+    if not source_url and not reference_video_path:
+        pytest.skip("Set a Seedance first-frame URL or reference-video path for smoke tests.")
+
+    media_inputs = (
+        {
+            "videos": [
+                {
+                    "path": reference_video_path,
+                    "role": "reference",
+                    "duration_seconds": float(
+                        os.getenv("KIE_SMOKE_SEEDANCE_25_REFERENCE_VIDEO_DURATION", "5.05")
+                    ),
+                }
+            ]
+        }
+        if reference_video_path
+        else {"images": [{"url": source_url, "role": "first_frame"}]}
+    )
 
     registry = load_registry()
     settings = KieSettings.from_env()
     validation = validate_request(
         RawUserRequest(
-            model_key="seedance-2.0",
+            model_key=model_key,
             prompt=os.getenv(
-                "KIE_SMOKE_SEEDANCE_PROMPT",
+                prompt_env,
                 "Animate from this first frame with a gentle cinematic push-in.",
             ),
-            images=[{"url": source_url, "role": "first_frame"}],
-            options={"duration": 4, "resolution": "480p", "generate_audio": False},
+            **media_inputs,
+            options={
+                "duration": 4,
+                "resolution": "480p",
+                "generate_audio": False,
+                **({"nsfw_checker": False} if model_key == "seedance-2.5" else {}),
+            },
         ),
         registry,
     )
@@ -149,6 +180,42 @@ def test_live_seedance_first_frame_submit_smoke() -> None:
     assert submission.task_id
     assert status is not None
     assert status.task_id == submission.task_id
+    assert status.state == JobState.SUCCEEDED
+    assert status.output_urls
+
+    download = download_output_file(
+        status.output_urls[0],
+        str(tmp_path / f"{model_key}-smoke-output.mp4"),
+        settings=settings,
+    )
+    assert download.http_status == 200
+    assert Path(download.destination_path).stat().st_size > 0
+    print(f"Seedance smoke task: {submission.task_id}")
+    print(f"Seedance smoke output: {download.destination_path}")
+
+
+def test_live_seedance_first_frame_submit_smoke(tmp_path: Path) -> None:
+    _require_live_smoke()
+    if os.getenv("KIE_SMOKE_ALLOW_SEEDANCE") != "1":
+        pytest.skip("Set KIE_SMOKE_ALLOW_SEEDANCE=1 to run Seedance 2.0 smoke tests.")
+    _run_live_seedance_smoke("seedance-2.0", "KIE_SMOKE_SEEDANCE_PROMPT", tmp_path)
+
+
+def test_live_seedance_25_reference_video_submit_smoke(tmp_path: Path) -> None:
+    _require_live_smoke()
+    if os.getenv("KIE_SMOKE_ALLOW_SEEDANCE_25") != "1":
+        pytest.skip("Set KIE_SMOKE_ALLOW_SEEDANCE_25=1 to run Seedance 2.5 smoke tests.")
+    reference_video_path = os.getenv("KIE_SMOKE_SEEDANCE_25_REFERENCE_VIDEO_PATH")
+    if not reference_video_path:
+        pytest.skip(
+            "Set KIE_SMOKE_SEEDANCE_25_REFERENCE_VIDEO_PATH to run the lower-cost video-reference smoke."
+        )
+    _run_live_seedance_smoke(
+        "seedance-2.5",
+        "KIE_SMOKE_SEEDANCE_25_PROMPT",
+        tmp_path,
+        reference_video_path=reference_video_path,
+    )
 
 
 def test_live_suno_prompt_mode_submit_smoke() -> None:

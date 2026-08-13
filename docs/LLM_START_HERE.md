@@ -106,6 +106,14 @@ Seedance 2.0 variants currently share the same multimodal request shape:
 - `seedance-2.0-fast` -> `bytedance/seedance-2-fast`, supports `480p` and `720p`
 - `seedance-2.0-mini` -> `bytedance/seedance-2-mini`, supports `480p` and `720p`
 
+Seedance 2.5 reuses that role-aware request path:
+- `seedance-2.5` -> `bytedance/seedance-2-5`, supports `480p` and `720p`
+- duration is required and accepts `4`–`30` or `-1` for provider-selected automatic duration
+- `output_format` accepts `mp4` or `mov`
+- `nsfw_checker` defaults to `false` for Studio, as does `generate_audio`
+- first/last-frame inputs remain mutually exclusive with multimodal references
+- `asset://{assetId}` media references are passed through without upload
+
 Kling 3.0 Turbo Image to Video is separate from base Kling 3.0:
 - `kling-3.0-turbo-i2v` -> `kling/v3-turbo-image-to-video`, supports `720p` and `1080p`
 - It uses `prompt`, `image_urls`, `duration`, and `resolution`; it does not use base Kling 3.0 `mode`, `sound`, or `multi_shots` options.

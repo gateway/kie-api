@@ -3,7 +3,7 @@ from typing import Optional
 
 import pytest
 
-from kie_api import build_submission_payload, prepare_request_for_submission
+from kie_api import build_submission_payload, prepare_request_for_submission, validate_request
 from kie_api.config import KieSettings
 from kie_api.enums import JobState, MediaRole, MediaType, TaskMode
 from kie_api.exceptions import RequestPreparationError
@@ -223,6 +223,51 @@ def test_build_submission_payload_rejects_non_uploaded_media_urls() -> None:
                 prompt="Make this portrait more cinematic.",
                 images=["https://example.com/source/portrait.png"],
             ),
+            registry=registry,
+            settings=KieSettings(api_key="test-key"),
+        )
+
+
+def test_preparation_reuses_provider_asset_references_without_upload() -> None:
+    registry = load_registry()
+    upload_client = DummyUploadClient()
+    raw_request = RawUserRequest(
+        model_key="seedance-2.5",
+        prompt="animate this provider asset",
+        images=[{"url": "asset://frame-123", "role": "first_frame"}],
+        options={"duration": 4},
+    )
+
+    prepared = prepare_request_for_submission(
+        raw_request,
+        registry=registry,
+        settings=KieSettings(api_key="test-key"),
+        upload_client=upload_client,
+    )
+    payload = build_submission_payload(
+        prepared.normalized_request,
+        registry=registry,
+        settings=KieSettings(api_key="test-key"),
+    )
+
+    assert upload_client.stream_calls == []
+    assert upload_client.url_calls == []
+    assert prepared.normalized_request.images[0].source == "provider_asset"
+    assert payload["input"]["first_frame_url"] == "asset://frame-123"
+
+
+def test_submission_rejects_provider_assets_for_older_seedance_models() -> None:
+    registry = load_registry()
+    raw_request = RawUserRequest(
+        model_key="seedance-2.0",
+        prompt="animate this provider asset",
+        images=[{"url": "asset://frame-123", "role": "first_frame"}],
+        options={"duration": 4},
+    )
+
+    with pytest.raises(RequestPreparationError, match="must only contain KIE-uploaded media URLs"):
+        build_submission_payload(
+            validate_request(raw_request, registry),
             registry=registry,
             settings=KieSettings(api_key="test-key"),
         )

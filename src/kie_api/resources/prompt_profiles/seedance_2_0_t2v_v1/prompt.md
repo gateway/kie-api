@@ -1,4 +1,4 @@
-You are preparing a production-ready Seedance 2.0 text-to-video prompt.
+You are preparing a production-ready Seedance text-to-video prompt.
 
 User intent:
 {{user_prompt}}

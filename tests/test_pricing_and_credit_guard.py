@@ -16,7 +16,7 @@ def test_pricing_registry_returns_snapshot_backed_estimate() -> None:
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-07-06-site-pricing-page"
+    assert estimate.pricing_version == "2026-08-12-site-pricing-page"
     assert estimate.pricing_status == "observed_site_pricing"
 
 
@@ -31,7 +31,7 @@ def test_pricing_registry_uses_observed_gpt_image_2_pricing_over_local_policy_fa
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-07-06-site-pricing-page"
+    assert estimate.pricing_version == "2026-08-12-site-pricing-page"
     assert estimate.pricing_status == "observed_site_pricing"
     assert estimate.estimated_credits == pytest.approx(16.0)
     assert estimate.estimated_cost_usd == pytest.approx(0.08)
@@ -318,8 +318,8 @@ def test_pricing_registry_applies_seedance_fast_variant() -> None:
     estimate = registry.estimate_request(request)
 
     assert estimate.applied_multipliers["duration"] == 10.0
-    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(20.0 / 15.5)
-    assert estimate.estimated_credits == pytest.approx(200.0)
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(15.0 / 11.7)
+    assert estimate.estimated_credits == pytest.approx(150.0)
 
 
 def test_pricing_registry_applies_seedance_mini_variant() -> None:
@@ -343,8 +343,34 @@ def test_pricing_registry_applies_seedance_mini_variant() -> None:
     estimate = registry.estimate_request(request)
 
     assert estimate.applied_multipliers["duration"] == 10.0
-    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(12.5 / 9.5)
-    assert estimate.estimated_credits == pytest.approx(125.0)
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(5.0 / 3.8)
+    assert estimate.estimated_credits == pytest.approx(50.0)
+
+
+def test_pricing_registry_applies_seedance_25_auto_duration_conservatively() -> None:
+    registry = PricingRegistry()
+    request = NormalizedRequest(
+        model_key="seedance-2.5",
+        provider_model="bytedance/seedance-2-5",
+        task_mode=TaskMode.REFERENCE_TO_VIDEO,
+        prompt="follow the reference clip's motion",
+        prompt_policy=PromptPolicy.OFF,
+        videos=[
+            {
+                "media_type": "video",
+                "url": "asset://reference-video",
+                "role": "reference",
+            }
+        ],
+        options={"duration": -1, "resolution": "480p"},
+    )
+
+    estimate = registry.estimate_request(request)
+
+    assert estimate.applied_multipliers["duration"] == 30.0
+    assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(17.0 / 28.0)
+    assert estimate.estimated_credits == pytest.approx(510.0)
+    assert estimate.estimated_cost_usd == pytest.approx(2.55)
 
 
 def test_pricing_registry_applies_kling_3_turbo_i2v_variant() -> None:

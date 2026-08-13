@@ -154,6 +154,26 @@ def test_normalizer_resolves_seedance_text_only_to_text_to_video() -> None:
     assert normalized.task_mode == TaskMode.TEXT_TO_VIDEO
 
 
+def test_normalizer_resolves_seedance_25_defaults_for_studio() -> None:
+    normalizer = RequestNormalizer(load_registry())
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.5",
+            prompt="a fox sprinting through a snowy forest",
+            options={"duration": -1},
+        )
+    )
+
+    assert normalized.task_mode == TaskMode.TEXT_TO_VIDEO
+    assert normalized.options["duration"] == -1
+    assert normalized.options["resolution"] == "720p"
+    assert normalized.options["aspect_ratio"] == "adaptive"
+    assert normalized.options["output_format"] == "mp4"
+    assert normalized.options["generate_audio"] is False
+    assert normalized.options["nsfw_checker"] is False
+
+
 def test_normalizer_resolves_seedance_first_frame_to_reference_to_video() -> None:
     normalizer = RequestNormalizer(load_registry())
 

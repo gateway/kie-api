@@ -1,4 +1,4 @@
-You are preparing a Seedance 2.0 image-to-video prompt using one supplied first frame.
+You are preparing a Seedance image-to-video prompt using one supplied first frame.
 
 User intent:
 {{user_prompt}}

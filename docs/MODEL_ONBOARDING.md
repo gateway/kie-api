@@ -103,12 +103,14 @@ For image-edit models that use a nonstandard image URL field:
 - add a payload test proving the provider field name, such as `input_urls` instead of `image_input`
 - add validator tests for documented cross-field constraints before live spend
 
-For multimodal video models such as Seedance 2.0:
+For multimodal video models such as Seedance 2.0 and 2.5:
 - treat first-frame, first+last-frame, and multimodal-reference as mutually-exclusive validated scenarios if the provider documents them that way
 - do not force them into a Kling-style multi-shot abstraction unless the provider request shape actually exposes shot arrays
 - if multimodal references introduce mixed image/video/audio guidance, prefer a dedicated input-pattern binding over overloading existing `single_image` or `first_last_frames` logic
 - use role-aware media references when the same endpoint needs to distinguish first-frame, last-frame, and general reference assets
 - keep Seedance 2.0 Standard and Fast as separate model keys when the provider model string or pricing differs; Fast currently reuses the same request shape but omits `1080p`
+- reuse the established Seedance services for new versions and put version-specific limits/defaults in the model spec; Seedance 2.5 uses larger reference counts, 30-second totals, `-1` automatic duration, and MP4/MOV output without a new client or adapter
+- when the docs reference an option such as `draft` but do not actually expose the request field, record the discrepancy and do not invent the field
 
 Known current TODO:
 - Kling 3.0 `kling_elements` / element-reference support is documented by Kie.ai, but is not yet modeled in the runtime request types or upload flow here

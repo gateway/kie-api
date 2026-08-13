@@ -385,6 +385,39 @@ def test_submit_client_builds_seedance_first_last_frame_payload() -> None:
     assert payload["input"]["generate_audio"] is True
 
 
+def test_submit_client_builds_seedance_25_payload_with_studio_safety_default() -> None:
+    registry = load_registry()
+    normalizer = RequestNormalizer(registry)
+    client = SubmitClient(KieSettings(api_key="test-key"), registry)
+
+    normalized = normalizer.normalize(
+        RawUserRequest(
+            model_key="seedance-2.5",
+            prompt="follow the reference clip's camera movement",
+            videos=[{"url": "asset://reference-video", "role": "reference"}],
+            options={
+                "duration": -1,
+                "resolution": "480p",
+                "output_format": "mov",
+                "return_last_frame": True,
+                "web_search": True,
+            },
+        )
+    )
+
+    payload = client.build_payload(normalized)
+
+    assert payload["model"] == "bytedance/seedance-2-5"
+    assert payload["input"]["reference_video_urls"] == ["asset://reference-video"]
+    assert payload["input"]["duration"] == -1
+    assert payload["input"]["resolution"] == "480p"
+    assert payload["input"]["output_format"] == "mov"
+    assert payload["input"]["return_last_frame"] is True
+    assert payload["input"]["web_search"] is True
+    assert payload["input"]["generate_audio"] is False
+    assert payload["input"]["nsfw_checker"] is False
+
+
 def test_submit_client_builds_seedance_multimodal_reference_payload() -> None:
     registry = load_registry()
     normalizer = RequestNormalizer(registry)

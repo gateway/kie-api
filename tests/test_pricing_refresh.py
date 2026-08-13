@@ -545,6 +545,50 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "discountRate": 0.0,
             "anchor": None,
         },
+        {
+            "modelDescription": "bytedance/seedance-2-5, 720p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "63",
+            "creditUnit": "per second",
+            "usdPrice": "0.315",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/seedance-2-5",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2-5, 720p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "38",
+            "creditUnit": "per second",
+            "usdPrice": "0.19",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/seedance-2-5",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2-5, 480p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "28",
+            "creditUnit": "per second",
+            "usdPrice": "0.14",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/seedance-2-5",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2-5, 480p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "17",
+            "creditUnit": "per second",
+            "usdPrice": "0.085",
+            "falPrice": None,
+            "discountRate": 0.0,
+            "anchor": "https://kie.ai/seedance-2-5",
+        },
     ]
 
     rows = [
@@ -613,6 +657,11 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert rules["seedance-2.0-mini"].multipliers["pricing_variant"]["720p_no_video_input"] == 20.5 / 9.5
     assert rules["seedance-2.0-mini"].multipliers["pricing_variant"]["720p_with_video_input"] == 12.5 / 9.5
     assert "1080p_no_video_input" not in rules["seedance-2.0-mini"].multipliers["pricing_variant"]
+    assert rules["seedance-2.5"].billing_unit == "second"
+    assert rules["seedance-2.5"].base_credits == 28.0
+    assert rules["seedance-2.5"].multipliers["duration"]["30"] == 30.0
+    assert rules["seedance-2.5"].multipliers["duration"]["-1"] == 30.0
+    assert rules["seedance-2.5"].multipliers["pricing_variant"]["720p_with_video_input"] == 38.0 / 28.0
     assert rules["suno-generate-music"].pricing_status == "unknown"
     assert rules["suno-generate-music"].interface_type == "music"
     assert snapshot.missing_model_keys == []

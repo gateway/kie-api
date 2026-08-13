@@ -61,6 +61,33 @@ def test_status_client_extracts_output_urls_from_result_json_string() -> None:
     assert result.output_urls == ["https://tempfile.aiquickdraw.com/out.jpeg"]
 
 
+def test_status_client_extracts_seedance_25_frames_and_result_object() -> None:
+    client = StatusClient(KieSettings(api_key="test-key"))
+
+    result = client.normalize_status_response(
+        {
+            "code": 200,
+            "data": {
+                "taskId": "task_seedance_25",
+                "state": "success",
+                "resultJson": (
+                    '{"resultUrls":["https://cdn.example.com/out.mp4"],'
+                    '"firstFrameUrl":["https://cdn.example.com/first.jpg"],'
+                    '"lastFrameUrl":["https://cdn.example.com/last.jpg"],'
+                    '"resultObject":{"videoUrl":"https://cdn.example.com/alternate.mov"}}'
+                ),
+            },
+        }
+    )
+
+    assert result.output_urls == [
+        "https://cdn.example.com/out.mp4",
+        "https://cdn.example.com/first.jpg",
+        "https://cdn.example.com/last.jpg",
+        "https://cdn.example.com/alternate.mov",
+    ]
+
+
 def test_status_client_normalizes_failure_response() -> None:
     client = StatusClient(KieSettings(api_key="test-key"))
 

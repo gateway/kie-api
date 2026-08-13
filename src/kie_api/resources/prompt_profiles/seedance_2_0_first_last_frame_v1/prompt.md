@@ -1,4 +1,4 @@
-You are preparing a Seedance 2.0 first+last-frame video prompt.
+You are preparing a Seedance first+last-frame video prompt.
 
 User intent:
 {{user_prompt}}

@@ -16,7 +16,12 @@ from ..models import (
 )
 from ..registry.loader import SpecRegistry
 
-SEEDANCE_MODEL_KEYS = {"seedance-2.0", "seedance-2.0-fast", "seedance-2.0-mini"}
+SEEDANCE_MODEL_KEYS = {
+    "seedance-2.0",
+    "seedance-2.0-fast",
+    "seedance-2.0-mini",
+    "seedance-2.5",
+}
 
 
 class RequestValidator:
@@ -137,6 +142,17 @@ class RequestValidator:
                 )
 
         if request.model_key in SEEDANCE_MODEL_KEYS:
+            seedance_label = spec.label
+            max_reference_images = spec.inputs["image"].required_max
+            max_reference_videos = spec.inputs["video"].required_max
+            max_reference_audios = spec.inputs["audio"].required_max
+            constraints = spec.input_constraints
+            video_total_duration_limit = (
+                constraints.video_total_duration_max_seconds if constraints else None
+            )
+            audio_total_duration_limit = (
+                constraints.audio_total_duration_max_seconds if constraints else None
+            )
             first_frame_images = _media_with_role(normalized.images, MediaRole.FIRST_FRAME)
             last_frame_images = _media_with_role(normalized.images, MediaRole.LAST_FRAME)
             reference_images = _media_with_role(normalized.images, MediaRole.REFERENCE)
@@ -157,7 +173,8 @@ class RequestValidator:
                         field="media",
                         code="seedance_media_role_required",
                         message=(
-                            "Seedance 2.0 media inputs must declare a role of first_frame, last_frame, or reference."
+                            f"{seedance_label} media inputs must declare a role of "
+                            "first_frame, last_frame, or reference."
                         ),
                         received=[item.model_dump() for item in unlabeled_media],
                     )
@@ -171,7 +188,8 @@ class RequestValidator:
                         field="task_mode",
                         code="seedance_text_to_video_cannot_include_media",
                         message=(
-                            "Seedance 2.0 text-to-video requests cannot include first/last frame inputs or reference media."
+                            f"{seedance_label} text-to-video requests cannot include "
+                            "first/last frame inputs or reference media."
                         ),
                         received=normalized.task_mode.value,
                     )
@@ -184,7 +202,8 @@ class RequestValidator:
                     MissingInput(
                         field="media",
                         message=(
-                            "Seedance 2.0 reference-to-video requests require a first frame, first+last frames, or reference media."
+                            f"{seedance_label} reference-to-video requests require a first "
+                            "frame, first+last frames, or reference media."
                         ),
                     )
                 )
@@ -195,7 +214,8 @@ class RequestValidator:
                         field="images",
                         code="seedance_frames_and_references_are_mutually_exclusive",
                         message=(
-                            "Seedance 2.0 does not allow first/last frame guidance together with multimodal reference assets."
+                            f"{seedance_label} does not allow first/last frame guidance "
+                            "together with multimodal reference assets."
                         ),
                         received={
                             "first_frame_count": len(first_frame_images),
@@ -212,7 +232,10 @@ class RequestValidator:
                     InvalidInput(
                         field="images",
                         code="seedance_last_frame_requires_first_frame",
-                        message="Seedance 2.0 requires a first-frame image when a last-frame image is provided.",
+                        message=(
+                            f"{seedance_label} requires a first-frame image when a "
+                            "last-frame image is provided."
+                        ),
                         received={"last_frame_count": len(last_frame_images)},
                     )
                 )
@@ -222,7 +245,7 @@ class RequestValidator:
                     InvalidInput(
                         field="images",
                         code="too_many_first_frame_images",
-                        message="Seedance 2.0 accepts at most one first-frame image.",
+                        message=f"{seedance_label} accepts at most one first-frame image.",
                         received=len(first_frame_images),
                     )
                 )
@@ -232,59 +255,126 @@ class RequestValidator:
                     InvalidInput(
                         field="images",
                         code="too_many_last_frame_images",
-                        message="Seedance 2.0 accepts at most one last-frame image.",
+                        message=f"{seedance_label} accepts at most one last-frame image.",
                         received=len(last_frame_images),
                     )
                 )
 
-            if len(reference_images) > 9:
+            if max_reference_images is not None and len(reference_images) > max_reference_images:
                 impossible_inputs.append(
                     InvalidInput(
                         field="images",
                         code="too_many_reference_images",
-                        message="Seedance 2.0 accepts at most 9 reference images.",
+                        message=(
+                            f"{seedance_label} accepts at most {max_reference_images} "
+                            "reference images."
+                        ),
                         received=len(reference_images),
                     )
                 )
 
-            if len(reference_videos) > 3:
+            if max_reference_videos is not None and len(reference_videos) > max_reference_videos:
                 impossible_inputs.append(
                     InvalidInput(
                         field="videos",
                         code="too_many_reference_videos",
-                        message="Seedance 2.0 accepts at most 3 reference videos.",
+                        message=(
+                            f"{seedance_label} accepts at most {max_reference_videos} "
+                            "reference videos."
+                        ),
                         received=len(reference_videos),
                     )
                 )
 
-            if len(reference_audios) > 3:
+            if max_reference_audios is not None and len(reference_audios) > max_reference_audios:
                 impossible_inputs.append(
                     InvalidInput(
                         field="audios",
                         code="too_many_reference_audios",
-                        message="Seedance 2.0 accepts at most 3 reference audios.",
+                        message=(
+                            f"{seedance_label} accepts at most {max_reference_audios} "
+                            "reference audios."
+                        ),
                         received=len(reference_audios),
                     )
                 )
 
             video_total_duration = _sum_known_media_durations(reference_videos)
-            if video_total_duration is not None and video_total_duration > 15:
+            if (
+                video_total_duration is not None
+                and video_total_duration_limit is not None
+                and video_total_duration > video_total_duration_limit
+            ):
                 impossible_inputs.append(
                     InvalidInput(
                         field="videos",
                         code="reference_video_duration_limit_exceeded",
-                        message="Seedance 2.0 reference videos must total 15 seconds or less.",
+                        message=(
+                            f"{seedance_label} reference videos must total "
+                            f"{video_total_duration_limit} seconds or less."
+                        ),
                         received=video_total_duration,
                     )
                 )
 
-            if reference_audios:
+            if (
+                request.model_key == "seedance-2.5"
+                and reference_videos
+                and video_total_duration is None
+            ):
+                warning_details.append(
+                    ValidationMessage(
+                        field="videos",
+                        code="seedance_reference_video_duration_unverified",
+                        message=(
+                            f"{seedance_label} reference video duration metadata is incomplete; "
+                            f"verify the combined duration is at most {video_total_duration_limit} seconds."
+                        ),
+                    )
+                )
+
+            audio_total_duration = _sum_known_media_durations(reference_audios)
+            if request.model_key == "seedance-2.5":
+                if (
+                    audio_total_duration is not None
+                    and audio_total_duration_limit is not None
+                    and audio_total_duration > audio_total_duration_limit
+                ):
+                    impossible_inputs.append(
+                        InvalidInput(
+                            field="audios",
+                            code="reference_audio_duration_limit_exceeded",
+                            message=(
+                                f"{seedance_label} reference audios must total "
+                                f"{audio_total_duration_limit} seconds or less."
+                            ),
+                            received=audio_total_duration,
+                        )
+                    )
+            elif reference_audios:
                 warning_details.append(
                     ValidationMessage(
                         field="audios",
                         code="seedance_reference_audio_duration_unverified",
                         message=(
-                            "Seedance 2.0 reference audio count is validated, but total reference audio duration still needs live verification."
+                            f"{seedance_label} reference audio count is validated, but total "
+                            "reference audio duration still needs live verification."
+                        ),
+                    )
+                )
+
+            if (
+                request.model_key == "seedance-2.5"
+                and reference_audios
+                and audio_total_duration is None
+            ):
+                warning_details.append(
+                    ValidationMessage(
+                        field="audios",
+                        code="seedance_reference_audio_duration_unverified",
+                        message=(
+                            f"{seedance_label} reference audio duration metadata is incomplete; "
+                            f"verify the combined duration is at most {audio_total_duration_limit} seconds."
                         ),
                     )
                 )
@@ -443,7 +533,14 @@ class RequestValidator:
                         )
                     )
                 else:
-                    if option_spec.min is not None and value < option_spec.min:
+                    is_allowed_sentinel = bool(
+                        option_spec.allowed and value in option_spec.allowed
+                    )
+                    if (
+                        not is_allowed_sentinel
+                        and option_spec.min is not None
+                        and value < option_spec.min
+                    ):
                         impossible_inputs.append(
                             self._invalid_option(
                                 option_name,
@@ -452,7 +549,11 @@ class RequestValidator:
                                 value,
                             )
                         )
-                    if option_spec.max is not None and value > option_spec.max:
+                    if (
+                        not is_allowed_sentinel
+                        and option_spec.max is not None
+                        and value > option_spec.max
+                    ):
                         impossible_inputs.append(
                             self._invalid_option(
                                 option_name,
@@ -673,14 +774,14 @@ def _validate_suno_request(
         )
 
 
-def _sum_known_media_durations(media: List[MediaReference]) -> int | None:
-    durations: List[int] = []
+def _sum_known_media_durations(media: List[MediaReference]) -> float | None:
+    durations: List[float] = []
     for item in media:
         duration_hint = item.duration_seconds
         if duration_hint is None:
             return None
         try:
-            durations.append(int(duration_hint))
+            durations.append(float(duration_hint))
         except (TypeError, ValueError):
             return None
     return sum(durations)

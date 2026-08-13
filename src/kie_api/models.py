@@ -37,6 +37,8 @@ class MediaReference(BaseModel):
     def validate_location(self) -> "MediaReference":
         if not self.url and not self.path:
             raise ValueError("either url or path must be provided")
+        if self.url and urlparse(self.url).scheme.lower() == "asset":
+            self.source = "provider_asset"
         return self
 
     @classmethod
@@ -51,9 +53,10 @@ class MediaReference(BaseModel):
             return cls(media_type=media_type, path=str(value), filename=value.name, source="local")
         if isinstance(value, str):
             parsed = urlparse(value)
-            if parsed.scheme in {"http", "https"}:
+            if parsed.scheme in {"http", "https", "asset"}:
                 name = Path(parsed.path).name or None
-                return cls(media_type=media_type, url=value, filename=name, source="remote")
+                source = "provider_asset" if parsed.scheme == "asset" else "remote"
+                return cls(media_type=media_type, url=value, filename=name, source=source)
             path = Path(value)
             return cls(media_type=media_type, path=value, filename=path.name, source="local")
         raise TypeError(f"unsupported media reference value: {type(value)!r}")

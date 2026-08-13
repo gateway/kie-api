@@ -12,7 +12,7 @@ from kie_api.registry.loader import load_latest_pricing_snapshot, load_model_spe
 def test_registry_loads_verified_model_specs() -> None:
     registry = load_registry()
 
-    assert len(registry.model_specs) == 15
+    assert len(registry.model_specs) == 16
     assert registry.get_model("nano-banana-pro").inputs["image"].required_max == 8
     assert registry.get_model("nano-banana-2").inputs["image"].required_max == 14
     assert registry.get_model("gpt-image-2-image-to-image").inputs["image"].required_max == 16
@@ -29,6 +29,16 @@ def test_registry_loads_verified_model_specs() -> None:
     assert registry.get_model("seedance-2.0-mini").options["resolution"].allowed == ["480p", "720p"]
     assert registry.get_model("seedance-2.0-mini").options["aspect_ratio"].allowed[-1] == "adaptive"
     assert "nsfw_checker" not in registry.get_model("seedance-2.0-mini").options
+    seedance_25 = registry.get_model("seedance-2.5")
+    assert seedance_25.provider_model == "bytedance/seedance-2-5"
+    assert seedance_25.inputs["image"].required_max == 30
+    assert seedance_25.inputs["video"].required_max == 10
+    assert seedance_25.inputs["audio"].required_max == 10
+    assert seedance_25.options["resolution"].allowed == ["480p", "720p"]
+    assert seedance_25.options["duration"].allowed == [-1]
+    assert seedance_25.options["duration"].max == 30
+    assert seedance_25.options["output_format"].allowed == ["mp4", "mov"]
+    assert seedance_25.options["nsfw_checker"].default is False
     assert registry.get_model("kling-3.0-turbo-i2v").provider_model == "kling/v3-turbo-image-to-video"
     assert registry.get_model("kling-3.0-turbo-i2v").options["resolution"].allowed == ["720p", "1080p"]
     assert registry.get_model("kling-3.0-turbo-i2v").options["duration"].min == 3
@@ -133,6 +143,7 @@ def test_video_generation_models_expose_duration_controls() -> None:
         "kling-3.0-turbo-i2v": {"min": 3, "max": 15},
         "seedance-2.0": {"min": 4, "max": 15},
         "seedance-2.0-mini": {"min": 4, "max": 15},
+        "seedance-2.5": {"allowed": [-1], "min": 4, "max": 30},
     }
 
     for model_key, expected in expected_duration_specs.items():
@@ -205,6 +216,7 @@ def test_registry_can_load_bundled_package_specs() -> None:
     assert registry.get_model("gpt-image-2-image-to-image").provider_model == "gpt-image-2-image-to-image"
     assert registry.get_model("gpt-image-2-text-to-image").provider_model == "gpt-image-2-text-to-image"
     assert registry.get_model("seedance-2.0-fast").provider_model == "bytedance/seedance-2-fast"
+    assert registry.get_model("seedance-2.5").provider_model == "bytedance/seedance-2-5"
     assert registry.get_model("kling-2.6-motion").provider_model == "kling-2.6/motion-control"
     assert registry.get_model("kling-3.0-motion").options["background_source"].type == "string"
 
@@ -212,8 +224,8 @@ def test_registry_can_load_bundled_package_specs() -> None:
 def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     snapshot = load_latest_pricing_snapshot()
 
-    assert snapshot.version == "2026-07-06-site-pricing-page"
-    assert snapshot.released_on == "2026-07-06"
+    assert snapshot.version == "2026-08-12-site-pricing-page"
+    assert snapshot.released_on == "2026-08-12"
     assert any(rule.model_key == "kling-3.0-t2v" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-image-to-image" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-text-to-image" for rule in snapshot.rules)
@@ -237,11 +249,15 @@ def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     assert seedance_rule.multipliers["pricing_variant"]["4k_no_video_input"] == pytest.approx(208.0 / 19.0)
     assert seedance_rule.multipliers["pricing_variant"]["4k_with_video_input"] == pytest.approx(128.0 / 19.0)
     seedance_fast_rule = next(rule for rule in snapshot.rules if rule.model_key == "seedance-2.0-fast")
-    assert seedance_fast_rule.base_credits == 15.5
-    assert seedance_fast_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(20.0 / 15.5)
+    assert seedance_fast_rule.base_credits == 11.7
+    assert seedance_fast_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(15.0 / 11.7)
     seedance_mini_rule = next(rule for rule in snapshot.rules if rule.model_key == "seedance-2.0-mini")
-    assert seedance_mini_rule.base_credits == 9.5
-    assert seedance_mini_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(12.5 / 9.5)
+    assert seedance_mini_rule.base_credits == 3.8
+    assert seedance_mini_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(5.0 / 3.8)
+    seedance_25_rule = next(rule for rule in snapshot.rules if rule.model_key == "seedance-2.5")
+    assert seedance_25_rule.base_credits == 28.0
+    assert seedance_25_rule.multipliers["duration"]["-1"] == 30.0
+    assert seedance_25_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(38.0 / 28.0)
     kling_turbo_rule = next(rule for rule in snapshot.rules if rule.model_key == "kling-3.0-turbo-i2v")
     assert kling_turbo_rule.base_credits == 18
     assert kling_turbo_rule.multipliers["resolution"]["1080p"] == pytest.approx(22.5 / 18)
