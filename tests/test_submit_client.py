@@ -397,7 +397,7 @@ def test_submit_client_builds_seedance_25_payload_with_studio_safety_default() -
             videos=[{"url": "asset://reference-video", "role": "reference"}],
             options={
                 "duration": -1,
-                "resolution": "480p",
+                "resolution": "1080p",
                 "output_format": "mov",
                 "return_last_frame": True,
                 "web_search": True,
@@ -410,7 +410,7 @@ def test_submit_client_builds_seedance_25_payload_with_studio_safety_default() -
     assert payload["model"] == "bytedance/seedance-2-5"
     assert payload["input"]["reference_video_urls"] == ["asset://reference-video"]
     assert payload["input"]["duration"] == -1
-    assert payload["input"]["resolution"] == "480p"
+    assert payload["input"]["resolution"] == "1080p"
     assert payload["input"]["output_format"] == "mov"
     assert payload["input"]["return_last_frame"] is True
     assert payload["input"]["web_search"] is True

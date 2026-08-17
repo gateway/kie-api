@@ -49,7 +49,7 @@ options:
     default: false
   resolution:
     type: enum
-    allowed: [480p, 720p]
+    allowed: [480p, 720p, 1080p]
     default: 720p
   aspect_ratio:
     type: enum
@@ -102,20 +102,23 @@ verification:
     - live_page_api_surface
     - docs_kie_secondary
     - site_pricing_api
-  verified_on: '2026-08-12'
+    - official_kie_telegram_announcement
+  verified_on: '2026-08-17'
   verification_notes:
-    - Verified against the live https://kie.ai/seedance-2-5 model page and https://docs.kie.ai/market/bytedance/seedance-2-5.md OpenAPI schema on 2026-08-12.
+    - Initially verified against the live https://kie.ai/seedance-2-5 model page and https://docs.kie.ai/market/bytedance/seedance-2-5.md OpenAPI schema on 2026-08-12; the resolution enum and pricing were reverified on 2026-08-17.
     - The provider model is bytedance/seedance-2-5 and uses the existing Market createTask and recordInfo endpoints.
     - Text-only, first-frame, first+last-frame, and multimodal-reference requests share one endpoint; first/last-frame guidance is mutually exclusive with multimodal references.
     - The API exposes at most 30 reference images, 10 reference videos, and 10 reference audios; reference videos and audios each have a 30-second combined-duration limit.
     - The API accepts KIE URLs and provider asset://{assetId} references for frame and multimodal media fields.
-    - The API schema exposes only 480p and 720p output despite broader marketing claims, so the SDK does not infer 1080p or 4K support.
+    - The 2026-08-17 OpenAPI schema explicitly exposes 480p, 720p, and 1080p output; its nearby prose still mentions only 480p and 720p, so the machine-readable enum is treated as authoritative.
+    - KIE's official Telegram announcement supplied on 2026-08-17 states that 1080p output supports 10-bit color depth and higher-fidelity detail, lighting, and skin tones.
     - Duration accepts explicit integer values from 4 through 30 plus -1 for provider-selected automatic duration.
     - The schema references draft behavior in return_last_frame help text but does not define a draft request field, so the SDK does not invent one.
     - The docs default generate_audio to true, but the SDK keeps it false to avoid surprise cost increases.
     - The Studio policy requires nsfw_checker to remain off; the option is supported and submitted with default false.
     - Status callbacks may return resultUrls, firstFrameUrl, lastFrameUrl, or resultObject inside resultJson.
     - Public pricing rows are observed rather than provider-authoritative and vary by resolution and the presence of reference_video_urls.
+    - The public pricing API exposes promotional 1080p rates of 68.5 credits/s with video input and 114 credits/s without video input; KIE announced a 28% discount through 2026-09-17 06:00 UTC, so pricing must be refreshed after that deadline.
   field_provenance:
     key: inferred
     label: inferred

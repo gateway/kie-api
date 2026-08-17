@@ -16,7 +16,7 @@ def test_pricing_registry_returns_snapshot_backed_estimate() -> None:
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-08-12-site-pricing-page"
+    assert estimate.pricing_version == "2026-08-17-site-pricing-page"
     assert estimate.pricing_status == "observed_site_pricing"
 
 
@@ -31,7 +31,7 @@ def test_pricing_registry_uses_observed_gpt_image_2_pricing_over_local_policy_fa
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-08-12-site-pricing-page"
+    assert estimate.pricing_version == "2026-08-17-site-pricing-page"
     assert estimate.pricing_status == "observed_site_pricing"
     assert estimate.estimated_credits == pytest.approx(16.0)
     assert estimate.estimated_cost_usd == pytest.approx(0.08)
@@ -371,6 +371,38 @@ def test_pricing_registry_applies_seedance_25_auto_duration_conservatively() -> 
     assert estimate.applied_multipliers["pricing_variant"] == pytest.approx(17.0 / 28.0)
     assert estimate.estimated_credits == pytest.approx(510.0)
     assert estimate.estimated_cost_usd == pytest.approx(2.55)
+
+
+def test_pricing_registry_applies_seedance_25_promotional_1080p_variants() -> None:
+    registry = PricingRegistry()
+    no_video_request = NormalizedRequest(
+        model_key="seedance-2.5",
+        provider_model="bytedance/seedance-2-5",
+        task_mode=TaskMode.TEXT_TO_VIDEO,
+        prompt="cinematic product film",
+        prompt_policy=PromptPolicy.OFF,
+        options={"duration": 5, "resolution": "1080p"},
+    )
+    with_video_request = no_video_request.model_copy(
+        update={
+            "task_mode": TaskMode.REFERENCE_TO_VIDEO,
+            "videos": [
+                {
+                    "media_type": "video",
+                    "url": "asset://reference-video",
+                    "role": "reference",
+                }
+            ],
+        }
+    )
+
+    no_video_estimate = registry.estimate_request(no_video_request)
+    with_video_estimate = registry.estimate_request(with_video_request)
+
+    assert no_video_estimate.estimated_credits == pytest.approx(570.0)
+    assert no_video_estimate.estimated_cost_usd == pytest.approx(2.85)
+    assert with_video_estimate.estimated_credits == pytest.approx(342.5)
+    assert with_video_estimate.estimated_cost_usd == pytest.approx(1.7125)
 
 
 def test_pricing_registry_applies_kling_3_turbo_i2v_variant() -> None:

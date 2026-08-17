@@ -107,7 +107,7 @@ Seedance 2.0 variants currently share the same multimodal request shape:
 - `seedance-2.0-mini` -> `bytedance/seedance-2-mini`, supports `480p` and `720p`
 
 Seedance 2.5 reuses that role-aware request path:
-- `seedance-2.5` -> `bytedance/seedance-2-5`, supports `480p` and `720p`
+- `seedance-2.5` -> `bytedance/seedance-2-5`, supports `480p`, `720p`, and `1080p`
 - duration is required and accepts `4`–`30` or `-1` for provider-selected automatic duration
 - `output_format` accepts `mp4` or `mov`
 - `nsfw_checker` defaults to `false` for Studio, as does `generate_audio`

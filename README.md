@@ -86,7 +86,7 @@ These descriptions are based on the current public Kie.ai model pages and live p
 ### Seedance 2.5
 
 - Good at: longer, reference-heavy multimodal video generation with image, video, and audio guidance
-- What it does: supports text-only, first-frame, first+last-frame, and mutually exclusive multimodal-reference flows; up to 30 reference images, 10 reference videos, 10 reference audios, 4–30 second or automatic duration, MP4/MOV output, and 480p/720p generation
+- What it does: supports text-only, first-frame, first+last-frame, and mutually exclusive multimodal-reference flows; up to 30 reference images, 10 reference videos, 10 reference audios, 4–30 second or automatic duration, MP4/MOV output, and 480p/720p/1080p generation
 - Studio policy: `nsfw_checker` is supported and defaults to `false`; `generate_audio` also defaults to `false` to avoid surprise cost
 - Who it is by: ByteDance on Kie.ai, using provider model `bytedance/seedance-2-5`
 
@@ -189,11 +189,11 @@ Use `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini`, or `seedance-2.5` 
 `bytedance/seedance-2-fast` provider model and supports `480p` and `720p`.
 `seedance-2.0-mini` uses the same request shape with the lower-cost
 `bytedance/seedance-2-mini` provider model and supports `480p` and `720p`.
-Use `seedance-2.0` when `1080p` output is required.
+Use `seedance-2.0` when `4k` output is required.
 Use `seedance-2.5` for its expanded 30-image/10-video/10-audio reference limits,
 30-second maximum duration, automatic duration via `-1`, MOV output, and provider `asset://`
-references. Its verified API surface is limited to `480p` and `720p`; the SDK does not
-infer 4K support from marketing copy.
+references. Its verified API surface supports `480p`, `720p`, and `1080p`; the SDK does
+not infer 4K support from marketing copy.
 
 Seedance uses role-aware media references in the runtime request model:
 - `first_frame`

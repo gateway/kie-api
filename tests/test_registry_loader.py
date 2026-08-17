@@ -34,7 +34,7 @@ def test_registry_loads_verified_model_specs() -> None:
     assert seedance_25.inputs["image"].required_max == 30
     assert seedance_25.inputs["video"].required_max == 10
     assert seedance_25.inputs["audio"].required_max == 10
-    assert seedance_25.options["resolution"].allowed == ["480p", "720p"]
+    assert seedance_25.options["resolution"].allowed == ["480p", "720p", "1080p"]
     assert seedance_25.options["duration"].allowed == [-1]
     assert seedance_25.options["duration"].max == 30
     assert seedance_25.options["output_format"].allowed == ["mp4", "mov"]
@@ -224,8 +224,8 @@ def test_registry_can_load_bundled_package_specs() -> None:
 def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     snapshot = load_latest_pricing_snapshot()
 
-    assert snapshot.version == "2026-08-12-site-pricing-page"
-    assert snapshot.released_on == "2026-08-12"
+    assert snapshot.version == "2026-08-17-site-pricing-page"
+    assert snapshot.released_on == "2026-08-17"
     assert any(rule.model_key == "kling-3.0-t2v" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-image-to-image" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-text-to-image" for rule in snapshot.rules)
@@ -258,6 +258,8 @@ def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     assert seedance_25_rule.base_credits == 28.0
     assert seedance_25_rule.multipliers["duration"]["-1"] == 30.0
     assert seedance_25_rule.multipliers["pricing_variant"]["720p_with_video_input"] == pytest.approx(38.0 / 28.0)
+    assert seedance_25_rule.multipliers["pricing_variant"]["1080p_no_video_input"] == pytest.approx(114.0 / 28.0)
+    assert seedance_25_rule.multipliers["pricing_variant"]["1080p_with_video_input"] == pytest.approx(68.5 / 28.0)
     kling_turbo_rule = next(rule for rule in snapshot.rules if rule.model_key == "kling-3.0-turbo-i2v")
     assert kling_turbo_rule.base_credits == 18
     assert kling_turbo_rule.multipliers["resolution"]["1080p"] == pytest.approx(22.5 / 18)

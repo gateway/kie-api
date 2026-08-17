@@ -682,6 +682,12 @@ def _build_seedance_2_rule(
         notes.append(
             f"Duration -1 is estimated conservatively at the {max_duration}-second maximum because the provider selects the final duration."
         )
+    if model_key == "seedance-2.5" and any(
+        key.startswith("1080p_") for key in pricing_variant
+    ):
+        notes.append(
+            "KIE announced the observed Seedance 2.5 1080p rates as a limited-time 28% discount through 2026-09-17 06:00 UTC; refresh pricing after expiry."
+        )
 
     return _with_row_provenance(
         PricingRule(

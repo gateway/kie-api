@@ -816,7 +816,7 @@ def test_validator_accepts_seedance_25_auto_duration_and_documented_limits() -> 
                     "duration_seconds": 14.75,
                 },
             ],
-            options={"duration": -1, "resolution": "480p"},
+            options={"duration": -1, "resolution": "1080p"},
         )
     )
 
@@ -842,7 +842,7 @@ def test_validator_rejects_seedance_25_values_beyond_documented_limits() -> None
                     "duration_seconds": 30.1,
                 }
             ],
-            options={"duration": 31, "resolution": "1080p"},
+            options={"duration": 31, "resolution": "4k"},
         )
     )
 

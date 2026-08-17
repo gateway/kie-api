@@ -183,7 +183,7 @@ print(validation.state)
 
 For Seedance 2.5, change `model_key` to `seedance-2.5`. It additionally accepts
 `duration=-1`, `output_format="mov"`, up to 30 reference images, 10 reference videos,
-and 10 reference audios. Its verified output resolutions are only `480p` and `720p`.
+and 10 reference audios. Its verified output resolutions are `480p`, `720p`, and `1080p`.
 The Studio-safe defaults submit both `generate_audio=False` and `nsfw_checker=False`.
 Documented provider references such as `asset://asset-123` can be used in place of URLs.
 

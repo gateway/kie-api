@@ -589,6 +589,28 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
             "discountRate": 0.0,
             "anchor": "https://kie.ai/seedance-2-5",
         },
+        {
+            "modelDescription": "bytedance/seedance-2-5, 1080p no video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "114",
+            "creditUnit": "per second",
+            "usdPrice": "0.570",
+            "falPrice": None,
+            "discountRate": 28.0,
+            "anchor": "https://kie.ai/seedance-2-5",
+        },
+        {
+            "modelDescription": "bytedance/seedance-2-5, 1080p with video input",
+            "interfaceType": "video",
+            "provider": "ByteDance",
+            "creditPrice": "68.5",
+            "creditUnit": "per second",
+            "usdPrice": "0.3425",
+            "falPrice": None,
+            "discountRate": 28.0,
+            "anchor": "https://kie.ai/seedance-2-5",
+        },
     ]
 
     rows = [
@@ -662,6 +684,9 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert rules["seedance-2.5"].multipliers["duration"]["30"] == 30.0
     assert rules["seedance-2.5"].multipliers["duration"]["-1"] == 30.0
     assert rules["seedance-2.5"].multipliers["pricing_variant"]["720p_with_video_input"] == 38.0 / 28.0
+    assert rules["seedance-2.5"].multipliers["pricing_variant"]["1080p_no_video_input"] == 114.0 / 28.0
+    assert rules["seedance-2.5"].multipliers["pricing_variant"]["1080p_with_video_input"] == 68.5 / 28.0
+    assert any("2026-09-17 06:00 UTC" in note for note in rules["seedance-2.5"].notes)
     assert rules["suno-generate-music"].pricing_status == "unknown"
     assert rules["suno-generate-music"].interface_type == "music"
     assert snapshot.missing_model_keys == []
