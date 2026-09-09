@@ -1,0 +1,122 @@
+key: gpt-image-2-5-sunburst-image-to-image
+label: GPT Image 2.5 Sunburst Image To Image
+family: market
+provider_model: gpt-image-2-5-sunburst-image-to-image
+task_modes:
+- image_edit
+inputs:
+  image:
+    required_min: 1
+    required_max: 16
+  video:
+    required_min: 0
+    required_max: 0
+  audio:
+    required_min: 0
+    required_max: 0
+options:
+  aspect_ratio:
+    type: enum
+    allowed:
+    - auto
+    - '1:1'
+    - '3:2'
+    - '2:3'
+    - '4:3'
+    - '3:4'
+    - '16:9'
+    - '9:16'
+    - '21:9'
+    - '27:16'
+    - '16:27'
+    - '9:8'
+    - '8:9'
+    default: auto
+  resolution:
+    type: enum
+    allowed:
+    - 1K
+    - 2K
+    - 4K
+    default: 1K
+    value_aliases:
+      1k: 1K
+      2k: 2K
+      4k: 4K
+    notes: 1K is a local wrapper default; the provider schema does not specify a resolution
+      default.
+prompt:
+  required: true
+  max_chars: 20000
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_keys_by_input_pattern:
+    image_edit: gpt_image_2_5_image_to_image_v1
+  min_chars: 1
+defaults: {}
+transport:
+  endpoint_family: market
+  create_path: /api/v1/jobs/createTask
+  status_path: /api/v1/jobs/recordInfo
+  callback_supported: true
+  image_input_field: input_urls
+verification:
+  verified_from:
+  - docs_kie_openapi_markdown
+  - docs_kie_request_example
+  - live_smoke_submit_status_download_artifacts
+  verified_on: '2026-09-09'
+  verification_notes:
+  - 'Contract source: https://docs.kie.ai/market/gpt/gpt-image-2-5-sunburst-image-to-image.md.'
+  - Required root fields are model and input; callBackUrl is optional. Prompt is required,
+    with a documented maximum of 20000 characters.
+  - Aspect ratios follow the actual OpenAPI enum, not x-apidog-enum display metadata.
+  - The playground advertises 1K-only limits for 27:16, 16:27, 9:8 and 8:9, but the
+    API docs omit them. Per onboarding decision, follow the API schema and do not
+    enforce this playground-only restriction.
+  - 'Do not inherit GPT Image 2 square/auto high-resolution restrictions: they are
+    absent from the 2.5 API contract.'
+  - Resolution 1K is a local wrapper default for deterministic payloads and pricing;
+    lowercase aliases are local normalization.
+  - input_urls is required with maxItems 16. The wrapper requires at least one image
+    and a nonempty prompt; these minimums are semantic safeguards, not explicit OpenAPI
+    minItems/minLength.
+  - Image formats, file size and pixel dimensions are not specified by the model docs.
+  - I2I x-apidog-enum contains stale ratios inconsistent with the actual enum; those
+    extra values are not supported here.
+  - Live smoke 4f97a7d5d981ca234fdb82f6a0b1fefd succeeded on 2026-09-09 with aspect_ratio
+    1:1 and resolution 1K; returned a 1254x1254 PNG. Download, artifact originals,
+    web/thumb derivatives and visual output were verified.
+  - Live proof covers one 1K square request only; all other documented combinations
+    remain docs-backed.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    provider_model: verified_live
+    task_modes: inferred
+    inputs.image.required_min: inferred
+    inputs.image.required_max: verified_docs
+    inputs.video.required_min: inferred
+    inputs.video.required_max: inferred
+    inputs.audio.required_min: inferred
+    inputs.audio.required_max: inferred
+    options.aspect_ratio.type: inferred
+    options.aspect_ratio.allowed: verified_docs
+    options.aspect_ratio.default: verified_docs
+    options.resolution.type: inferred
+    options.resolution.allowed: verified_docs
+    options.resolution.default: inferred
+    prompt.required: verified_docs
+    prompt.max_chars: verified_docs
+    prompt.enhancement_supported: inferred
+    prompt.enhancement_default_policy: inferred
+    prompt.default_profile_keys_by_input_pattern: inferred
+    defaults: inferred
+    transport.endpoint_family: inferred
+    transport.create_path: verified_live
+    transport.status_path: verified_live
+    transport.callback_supported: verified_docs
+    transport.image_input_field: verified_live
+    prompt.min_chars: inferred
+    options.resolution.value_aliases: inferred

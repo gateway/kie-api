@@ -12,7 +12,7 @@ from kie_api.registry.loader import load_latest_pricing_snapshot, load_model_spe
 def test_registry_loads_verified_model_specs() -> None:
     registry = load_registry()
 
-    assert len(registry.model_specs) == 16
+    assert len(registry.model_specs) == 20
     assert registry.get_model("nano-banana-pro").inputs["image"].required_max == 8
     assert registry.get_model("nano-banana-2").inputs["image"].required_max == 14
     assert registry.get_model("gpt-image-2-image-to-image").inputs["image"].required_max == 16
@@ -224,8 +224,8 @@ def test_registry_can_load_bundled_package_specs() -> None:
 def test_latest_pricing_snapshot_loads_from_package_resources() -> None:
     snapshot = load_latest_pricing_snapshot()
 
-    assert snapshot.version == "2026-08-17-site-pricing-page"
-    assert snapshot.released_on == "2026-08-17"
+    assert snapshot.version == "2026-09-09-gpt-image-2-5-market-page"
+    assert snapshot.released_on == "2026-09-09"
     assert any(rule.model_key == "kling-3.0-t2v" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-image-to-image" for rule in snapshot.rules)
     assert any(rule.model_key == "gpt-image-2-text-to-image" for rule in snapshot.rules)

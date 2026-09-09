@@ -20,6 +20,8 @@ Example:
 - `src/kie_api/resources/prompt_profiles/gpt_image_2_text_to_image_v1/metadata.yaml`
 - `src/kie_api/resources/prompt_profiles/gpt_image_2_text_to_image_v1/prompt.md`
 
+GPT Image 2.5 uses `gpt_image_2_5_text_to_image_v1` and `gpt_image_2_5_image_to_image_v1`, each shared by Flare and Sunburst for its request shape. Their source copies under `specs/prompt_profiles/` must match the packaged copies; the GPT Image 2.5 regression tests check parity.
+
 ## File format
 
 `metadata.yaml` can contain:

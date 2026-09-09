@@ -81,6 +81,7 @@ They are:
 Examples:
 - Nano Banana prompt-only
 - Nano Banana image-edit
+- GPT Image 2.5 Flare/Sunburst prompt-only and image-edit (four exact model keys; [integration details](GPT_IMAGE_2_5.md))
 - Kling text-to-video
 - Kling first-frame image-to-video
 - Kling first+last-frame image-to-video

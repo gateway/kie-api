@@ -16,7 +16,7 @@ def test_pricing_registry_returns_snapshot_backed_estimate() -> None:
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-08-17-site-pricing-page"
+    assert estimate.pricing_version == "2026-09-09-gpt-image-2-5-market-page"
     assert estimate.pricing_status == "observed_site_pricing"
 
 
@@ -31,7 +31,7 @@ def test_pricing_registry_uses_observed_gpt_image_2_pricing_over_local_policy_fa
     assert estimate.has_numeric_estimate is True
     assert estimate.is_known is False
     assert estimate.is_authoritative is False
-    assert estimate.pricing_version == "2026-08-17-site-pricing-page"
+    assert estimate.pricing_version == "2026-09-09-gpt-image-2-5-market-page"
     assert estimate.pricing_status == "observed_site_pricing"
     assert estimate.estimated_credits == pytest.approx(16.0)
     assert estimate.estimated_cost_usd == pytest.approx(0.08)

@@ -10,11 +10,13 @@ Versioned pricing snapshots live under:
 
 Current default snapshot:
 
-- `src/kie_api/resources/pricing/2026-03-26_site_pricing_page.yaml`
+- `src/kie_api/resources/pricing/2026-09-09_gpt_image_2_5_market_page.yaml`
+
+This snapshot adds GPT Image 2.5 Flare and Sunburst T2I/I2I at 6/10/16 credits for 1K/2K/4K. It carries forward previous model rules unchanged, retaining their original observation dates. GPT Image 2.5 uses a local 1K default so requests and preflight estimates agree. See [model details](GPT_IMAGE_2_5.md).
 
 ## Important honesty rule
 
-The default snapshot is sourced from KIE's public site pricing API. It is live-observed site pricing, not a verified billing contract.
+The default snapshot combines the existing public pricing API baseline with GPT Image 2.5 market-page observations. It is observed site pricing, not an authoritative billing contract. Four 1K smoke runs confirmed the expected 6-credit balance decrease per run; higher-resolution rates remain advertised estimates.
 
 Use it for:
 - local cost estimation

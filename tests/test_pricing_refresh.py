@@ -689,7 +689,12 @@ def test_build_supported_model_snapshot_maps_live_pricing_rows() -> None:
     assert any("2026-09-17 06:00 UTC" in note for note in rules["seedance-2.5"].notes)
     assert rules["suno-generate-music"].pricing_status == "unknown"
     assert rules["suno-generate-music"].interface_type == "music"
-    assert snapshot.missing_model_keys == []
+    # This historical fixture predates the four GPT Image 2.5 models.
+    assert snapshot.missing_model_keys == sorted(
+        f"gpt-image-2-5-{flavor}-{mode}"
+        for flavor in ("flare", "sunburst")
+        for mode in ("text-to-image", "image-to-image")
+    )
     assert "gpt-image-2-text-to-image" in snapshot.priced_model_keys
     assert any(
         row["model_description"] == "gpt image 2, text-to-image, experimental tier"

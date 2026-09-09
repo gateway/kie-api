@@ -47,6 +47,61 @@ def test_live_credit_balance_smoke() -> None:
     assert result.raw_response is not None
 
 
+@pytest.mark.parametrize("flavor", ["flare", "sunburst"])
+def test_live_gpt_image_25_generation_and_edit(flavor: str, tmp_path: Path) -> None:
+    """Two 1K tasks per flavor, using the generated image as the edit reference."""
+    _require_live_smoke()
+    if os.getenv("KIE_SMOKE_ALLOW_GPT_IMAGE_25") != "1":
+        pytest.skip("Set KIE_SMOKE_ALLOW_GPT_IMAGE_25=1 for GPT Image 2.5 smoke tests.")
+
+    from PIL import Image
+
+    registry = load_registry()
+    settings = KieSettings.from_env()
+    balance = CreditsClient(settings).get_balance()
+    assert balance.success and balance.available_credits is not None
+    assert balance.available_credits >= 12, "Each flavor needs an estimated 12 credits."
+    source = None
+    for mode in ("text-to-image", "image-to-image"):
+        model_key = f"gpt-image-2-5-{flavor}-{mode}"
+        validation = validate_request(
+            RawUserRequest(
+                model_key=model_key,
+                prompt=(
+                    "A blue ceramic mug on a plain cream background, soft studio lighting."
+                    if source is None
+                    else "Change only the mug to red; preserve shape, framing and lighting."
+                ),
+                prompt_policy="off",
+                images=[str(source)] if source else [],
+                options={"aspect_ratio": "1:1", "resolution": "1K"},
+            ),
+            registry,
+        )
+        assert validation.state in {
+            ValidationState.READY, ValidationState.READY_WITH_DEFAULTS,
+            ValidationState.READY_WITH_WARNING,
+        }
+        prepared = prepare_request_for_submission(validation, registry=registry, settings=settings)
+        submission = submit_prepared_request(prepared, registry=registry, settings=settings)
+        assert submission.success and submission.task_id
+        # Print immediately so an interrupted test can be investigated without resubmitting.
+        print(f"{model_key} task: {submission.task_id}", flush=True)
+        status = wait_for_task(
+            submission.task_id, settings=settings,
+            poll_interval_seconds=settings.wait_poll_interval_seconds,
+            timeout_seconds=min(settings.wait_timeout_seconds, 600.0),
+        ).final_status
+        assert status is not None and status.state == JobState.SUCCEEDED
+        assert status.output_urls
+        source = tmp_path / f"{model_key}.png"
+        download = download_output_file(status.output_urls[0], str(source), settings=settings)
+        assert download.http_status == 200
+        with Image.open(source) as image:
+            image.load()
+            assert image.width > 0 and image.height > 0
+
+
 def test_live_upload_from_url_smoke() -> None:
     _require_live_smoke()
     source_url = os.getenv("KIE_SMOKE_UPLOAD_SOURCE_URL")

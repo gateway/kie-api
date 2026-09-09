@@ -28,6 +28,7 @@ Kie.ai is a marketplace-style API platform for creative AI models. Instead of on
 Examples of model families currently covered by this repo:
 - Nano Banana 2
 - Nano Banana Pro
+- GPT Image 2.5 Flare and Sunburst (text-to-image and image editing)
 - Seedance 2.0
 - Seedance 2.5
 - Kling 2.6 text-to-video
@@ -70,6 +71,13 @@ These descriptions are based on the current public Kie.ai model pages and live p
 - Good at: higher-fidelity image generation, better prompt understanding, text rendering, and more demanding production-style image work
 - What it does: generates or edits higher-end images with 2K/4K output, strong typography, multi-object consistency, and better reasoning over complex visual instructions
 - Who it is by: Google DeepMind, using Gemini 3.0 Pro Image on Kie.ai
+
+### GPT Image 2.5
+
+- Four separate model keys cover Flare and Sunburst text-to-image and image-to-image requests.
+- Supports prompts up to 20,000 characters, up to 16 image references for editing, 13 documented aspect-ratio values, and 1K/2K/4K output.
+- Uses the existing Market adapter, shared presets for each request shape, and observed resolution-based pricing. Wrapper defaults are `aspect_ratio: auto` and `resolution: 1K`.
+- See [GPT Image 2.5 usage and verification](docs/GPT_IMAGE_2_5.md) for model keys, examples, and contract decisions.
 
 ### Kling 2.6
 
