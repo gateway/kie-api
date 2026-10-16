@@ -15,9 +15,9 @@ from ..exceptions import ModelNotFoundError, SpecValidationError
 from .models import ModelSpec, PricingSnapshot, PromptProfile
 
 try:
+    from importlib.resources.abc import Traversable
+except ImportError:  # Python 3.9–3.10; the old export was removed in 3.14.
     from importlib.abc import Traversable
-except ImportError:  # pragma: no cover - Python <3.9 fallback
-    from importlib_resources.abc import Traversable  # type: ignore
 
 
 SpecsRoot = Union[Path, Traversable]
