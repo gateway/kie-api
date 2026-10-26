@@ -86,7 +86,7 @@ from .registry.loader import SpecRegistry, load_registry
 try:
     __version__ = version("kie-api")
 except PackageNotFoundError:  # pragma: no cover - editable import without metadata
-    __version__ = "0.1.1"
+    __version__ = "0.1.2"
 
 __all__ = [
     "AppliedDefault",
