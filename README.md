@@ -1,5 +1,9 @@
 # Kie.ai Python Workflow Toolkit
 
+Requires Python 3.11 or newer and Pillow 13.x. Standalone users should create a
+Python 3.11+ virtual environment and reinstall this package. Media Studio users
+should use its current installer. Do not restore an old virtual environment.
+
 `kie-api` is a Python workflow toolkit for working with [Kie.ai](https://kie.ai?ref=e7565cf24a7fad4586341a87eaf21e42).
 
 ## LLM quick start
