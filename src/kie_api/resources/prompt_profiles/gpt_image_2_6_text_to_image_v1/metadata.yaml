@@ -1,0 +1,19 @@
+key: gpt_image_2_6_text_to_image_v1
+label: GPT Image 2.6 Text to Image Preset v1
+version: v1
+description: Shared by the Flare and Sunburst cards.
+applies_to_models:
+- gpt-image-2-6-flare-text-to-image
+- gpt-image-2-6-sunburst-text-to-image
+applies_to_task_modes:
+- text_to_image
+applies_to_input_patterns:
+- prompt_only
+variables:
+- user_prompt
+- output_format
+rules:
+- Describe the subject, composition and visual style.
+- Quote exact visible text.
+- For animated output, describe the motion and loop; for SVG, favor simple vector forms.
+source: builtin

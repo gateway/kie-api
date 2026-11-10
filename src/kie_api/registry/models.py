@@ -28,6 +28,7 @@ class InputConstraintsSpec(BaseModel):
 
     image_formats: Optional[List[str]] = None
     image_max_mb: Optional[float] = None
+    mask_max_mb: Optional[float] = None
     image_min_dimension_px: Optional[int] = None
     image_max_dimension_px: Optional[int] = None
     image_aspect_ratio_min: Optional[float] = None
@@ -170,6 +171,15 @@ class PromptProfile(BaseModel):
         return self.applies_to_models
 
 
+class TokenRate(BaseModel):
+    """Observed prices per million tokens in one billing category."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    credits: float
+    usd: float
+
+
 class PricingRule(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -183,6 +193,7 @@ class PricingRule(BaseModel):
     raw_usd_text: Optional[str] = None
     base_credits: Optional[float] = None
     base_cost_usd: Optional[float] = None
+    token_rates: Dict[str, TokenRate] = Field(default_factory=dict)
     multipliers: Dict[str, Dict[str, float]] = Field(default_factory=dict)
     adders_credits: Dict[str, Dict[str, float]] = Field(default_factory=dict)
     adders_cost_usd: Dict[str, Dict[str, float]] = Field(default_factory=dict)

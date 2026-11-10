@@ -1,0 +1,225 @@
+key: gpt-image-2-6-sunburst-image-to-image
+label: GPT Image 2.6 Sunburst Image to Image
+family: market
+provider_model: gpt-image-2-6/sunburst-image-to-image
+task_modes:
+- image_edit
+inputs:
+  image:
+    required_min: 1
+    required_max: 16
+  video:
+    required_max: 0
+  audio:
+    required_max: 0
+input_constraints:
+  image_formats:
+  - jpeg
+  - png
+  - webp
+  image_max_mb: 30
+  mask_max_mb: 30
+options:
+  aspect_ratio:
+    type: enum
+    allowed:
+    - auto
+    - '1:1'
+    - '3:2'
+    - '2:3'
+    - '4:3'
+    - '3:4'
+    - '5:4'
+    - '4:5'
+    - '16:9'
+    - '9:16'
+    - '2:1'
+    - '1:2'
+    - '21:9'
+    - '9:21'
+    - '3:1'
+    - '1:3'
+    default: auto
+    help_text: Shape of the canvas. Auto lets Kie choose.
+  resolution:
+    type: enum
+    allowed:
+    - 1K
+    - 2K
+    - 4K
+    default: 1K
+    value_aliases:
+      1k: 1K
+      2k: 2K
+      4k: 4K
+    help_text: Size tier. Exact pixel dimensions depend on the aspect ratio.
+  quality:
+    type: enum
+    allowed:
+    - low
+    - medium
+    - high
+    - xhigh
+    - max
+    - auto
+    default: medium
+    notes: Rendered image detail; independent of planning complexity.
+    help_text: Controls rendered detail. Independent of planning complexity.
+  background:
+    type: enum
+    allowed:
+    - transparent
+    - opaque
+    - auto
+    notes: 'Playground control is 1K-only. Provider default: auto. Transparent requires PNG, WebP or GIF.'
+    help_text: Auto lets Kie decide. Opaque gives a solid background. Transparent uses alpha and needs
+      PNG, WebP or GIF. This control is available at 1K.
+  output_format:
+    type: enum
+    allowed:
+    - png
+    - jpeg
+    - webp
+    - gif
+    - svg
+    default: png
+    value_aliases:
+      jpg: jpeg
+    help_text: PNG, JPEG and WebP are raster images. GIF is animated. SVG is available as an original
+      download.
+  complexity:
+    type: enum
+    allowed:
+    - low
+    - medium
+    - high
+    default: high
+    notes: Planning complexity; higher settings can take longer and may introduce unwanted edit changes.
+    help_text: Controls planning before rendering. Lower can suit focused edits; higher can add time and
+      unwanted changes.
+  moderation:
+    type: enum
+    allowed:
+    - auto
+    - low
+    default: low
+    help_text: Controls filtering strictness. Low is less restrictive; filtering still applies.
+  output_compression:
+    type: int_range
+    min: 0
+    max: 100
+    help_text: Controls file encoding for JPEG and WebP, from 0 to 100.
+  svg_model:
+    type: enum
+    allowed:
+    - gpt-6-sol
+    - gpt-5.6-luna
+    - gpt-5.6-terra
+    notes: 'SVG only. Provider default: gpt-5.6-luna.'
+    help_text: Selects the text model that writes the SVG. Its tokens are billed separately from the image
+      tokens.
+  frame_count:
+    type: int_range
+    min: 2
+    max: 16
+    notes: 'GIF only. Provider default: 9.'
+    help_text: Number of GIF frames, from 2 to 16.
+  frame_duration_ms:
+    type: int_range
+    min: 20
+    max: 2000
+    notes: 'GIF only, in multiples of 10 ms. Provider default: 200.'
+    help_text: Time per GIF frame, from 20 to 2000 ms in steps of 10 ms.
+prompt:
+  required: true
+  min_chars: 1
+  max_chars: 32000
+  enhancement_supported: true
+  enhancement_default_policy: ask
+  default_profile_keys_by_input_pattern:
+    image_edit: gpt_image_2_6_image_to_image_v1
+transport:
+  endpoint_family: market
+  create_path: /api/v1/jobs/createTask
+  status_path: /api/v1/jobs/recordInfo
+  callback_supported: true
+  image_input_field: input_urls
+verification:
+  verified_from:
+  - kie_market_playground_api
+  - docs_kie_openapi_markdown
+  verified_on: '2026-11-10'
+  verification_notes:
+  - 'Market and playground: https://kie.ai/gpt-image-2-6'
+  - 'OpenAPI: https://docs.kie.ai/market/gpt/gpt-image-2-6-sunburst-image-to-image.md'
+  - Authenticated acceptance is unverified. Conditional provider defaults are omitted unless explicitly
+    requested.
+  - Playground limits explicit background to 1K; OpenAPI allows transparent PNG, WebP and GIF in its background
+    summary.
+  - Follow the SVG author enum and market pricing; some OpenAPI examples show stale model names.
+  - 'GIF duration uses the schema multipleOf: 10, rather than relying on rounding in prose.'
+  - The Kie playground lists JPEG, PNG and WebP mask uploads with a 30 MB limit.
+    The SDK alpha-mask workflow accepts PNG or WebP with editable alpha pixels.
+  - Edit media uses separate reference, mask and markup roles. Markup is a transparent PNG over the first
+    reference.
+  - Kie documents SVG editing; the upstream OpenAI Image API only documents SVG generation. Live Kie SVG
+    editing remains unverified.
+  field_provenance:
+    key: inferred
+    label: inferred
+    family: inferred
+    task_modes: inferred
+    inputs.image.required_min: inferred
+    inputs.video.required_max: inferred
+    inputs.audio.required_max: inferred
+    prompt.enhancement_supported: inferred
+    prompt.enhancement_default_policy: inferred
+    prompt.default_profile_keys_by_input_pattern: inferred
+    transport.endpoint_family: inferred
+    transport.create_path: verified_docs
+    transport.status_path: verified_docs
+    transport.callback_supported: verified_docs
+    prompt.required: verified_docs
+    prompt.min_chars: verified_docs
+    prompt.max_chars: verified_docs
+    provider_model: verified_live
+    options.aspect_ratio.type: verified_docs
+    options.aspect_ratio.allowed: verified_docs
+    options.aspect_ratio.default: verified_docs
+    options.resolution.type: verified_docs
+    options.resolution.allowed: verified_docs
+    options.resolution.default: verified_docs
+    options.resolution.value_aliases: inferred
+    options.quality.type: verified_docs
+    options.quality.allowed: verified_docs
+    options.quality.default: verified_docs
+    options.background.type: verified_docs
+    options.background.allowed: verified_docs
+    options.output_format.type: verified_docs
+    options.output_format.allowed: verified_docs
+    options.output_format.default: verified_docs
+    options.output_format.value_aliases: verified_docs
+    options.complexity.type: verified_docs
+    options.complexity.allowed: verified_docs
+    options.complexity.default: verified_docs
+    options.moderation.type: verified_docs
+    options.moderation.allowed: verified_docs
+    options.moderation.default: verified_docs
+    options.output_compression.type: verified_docs
+    options.output_compression.min: verified_docs
+    options.output_compression.max: verified_docs
+    options.svg_model.type: inferred
+    options.svg_model.allowed: verified_docs
+    options.frame_count.type: verified_docs
+    options.frame_count.min: verified_docs
+    options.frame_count.max: verified_docs
+    options.frame_duration_ms.type: verified_docs
+    options.frame_duration_ms.min: verified_docs
+    options.frame_duration_ms.max: verified_docs
+    inputs.image.required_max: verified_docs
+    transport.image_input_field: verified_docs
+    input_constraints.image_formats: verified_docs
+    input_constraints.image_max_mb: verified_live
+    input_constraints.mask_max_mb: verified_live
+    input_roles.mask: verified_docs
+    input_roles.markup: verified_docs

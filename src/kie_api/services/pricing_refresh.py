@@ -11,7 +11,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..registry.loader import SpecRegistry, load_registry
+from .. import _gpt_image_2_6 as gpt26
+from ..registry.loader import SpecRegistry, load_latest_pricing_snapshot, load_registry
 from ..registry.models import ModelSpec
 from ..registry.models import PricingRule, PricingSnapshot
 
@@ -310,9 +311,19 @@ def build_supported_model_snapshot(
             )
         )
 
+    token_model_keys = gpt26.MODEL_KEYS & resolved_registry.model_specs.keys()
+    if token_model_keys:
+        # The market banner provides these rates; the generic resolution rows
+        # cannot tell us the cost of a single request on these cards.
+        rules.extend(
+            rule for rule in load_latest_pricing_snapshot().rules
+            if rule.model_key in token_model_keys and rule.billing_unit == "million_tokens"
+            and rule.observed_at and rule.observed_at <= released
+        )
+
     existing_model_keys = {rule.model_key for rule in rules}
     for spec in sorted(resolved_registry.iter_models(), key=lambda item: item.key):
-        if spec.key in existing_model_keys:
+        if spec.key in existing_model_keys or spec.key in token_model_keys:
             continue
         image_rows = _rows_matching_model_spec(capture.rows, spec)
         image_rule = _build_generic_image_resolution_rule(
@@ -732,6 +743,7 @@ def _build_generic_image_resolution_rule(
         row
         for row in rows
         if row.interface_type.lower() == "image"
+        and "token" not in (row.credit_unit or "").lower()
         and row.credit_price is not None
         and _row_resolution(row) is not None
     ]

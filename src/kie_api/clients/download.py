@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from contextlib import closing
 from pathlib import Path
 from typing import Optional
 
@@ -22,14 +23,16 @@ class DownloadClient(ManagedHttpClientMixin):
         self.settings = settings or KieSettings()
         self._set_http_client(http_client, timeout=self.settings.json_timeout())
 
-    def download_to_path(self, source_url: str, destination_path: str) -> DownloadResult:
+    def download_to_path(
+        self, source_url: str, destination_path: str, *, anonymous: bool = False,
+    ) -> DownloadResult:
         self._validate_source_url(source_url)
         destination = self._resolve_destination(destination_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         temp_destination = destination.with_name(f".{destination.name}.{uuid.uuid4().hex}.part")
 
         try:
-            with self.http_client.stream("GET", source_url) as response:
+            with self._open_download(source_url, anonymous=anonymous) as response:
                 response.raise_for_status()
                 content_length = _coerce_int(response.headers.get("Content-Length"))
                 self._validate_content_length(content_length)
@@ -54,6 +57,13 @@ class DownloadClient(ManagedHttpClientMixin):
             content_length=content_length if content_length is not None else bytes_written,
             http_status=response.status_code,
         )
+
+    def _open_download(self, source_url: str, *, anonymous: bool):
+        if not anonymous:
+            return self.http_client.stream("GET", source_url)
+        # A bare request prevents a shared client from forwarding default credentials.
+        request = httpx.Request("GET", source_url, extensions={"timeout": self.settings.json_timeout().as_dict()})
+        return closing(self.http_client.send(request, stream=True, auth=None, follow_redirects=False))
 
     def _validate_source_url(self, source_url: str) -> None:
         parsed = httpx.URL(source_url)

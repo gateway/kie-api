@@ -6,6 +6,7 @@ import re
 from copy import deepcopy
 from typing import Callable, Optional
 
+from .. import _gpt_image_2_6 as gpt26
 from ..enums import MediaRole, PromptInputPattern, PromptPolicy, PromptResolutionSource, TaskMode
 from ..exceptions import PromptTemplateRenderError
 from ..models import (
@@ -229,7 +230,7 @@ def _build_template_context(
     reference_images = _media_with_role(request.images, MediaRole.REFERENCE)
     reference_videos = _media_with_role(request.videos, MediaRole.REFERENCE)
     reference_audios = _media_with_role(request.audios, MediaRole.REFERENCE)
-    return {
+    context = {
         "user_prompt": request.raw_prompt or request.prompt or "",
         "model_key": request.model_key,
         "task_mode": request.task_mode.value,
@@ -248,6 +249,14 @@ def _build_template_context(
             reference_audios=reference_audios,
         ),
     }
+    if request.model_key in gpt26.MODEL_KEYS:
+        roles = {item.role for item in request.images}
+        context.update(
+            output_format=str(request.options.get("output_format") or "png"),
+            image_count=str(len(gpt26.reference_images(request))),
+            edit_region_role=next((role.value for role in gpt26.EDIT_ROLE_FIELDS if role in roles), "none"),
+        )
+    return context
 
 
 def _render_template(template: str, context: dict) -> str:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
+from .. import _gpt_image_2_6 as gpt26
 from ..enums import JobState, MediaRole, TaskMode
 from ..exceptions import ProviderResponseError
 from ..models import (
@@ -76,6 +77,13 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
             input_payload["reference_video_urls"] = reference_videos
         if reference_audios:
             input_payload["reference_audio_urls"] = reference_audios
+    elif request.model_key in gpt26.MODEL_KEYS:
+        if request.task_mode == TaskMode.IMAGE_EDIT:
+            input_payload["input_urls"] = [media.url for media in gpt26.reference_images(request)]
+            for role, field in gpt26.EDIT_ROLE_FIELDS.items():
+                url = _first_media_url(request.images, role)
+                if url:
+                    input_payload[field] = url
     elif request.task_mode in {TaskMode.TEXT_TO_IMAGE, TaskMode.IMAGE_EDIT}:
         if request.images:
             image_input_field = spec.transport.image_input_field or "image_input"
@@ -88,6 +96,12 @@ def build_market_submission_payload(request: NormalizedRequest, spec: ModelSpec)
         input_payload["video_urls"] = [media.url or media.path for media in request.videos]
 
     for option_name, option_value in request.options.items():
+        if request.model_key in gpt26.MODEL_KEYS:
+            if option_value is None:
+                continue
+            if option_name == "svg_model":
+                input_payload["svg"] = {"model": option_value}
+                continue
         option_spec = spec.options.get(option_name)
         provider_field = option_spec.provider_field if option_spec and option_spec.provider_field else option_name
         input_payload[provider_field] = _coerce_market_option_value(request, provider_field, option_value)

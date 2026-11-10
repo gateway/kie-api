@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 import shutil
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
@@ -121,7 +122,10 @@ def build_run_manifest(run: RunArtifact) -> RunManifest:
     duration_seconds = None
     if hero_output:
         hero_original = hero_output.relative_path
-        hero_web = hero_output.web_path or hero_output.relative_path
+        # Unrendered images (including SVG) are downloads, never inline previews.
+        hero_web = hero_output.web_path
+        if hero_output.kind != "image" and hero_web is None:
+            hero_web = hero_output.relative_path
         hero_output_path = hero_web
         thumbnail_path = hero_output.thumb_path or hero_output.poster_path or hero_output.web_path
         duration_seconds = hero_output.duration_seconds
@@ -224,7 +228,14 @@ def _copy_outputs(
     records: List[AssetRecord] = []
     for index, source in enumerate(sources, start=1):
         source_path = Path(source.source_path)
-        destination = original_dir / f"output_{index:02d}{source_path.suffix.lower()}"
+        suffix = source_path.suffix.lower()
+        if source.kind == "image":
+            mime_type = image_metadata(
+                source_path, include_sha256=False, include_animation=False,
+            )["mime_type"]
+            if mime_type is None or mime_type != detect_mime_type(source_path):
+                suffix = (mimetypes.guess_extension(mime_type) if mime_type else None) or ".bin"
+        destination = original_dir / f"output_{index:02d}{suffix}"
         shutil.copy2(source_path, destination)
         record = _asset_record(
             kind=source.kind,
@@ -241,27 +252,35 @@ def _copy_outputs(
         if source.kind == "image":
             web_path = web_dir / f"output_{index:02d}.{derivative_settings.image_web_format.lstrip('.')}"
             thumb_path = thumb_dir / f"output_{index:02d}.{derivative_settings.image_thumb_format.lstrip('.')}"
-            web_record, thumb_record = generate_image_derivatives(
-                destination,
-                web_path,
-                thumb_path,
-                web_max_dimension=derivative_settings.image_web_max_dimension,
-                web_format=derivative_settings.image_web_format,
-                web_quality=derivative_settings.image_web_quality,
-                thumb_max_dimension=derivative_settings.image_thumb_max_dimension,
-                thumb_format=derivative_settings.image_thumb_format,
-                thumb_quality=derivative_settings.image_thumb_quality,
-                allow_upscale=derivative_settings.allow_upscale,
-                enable_sha256=derivative_settings.enable_sha256,
-            )
-            record.web_path = _relative(run_dir, web_path)
-            record.thumb_path = _relative(run_dir, thumb_path)
-            record.bytes_web = web_record.bytes
-            record.bytes_thumb = thumb_record.bytes
-            record.derivatives = [
-                _rebase_derived(run_dir, web_record, web_path),
-                _rebase_derived(run_dir, thumb_record, thumb_path),
-            ]
+            try:
+                if record.mime_type == "image/svg+xml":
+                    raise ArtifactProcessingError("SVG is preserved as a download; safe raster preview is unavailable.")
+                web_record, thumb_record = generate_image_derivatives(
+                    destination,
+                    web_path,
+                    thumb_path,
+                    web_max_dimension=derivative_settings.image_web_max_dimension,
+                    web_format=derivative_settings.image_web_format,
+                    web_quality=derivative_settings.image_web_quality,
+                    thumb_max_dimension=derivative_settings.image_thumb_max_dimension,
+                    thumb_format=derivative_settings.image_thumb_format,
+                    thumb_quality=derivative_settings.image_thumb_quality,
+                    allow_upscale=derivative_settings.allow_upscale,
+                    enable_sha256=derivative_settings.enable_sha256,
+                )
+            except ArtifactProcessingError as exc:
+                web_path.unlink(missing_ok=True)
+                thumb_path.unlink(missing_ok=True)
+                warnings.append(f"Image derivatives skipped for output {index}: {exc}")
+            else:
+                record.web_path = _relative(run_dir, web_path)
+                record.thumb_path = _relative(run_dir, thumb_path)
+                record.bytes_web = web_record.bytes
+                record.bytes_thumb = thumb_record.bytes
+                record.derivatives = [
+                    _rebase_derived(run_dir, web_record, web_path),
+                    _rebase_derived(run_dir, thumb_record, thumb_path),
+                ]
         elif source.kind == "video":
             from .videos import generate_video_derivatives
 
@@ -384,7 +403,7 @@ def _asset_record(
         bytes_original=extracted.get("bytes"),
         sha256=extracted.get("sha256"),
         codec_name=extracted.get("codec_name"),
-        metadata=metadata,
+        metadata={**metadata, **extracted.get("metadata", {})},
     )
 
 

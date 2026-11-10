@@ -10,13 +10,13 @@ Versioned pricing snapshots live under:
 
 Current default snapshot:
 
-- `src/kie_api/resources/pricing/2026-09-09_gpt_image_2_5_market_page.yaml`
+- `src/kie_api/resources/pricing/2026-11-10_gpt_image_2_6_market_page.yaml`
 
-This snapshot adds GPT Image 2.5 Flare and Sunburst T2I/I2I at 6/10/16 credits for 1K/2K/4K. It carries forward previous model rules unchanged, retaining their original observation dates. GPT Image 2.5 uses a local 1K default so requests and preflight estimates agree. See [model details](GPT_IMAGE_2_5.md).
+The snapshot adds GPT Image 2.6's published token rates and carries forward earlier rules with their observation dates. GPT Image 2.5 still uses its observed 6/10/16 credit rates at 1K/2K/4K; the four prior 1K smoke runs observed 6 credits each. See the [GPT Image 2.5 evidence](GPT_IMAGE_2_5.md).
 
 ## Important honesty rule
 
-The default snapshot combines the existing public pricing API baseline with GPT Image 2.5 market-page observations. It is observed site pricing, not an authoritative billing contract. Four 1K smoke runs confirmed the expected 6-credit balance decrease per run; higher-resolution rates remain advertised estimates.
+The rates are public observations. For GPT Image 2.6, the price of an individual request depends on billable usage. Inspect `PricingRegistry.get_rule(model_key).token_rates` for rates in credits and USD per million tokens, including the SVG author rates. The SDK returns null estimates and a warning even when the credit balance is known. An unknown request cost does not establish that a balance or threshold is sufficient. Catalog refresh carries the market token rules forward without converting them to prices per resolution.
 
 Use it for:
 - local cost estimation
@@ -53,6 +53,7 @@ Each rule can define:
 - `raw_usd_text`
 - `base_credits`
 - `base_cost_usd`
+- `token_rates` (credits and USD per million tokens by billing category)
 - `multipliers`
 - `adders_credits`
 - `adders_cost_usd`
@@ -66,7 +67,7 @@ Each snapshot can also report coverage metadata:
 - `missing_model_keys`
 - `unmapped_source_rows`
 
-Wrappers should pass this metadata through when they expose pricing status to an operator. `missing_model_keys` means a supported model exists without a numeric pricing rule. `unmapped_source_rows` means KIE published rows that matched the known registry/provider surface but were not safe to attach to a model rule.
+Wrappers should pass this metadata through when they expose pricing status to an operator. `missing_model_keys` means a supported model exists without a rule in that snapshot. `unmapped_source_rows` means KIE published rows that matched the known registry/provider surface but were not safe to attach to a model rule.
 
 ## How to change pricing without Python code
 
@@ -112,7 +113,7 @@ Preflight can optionally check remaining credits only if:
 - a `KIE_API_KEY` is present
 - an upstream balance fetcher is injected
 
-This repo now includes a KIE credit probe client, but the endpoint still needs verification against a real authenticated response in this environment.
+The KIE credit probe client was verified with authenticated balance responses during the GPT Image 2.6 live smoke tests. Balance differences are observations, not a provider itemized billing contract.
 
 ## Optional pricing refresh scaffolding
 
@@ -158,3 +159,9 @@ python scripts/refresh_site_pricing_snapshot.py --install
 Suno pricing is currently kept as `unknown` on purpose when the public KIE pricing API does not
 publish a matching music row. That allows the model to stay registered and visible to preflight
 without fabricating a numeric estimate.
+
+## SDK and consumer refresh responsibilities
+
+The SDK ships the versioned snapshot and provides optional refresh helpers; importing the SDK does not schedule synchronization. GPT Image 2.6 token rates were captured from the model market page. The catalog refresh carries those rules forward with their original observation dates; it does not re-fetch the model-page token rates. Updating them requires a new verified snapshot.
+
+Media Studio owns its runtime refresh scheduling and cache. Its pricing display and request estimation must use the same snapshot explicitly to avoid divergence. This SDK release does not update Media Studio's token-rate presentation or unify its cached and bundled estimate sources. Consumers should display GPT Image 2.6 token rates with an unknown per-request estimate rather than treating absent base credits as zero.

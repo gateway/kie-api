@@ -20,6 +20,8 @@ class MediaRole(StrEnum):
     FIRST_FRAME = "first_frame"
     LAST_FRAME = "last_frame"
     REFERENCE = "reference"
+    MASK = "mask"
+    MARKUP = "markup"
 
 
 class TaskMode(StrEnum):

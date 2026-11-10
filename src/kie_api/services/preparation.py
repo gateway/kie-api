@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
+from .. import _gpt_image_2_6 as gpt26
 from ..config import KieSettings
 from ..enums import ValidationState
 from ..exceptions import RequestPreparationError
@@ -44,6 +45,10 @@ class RequestPreparationService:
 
     def prepare(self, request: ReadyRequest) -> PreparedRequest:
         normalized = self._resolve_ready_request(request)
+        # Normalized and caller-supplied ready requests also reach this boundary.
+        if normalized.model_key in gpt26.MODEL_KEYS and not isinstance(request, RawUserRequest):
+            normalized = _require_ready_validation(RequestValidator(self.registry).validate(normalized))
+        _require_supported_edit_roles(normalized)
         prepared_request = normalized.model_copy(deep=True)
         upload_results: List[UploadResult] = []
         reused_media: List[MediaReference] = []
@@ -80,6 +85,8 @@ class RequestPreparationService:
             "reused_uploaded_media": [media.model_dump() for media in reused_media],
         }
 
+        if prepared_request.model_key in gpt26.MODEL_KEYS and prepared_request.images:
+            warnings.append("Hosted images will be checked before the generation request is sent.")
         if reused_media:
             warnings.append(
                 "Trusted KIE-hosted media URLs were reused without reupload."
@@ -96,6 +103,7 @@ class RequestPreparationService:
         )
 
     def ensure_submit_ready(self, request: NormalizedRequest) -> None:
+        _require_supported_edit_roles(request)
         invalid_media: List[str] = []
         for field_name, media_list in (
             ("images", request.images),
@@ -185,6 +193,12 @@ class RequestPreparationService:
         return request
 
 
+def _require_supported_edit_roles(request: NormalizedRequest) -> None:
+    errors = gpt26.validate_edit_roles(request)
+    if errors:
+        raise RequestPreparationError(errors[0].message)
+
+
 def _require_ready_validation(validation: ValidationResult) -> NormalizedRequest:
     ready_states = {
         ValidationState.READY,
@@ -195,6 +209,7 @@ def _require_ready_validation(validation: ValidationResult) -> NormalizedRequest
         raise RequestPreparationError(
             "prepare_request_for_submission requires a request in a ready state; "
             f"received {validation.state}."
+            + (" " + " ".join(validation.errors) if validation.errors else "")
         )
     return validation.normalized_request
 
