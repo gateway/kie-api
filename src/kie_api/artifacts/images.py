@@ -7,7 +7,9 @@ from typing import Tuple
 
 from PIL import Image, ImageOps
 
-from .inspect import image_metadata
+from ..exceptions import ArtifactProcessingError
+
+from .inspect import animation_frames, animation_loop_count, image_metadata
 from .models import DerivedAssetRecord
 
 
@@ -26,57 +28,83 @@ def generate_image_derivatives(
     enable_sha256: bool = True,
 ) -> tuple[DerivedAssetRecord, DerivedAssetRecord]:
     source = Path(source_path)
-    _save_resized_image(
-        source,
-        web_path,
-        max_dimension=web_max_dimension,
-        output_format=web_format,
-        quality=web_quality,
-        allow_upscale=allow_upscale,
-    )
-    _save_resized_image(
-        source,
-        thumb_path,
-        max_dimension=thumb_max_dimension,
-        output_format=thumb_format,
-        quality=thumb_quality,
-        allow_upscale=allow_upscale,
-    )
-    return (
-        _derived_record("web", web_path, include_sha256=enable_sha256),
-        _derived_record("thumb", thumb_path, include_sha256=enable_sha256),
-    )
+    try:
+        with Image.open(source) as image:
+            animated_gif = image.format == "GIF" and image.is_animated
+            _save_preview(
+                image, web_path, max_dimension=web_max_dimension, output_format=web_format,
+                quality=web_quality, allow_upscale=allow_upscale, animate=animated_gif,
+            )
+            image.seek(0)
+            _save_preview(
+                image, thumb_path, max_dimension=thumb_max_dimension, output_format=thumb_format,
+                quality=thumb_quality, allow_upscale=allow_upscale,
+            )
+        return (
+            _derived_record("web", web_path, include_sha256=enable_sha256),
+            _derived_record("thumb", thumb_path, include_sha256=enable_sha256),
+        )
+    except (OSError, ValueError, SyntaxError, KeyError, EOFError, Image.DecompressionBombError) as exc:
+        raise ArtifactProcessingError("Image preview could not be generated.") from exc
 
 
-def _save_resized_image(
-    source_path: Path,
+def _save_preview(
+    image: Image.Image,
     destination_path: Path,
     *,
     max_dimension: int,
     output_format: str,
     quality: int,
     allow_upscale: bool,
+    animate: bool = False,
 ) -> None:
     destination_path.parent.mkdir(parents=True, exist_ok=True)
-    with Image.open(source_path) as image:
-        processed = ImageOps.exif_transpose(image)
-        if processed.mode not in {"RGB", "RGBA"}:
-            processed = processed.convert("RGBA" if "A" in processed.getbands() else "RGB")
+    format_name = output_format.upper()
+    if format_name == "JPG":
+        format_name = "JPEG"
+
+    def resized(frame: Image.Image) -> Image.Image:
+        processed = ImageOps.exif_transpose(frame)
+        alpha = "A" in processed.getbands() or "transparency" in processed.info
+        mode = "RGBA" if alpha and format_name != "JPEG" else "RGB"
+        if processed.mode != mode:
+            processed = processed.convert(mode)
         size = _target_size(processed.size, max_dimension=max_dimension, allow_upscale=allow_upscale)
         if size != processed.size:
             processed = processed.resize(size, Image.Resampling.LANCZOS)
-        normalized_format = output_format.upper()
-        if normalized_format == "JPG":
-            normalized_format = "JPEG"
-        if normalized_format in {"JPEG", "JPG"} and processed.mode == "RGBA":
-            processed = processed.convert("RGB")
-        save_kwargs = {}
-        if normalized_format == "WEBP":
-            save_kwargs["quality"] = quality
-            save_kwargs["method"] = 6
-        elif normalized_format in {"JPEG", "JPG"}:
-            save_kwargs["quality"] = quality
-        processed.save(destination_path, format=normalized_format, **save_kwargs)
+        return processed
+
+    save_kwargs = {}
+    if format_name == "WEBP":
+        save_kwargs.update(quality=quality, method=6)
+    elif format_name == "JPEG":
+        save_kwargs["quality"] = quality
+    if not animate:
+        resized(image).save(destination_path, format=format_name, **save_kwargs)
+        return
+
+    if format_name not in {"WEBP", "GIF", "PNG"}:
+        raise ArtifactProcessingError("Animated GIF previews require WebP, GIF or PNG.")
+    if format_name == "GIF":
+        if "loop" in image.info:
+            save_kwargs["loop"] = image.info["loop"]
+        save_kwargs["disposal"] = 2
+    else:
+        save_kwargs["loop"] = animation_loop_count(image)
+    if format_name == "WEBP":
+        if save_kwargs["loop"] > 65535:
+            raise ArtifactProcessingError("The GIF loop count exceeds WebP's supported range.")
+        # Use full frames so cropped opaque regions cannot erase alpha in the canvas.
+        save_kwargs.update(background=(0, 0, 0, 0), kmax=1)
+    frames = []
+    durations = []
+    for frame in animation_frames(image):
+        frames.append(resized(frame.convert("RGBA")))
+        durations.append(frame.info.get("duration", 100))
+    frames[0].save(
+        destination_path, format=format_name, save_all=True, append_images=frames[1:],
+        duration=durations, **save_kwargs,
+    )
 
 
 def _target_size(
@@ -98,6 +126,8 @@ def _derived_record(kind: str, path: Path, *, include_sha256: bool) -> DerivedAs
         mime_type=metadata["mime_type"],
         width=metadata["width"],
         height=metadata["height"],
+        duration_seconds=metadata["duration_seconds"],
         bytes=metadata["bytes"],
         sha256=metadata["sha256"],
+        metadata=metadata["metadata"],
     )

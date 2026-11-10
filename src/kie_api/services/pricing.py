@@ -83,6 +83,19 @@ class PricingRegistry:
                 notes=["Pricing is not yet defined for this model in the active snapshot."],
             )
 
+        if rule.billing_unit == "million_tokens":
+            # A unit rate alone cannot estimate the billable usage of a request.
+            return EstimatedCost(
+                model_key=model_key,
+                currency=self.snapshot.currency,
+                pricing_version=self.snapshot.version,
+                pricing_source_kind=self.snapshot.source_kind,
+                pricing_status=rule.pricing_status,
+                billing_unit=rule.billing_unit,
+                assumptions=list(self.snapshot.notes),
+                notes=list(rule.notes),
+            )
+
         estimated_credits = rule.base_credits
         estimated_cost_usd = rule.base_cost_usd
         applied_multipliers: Dict[str, float] = {}

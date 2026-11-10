@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, List
 
+from .. import _gpt_image_2_6 as gpt26
 from ..enums import MediaRole, OptionType, TaskMode, ValidationState
 from ..models import (
     InvalidInput,
@@ -37,7 +38,8 @@ class RequestValidator:
         _apply_value_aliases(spec.options, normalized.options)
         defaulted_fields = deepcopy(normalized.defaulted_fields)
         warning_details: List[ValidationMessage] = []
-        impossible_inputs: List[InvalidInput] = []
+        impossible_inputs = gpt26.validate_edit_roles(normalized)
+        is_gpt26 = request.model_key in gpt26.MODEL_KEYS
 
         if request.task_mode not in spec.task_modes:
             impossible_inputs.append(
@@ -83,6 +85,16 @@ class RequestValidator:
             "video": normalized.videos,
             "audio": normalized.audios,
         }
+        if is_gpt26 and request.task_mode == TaskMode.IMAGE_EDIT:
+            media_collections["image"] = gpt26.reference_images(normalized)
+            impossible_inputs.extend(gpt26.validate_edit_images(normalized, spec))
+            if any(item.url and not item.path for item in normalized.images):
+                warning_details.append(ValidationMessage(
+                    field="images",
+                    code="remote_image_bytes_unverified",
+                    message="Hosted image bytes and alignment are checked at submission; dry runs cannot verify them.",
+                ))
+
         for media_name, count_spec in spec.inputs.items():
             current_count = len(media_collections[media_name])
             if current_count < count_spec.required_min:
@@ -611,8 +623,19 @@ class RequestValidator:
                         )
                     )
 
+        if is_gpt26:
+            impossible_inputs.extend(gpt26.validate_request_options(normalized, spec))
+
         for option_name in normalized.options:
             if option_name not in spec.options:
+                if is_gpt26:
+                    impossible_inputs.append(self._invalid_option(
+                        option_name,
+                        "unsupported_option",
+                        f"GPT Image 2.6 does not support option '{option_name}'.",
+                        normalized.options[option_name],
+                    ))
+                    continue
                 warning_details.append(
                     ValidationMessage(
                         field=option_name,

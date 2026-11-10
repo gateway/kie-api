@@ -110,7 +110,7 @@ def test_public_api_supports_dry_run_prompt_and_preflight_helpers() -> None:
     )
 
     assert enhancement.profile_key == "kling_3_0_t2v_v1"
-    assert estimate.pricing_version == "2026-09-09-gpt-image-2-5-market-page"
+    assert estimate.pricing_version == "2026-11-10-gpt-image-2-6-market-page"
     assert preflight.decision == GuardDecision.REQUIRE_CONFIRMATION
 
 

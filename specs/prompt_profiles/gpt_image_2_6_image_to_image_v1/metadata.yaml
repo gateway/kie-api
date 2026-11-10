@@ -1,0 +1,23 @@
+key: gpt_image_2_6_image_to_image_v1
+label: GPT Image 2.6 Image to Image Preset v1
+version: v1
+description: Shared by the Flare and Sunburst cards.
+applies_to_models:
+- gpt-image-2-6-flare-image-to-image
+- gpt-image-2-6-sunburst-image-to-image
+applies_to_task_modes:
+- image_edit
+applies_to_input_patterns:
+- image_edit
+variables:
+- user_prompt
+- output_format
+- image_count
+- edit_region_role
+rules:
+- Specify what changes and what must stay fixed.
+- Use the declared region aid. A mask indicates the edit region; markup visibly points to the target and
+  should not appear in the result.
+- Keep visible text and identity constraints explicit.
+- For GIF, describe motion and looping; for SVG, favor clean vector forms.
+source: builtin

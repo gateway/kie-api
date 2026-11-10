@@ -21,6 +21,11 @@ Rules:
 - preserve aspect ratio
 - auto-orient with EXIF transpose
 - do not upscale smaller images unless explicitly configured
+- detect image output MIME type from content and correct the archived extension when needed; keep the source filename in metadata
+- preserve alpha in preview formats that support it, including palette transparency
+- preserve the original animated GIF and create an animated web preview (WebP by default) plus a static first-frame thumbnail. A frame count and total canvas pixel budget bound inspection and preview work.
+- preserve SVG bytes as a download; the SDK does not render SVG or point preview fields to it
+- if an image preview cannot be made, retain the original and run metadata, record the warning, and leave the preview fields empty
 
 Captured metadata includes:
 - width
@@ -28,6 +33,8 @@ Captured metadata includes:
 - mime type
 - bytes
 - sha256
+
+GIF originals and animated previews report `metadata.is_animated`, `metadata.frame_count`, and `metadata.loop_count`. The loop count is the total number of plays, with zero for continuous playback. A GIF without a loop extension plays once. The record's `duration_seconds` measures one cycle from the encoded frame delays. The manifest uses that duration when the animation is the first output. Static thumbnails have one frame and no playback duration. If animation inspection fails or reaches the budget, the original stays available and `metadata.animation_metadata_incomplete` flags missing details.
 
 ## Video derivatives
 
@@ -71,7 +78,7 @@ When derivatives are written through `create_run_artifact(...)`, metadata paths 
 That keeps artifacts portable and easy to move or inspect.
 
 ## Current limitations
-- no animated image derivatives
+- animated previews are generated from GIF sources
 - no adaptive bitrate ladders
 - no parallelized transcode queue
 - no content-aware crop strategy

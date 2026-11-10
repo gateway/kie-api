@@ -8,7 +8,8 @@ import mimetypes
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterator, Optional
+from xml.parsers import expat
 
 from PIL import Image
 
@@ -28,17 +29,113 @@ def detect_mime_type(path: Path) -> Optional[str]:
     return mime_type
 
 
-def image_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]:
-    with Image.open(path) as image:
-        width, height = image.size
-        format_name = image.format
+MAX_ANIMATION_FRAMES = 256
+MAX_ANIMATION_PIXELS = 64_000_000
+
+
+def image_metadata(
+    path: Path, *, include_sha256: bool = True, include_animation: bool = True,
+) -> Dict[str, Any]:
+    width = height = None
+    mime_type = None
+    duration = None
+    metadata = {}
+    try:
+        with Image.open(path) as image:
+            width, height = image.size
+            mime_type = Image.MIME.get(image.format) or _mime_from_pillow_format(image.format)
+            if include_animation:
+                metadata, duration = _read_animation_metadata(image)
+    except (OSError, ValueError, SyntaxError, Image.DecompressionBombError):
+        if _has_svg_root(path):
+            mime_type = "image/svg+xml"
     return {
         "width": width,
         "height": height,
-        "mime_type": detect_mime_type(path) or _mime_from_pillow_format(format_name),
+        "mime_type": mime_type,
+        "duration_seconds": duration,
+        "metadata": metadata,
         "bytes": path.stat().st_size,
         "sha256": sha256_file(path) if include_sha256 else None,
     }
+
+
+def animation_frames(image: Image.Image) -> Iterator[Image.Image]:
+    """Read at most the supported frame and canvas pixel budgets."""
+    index = 1 if image.format == "PNG" and image.info.get("default_image") else 0
+    pixels = 0
+    for count in range(1, MAX_ANIMATION_FRAMES + 2):
+        try:
+            image.seek(index)
+        except EOFError:
+            return
+        pixels += image.width * image.height
+        if count > MAX_ANIMATION_FRAMES or pixels > MAX_ANIMATION_PIXELS:
+            raise ArtifactProcessingError("Animation exceeds the frame or canvas pixel budget.")
+        yield image
+        index += 1
+
+
+def animation_loop_count(image: Image.Image) -> int | None:
+    """Return total plays, with zero representing an infinite loop."""
+    loop = image.info.get("loop")
+    if image.format == "GIF":
+        # GIF stores additional repeats. WebP and APNG store total plays.
+        return 1 if loop is None else loop + 1 if loop else 0
+    return loop
+
+
+def _read_animation_metadata(image: Image.Image) -> tuple[dict[str, Any], float | None]:
+    if image.format not in {"GIF", "WEBP", "PNG", "JPEG"}:
+        return {}, None
+    metadata: dict[str, Any] = {}
+    try:
+        if not getattr(image, "is_animated", False):
+            return {"is_animated": False, "frame_count": 1}, None
+        metadata["is_animated"] = True
+        loop_count = animation_loop_count(image)
+        if loop_count is not None:
+            metadata["loop_count"] = loop_count
+        delays = []
+        for frame in animation_frames(image):
+            frame.load()
+            delays.append(frame.info.get("duration"))
+    except (ArtifactProcessingError, OSError, ValueError, SyntaxError, EOFError, Image.DecompressionBombError):
+        metadata["animation_metadata_incomplete"] = True
+        return metadata, None
+    metadata["frame_count"] = len(delays)
+    duration = sum(delays) / 1000 if all(delay is not None for delay in delays) else None
+    return metadata, duration
+
+
+class _RootFound(Exception):
+    pass
+
+
+def _has_svg_root(path: Path) -> bool:
+    """Identify an SVG root without rendering, loading DTDs, or parsing its contents."""
+    is_svg = False
+    parser = expat.ParserCreate(namespace_separator=" ")
+    parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_NEVER)
+    parser.ExternalEntityRefHandler = lambda *_: 0
+
+    def identify_root(name: str, _attrs: dict) -> None:
+        nonlocal is_svg
+        is_svg = name in {"http://www.w3.org/2000/svg svg", "svg"}
+        raise _RootFound
+
+    parser.StartElementHandler = identify_root
+    # Classify from a bounded header without resolving entities or external resources.
+    def reject_entity(*_args) -> None:
+        raise _RootFound
+
+    parser.EntityDeclHandler = reject_entity
+    try:
+        with path.open("rb") as handle:
+            parser.Parse(handle.read(64 * 1024), False)
+    except (_RootFound, expat.ExpatError):
+        pass
+    return is_svg
 
 
 def video_metadata(path: Path, *, include_sha256: bool = True) -> Dict[str, Any]:
