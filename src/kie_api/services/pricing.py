@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, List, Optional
 
+from .. import _gpt_image_2_6 as gpt26
 from ..models import EstimatedCost, NormalizedRequest
 from ..registry.loader import load_latest_pricing_snapshot
 from ..registry.models import PricingRule, PricingSnapshot
@@ -14,6 +15,13 @@ SEEDANCE_MODEL_KEYS = {
     "seedance-2.0-fast",
     "seedance-2.0-mini",
     "seedance-2.5",
+}
+
+# KIE's square-image calculator at https://kie.ai/gpt-image-2-6 (2026-11-16).
+_GPT26_SQUARE_OUTPUT_TOKENS = {
+    "1k": {"low": 823, "medium": 1449, "high": 1756, "xhigh": 3122, "max": 7024},
+    "2k": {"low": 1667, "medium": 2944, "high": 3568, "xhigh": 6343, "max": 14272},
+    "4k": {"low": 2768, "medium": 4894, "high": 5930, "xhigh": 10542, "max": 23719},
 }
 
 
@@ -66,7 +74,11 @@ class PricingRegistry:
     def estimate_request(self, request: NormalizedRequest) -> EstimatedCost:
         options = dict(request.options)
         options.update(_derive_request_pricing_options(request))
-        return self._estimate(request.model_key, options)
+        estimate = self._estimate(request.model_key, options)
+        if request.model_key in gpt26.MODEL_KEYS and estimate.billing_unit == "million_tokens":
+            rule = self._rules[request.model_key]
+            return _estimate_gpt26_static_image(request, estimate, rule)
+        return estimate
 
     def _estimate(self, model_key: str, options: Dict[str, Any]) -> EstimatedCost:
         rule = self._rules.get(model_key)
@@ -157,6 +169,37 @@ class PricingRegistry:
             assumptions=list(self.snapshot.notes),
             notes=list(rule.notes),
         )
+
+
+def _estimate_gpt26_static_image(
+    request: NormalizedRequest, estimate: EstimatedCost, rule: PricingRule,
+) -> EstimatedCost:
+    options = request.options
+    if options.get("output_format", "png") not in ("png", "jpeg", "webp"):
+        return estimate
+    if options.get("aspect_ratio", "auto") not in ("auto", "1:1"):
+        return estimate
+    resolution = _normalize_option_value(options.get("resolution", "1K"))
+    quality = _normalize_option_value(options.get("quality", "medium"))
+    output_tokens = _GPT26_SQUARE_OUTPUT_TOKENS.get(resolution, {}).get(quality)
+    output_rate = rule.token_rates.get("image_output")
+    if output_tokens is None or output_rate is None:
+        return estimate
+
+    reference_count = len(gpt26.reference_images(request))
+    input_credits = 0.1 + 2.2 * reference_count
+    output_million_tokens = output_tokens / 1_000_000
+    return estimate.model_copy(update={
+        "estimated_credits": output_million_tokens * output_rate.credits + input_credits,
+        "estimated_cost_usd": output_million_tokens * output_rate.usd + input_credits * 0.005,
+        "has_numeric_estimate": True,
+        "assumptions": [
+            *estimate.assumptions,
+            "KIE's square-image output estimate (also used for Auto aspect ratio).",
+            "KIE's planning allowances are 0.1 credits for the prompt and 2.2 per reference image.",
+        ],
+        "notes": ["KIE charges for actual token usage."],
+    })
 
 
 def _normalize_option_value(value: Any) -> str:

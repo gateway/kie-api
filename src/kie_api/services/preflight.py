@@ -61,14 +61,15 @@ class PreflightService:
             remaining_credits = self.remaining_credits_fetcher(self.settings)
             checked_remaining_credits = remaining_credits is not None
 
-        if not estimate.has_numeric_estimate:
+        usage_based = estimate.billing_unit == "million_tokens" and not estimate.is_authoritative
+        if not estimate.has_numeric_estimate or usage_based:
             return PreflightDecision(
                 decision=GuardDecision.WARN,
                 estimated_cost=estimate,
                 remaining_credits=remaining_credits,
                 remaining_credits_checked=checked_remaining_credits,
                 can_submit=True,
-                reason="Pricing is unknown for this request.",
+                reason=("Charges depend on billable token usage." if usage_based else "Pricing is unknown for this request."),
                 warnings=warnings,
             )
 

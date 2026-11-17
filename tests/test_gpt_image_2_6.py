@@ -323,6 +323,49 @@ def test_pricing_refresh_and_preflight_do_not_use_token_rates_as_estimates(regis
         assert not refreshed.estimate(key, {"resolution": "1K"}).has_numeric_estimate
 
 
+@pytest.mark.parametrize("key", KEYS)
+def test_static_pricing_preflight_estimates_default_quality_without_changing_token_billing(key, registry):
+    estimate = run_preflight(raw(key), registry).estimated_cost
+    references = int(key.endswith("image-to-image"))
+    assert estimate.estimated_credits == pytest.approx(7.8246 + 0.1 + 2.2 * references)
+    assert estimate.estimated_cost_usd == pytest.approx(estimate.estimated_credits * 0.005)
+    assert estimate.billing_unit == "million_tokens"
+    assert estimate.has_numeric_estimate
+    assert not estimate.is_authoritative
+    assert not estimate.is_known
+
+
+@pytest.mark.parametrize("guide", ("mask", "markup"))
+def test_static_pricing_counts_ordered_references_excluding_guidance(guide, registry):
+    request = raw(EDIT, images=[
+        f"{HOST}/source.png",
+        {"role": "reference", "url": f"{HOST}/reference.png"},
+        {"role": guide, "url": f"{HOST}/guide.png"},
+    ], options={"quality": "low", "resolution": "2K", "aspect_ratio": "1:1"})
+    estimate = run_preflight(request, registry).estimated_cost
+    assert estimate.estimated_credits == pytest.approx(1667 * 0.0054 + 0.1 + 2 * 2.2)
+
+
+@pytest.mark.parametrize("options", [
+    {"quality": "auto"}, {"output_format": "gif"}, {"output_format": "svg"}, {"aspect_ratio": "16:9"},
+])
+def test_static_pricing_keeps_unpublished_cases_usage_based(options, registry):
+    estimate = run_preflight(raw(TEXT, options=options), registry).estimated_cost
+    assert not estimate.has_numeric_estimate
+    assert estimate.estimated_credits is None
+    assert estimate.estimated_cost_usd is None
+
+
+def test_static_planning_estimate_does_not_become_a_credit_limit(registry):
+    preflight = run_preflight(raw(EDIT), registry, remaining_credits=1,
+                              settings=KieSettings(confirm_credit_threshold=1))
+    assert preflight.estimated_cost.has_numeric_estimate
+    assert preflight.decision == "warn"
+    assert preflight.can_submit
+    assert not preflight.requires_confirmation
+    assert preflight.reason == "Charges depend on billable token usage."
+
+
 def encoded_image(format_name, size, *, alpha=None, orientation=None):
     buffer = BytesIO()
     image = Image.new("RGB" if alpha is None else "RGBA", size,
