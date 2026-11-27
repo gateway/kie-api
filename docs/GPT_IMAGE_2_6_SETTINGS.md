@@ -65,13 +65,15 @@ request = RawUserRequest(
 )
 
 validation = validate_request(request)
-# Once validation is ready, this estimates without submitting and warns that cost is unknown.
+# Once validation is ready, this estimates without submitting and warns about token-based charges.
 preflight = run_preflight(validation)
 # This uploads media with your configured KIE_API_KEY; it does not start generation.
 prepared = prepare_request_for_submission(validation)
 ```
 
 Plain image entries are references, as are entries with `role: reference`. Use `role: mask` for an alpha mask or `role: markup` for an annotated overlay. An entry can specify a local `path` or a remote `url`. For the alpha-mask workflow, the SDK accepts decoded PNG or WebP with alpha-zero pixels. The Kie playground lists JPEG, PNG, and WebP uploads up to 30 MB for both edit cards. The SDK enforces the mask limit on local files and hosted downloads. JPEG mask behavior and WebP alpha-mask acceptance still need live Kie checks. A fully transparent mask represents an edit across the entire canvas. A mask with no alpha-zero pixels is rejected; the SDK never inverts opaque black-and-white masks. Markup must decode as a transparent PNG. When the first reference and auxiliary file are local, the SDK checks alignment against the displayed dimensions after EXIF orientation.
+
+For supported still images, preflight includes an approximate planning amount from Kie's square-image calculator. The original edit image and supporting references count toward the reference allowance; masks and markup are excluded from that allowance. Auto quality, non-square ratios, GIF and SVG keep usage-based fallback. These estimates warn rather than block on balance or cost thresholds and do not guarantee the final charge. See [pricing and preflight](PRICING_AND_PREFLIGHT.md#important-honesty-rule) for supported settings and estimate semantics.
 
 Dry runs cannot verify remote bytes. Preparation validates local files and uploads third-party sources through Kie. Immediately before sending a generation request, the SDK downloads the exact hosted references and auxiliary image from configured trusted upload hosts, without credentials or redirects. It checks bytes, supported formats, size limits, transparency and alignment; an unreadable, expired or invalid hosted input stops the request before generation. Temporary inspection copies are removed. File extensions, MIME headers and caller metadata do not establish image type.
 
